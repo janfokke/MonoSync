@@ -4,7 +4,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers
 {
-    public class ReferenceFieldSerializer : IFieldSerializer<object>
+    public class ReferenceFieldSerializer : IFieldSerializer
     {
         private readonly IReferenceResolver _referenceResolver;
 
@@ -12,6 +12,8 @@ namespace MonoSync.FieldSerializers
         {
             _referenceResolver = referenceResolver;
         }
+
+        public bool CanInterpolate => false;
 
         public bool CanSerialize(Type type)
         {
@@ -22,6 +24,11 @@ namespace MonoSync.FieldSerializers
         {
             int referenceIdentifier = _referenceResolver.ResolveIdentifier(value);
             writer.Write7BitEncodedInt(referenceIdentifier);
+        }
+
+        public object Interpolate(object source, object target, float factor)
+        {
+            throw new NotImplementedException();
         }
 
         public void Deserialize(ExtendedBinaryReader reader, Action<object> valueFixup)

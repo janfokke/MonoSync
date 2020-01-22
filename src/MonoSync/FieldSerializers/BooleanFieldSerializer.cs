@@ -4,14 +4,14 @@ using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers
 {
-    public class BooleanFieldSerializer : IFieldSerializer<bool>
+    public class BooleanFieldSerializer : FieldSerializer<bool>
     {
-        public void Serialize(bool value, ExtendedBinaryWriter writer)
+        public override void Serialize(bool value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
         }
 
-        public void Deserialize(ExtendedBinaryReader reader, Action<bool> valueFixup)
+        public override void Deserialize(ExtendedBinaryReader reader, Action<bool> valueFixup)
         {
             valueFixup(reader.ReadBoolean());
         }

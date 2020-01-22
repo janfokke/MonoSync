@@ -4,21 +4,21 @@ using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers
 {
-    public class UInt16FieldSerializer : IFieldSerializer<ushort>
+    public class UInt16FieldSerializer : FieldSerializer<ushort>
     {
-        public void Serialize(ushort value, ExtendedBinaryWriter writer)
+        public override void Serialize(ushort value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
         }
 
-        public void Deserialize(ExtendedBinaryReader reader, Action<ushort> valueFixup)
+        public override void Deserialize(ExtendedBinaryReader reader, Action<ushort> valueFixup)
         {
             valueFixup(reader.ReadUInt16());
         }
 
-        public bool CanInterpolate => true;
+        public override bool CanInterpolate => true;
 
-        public ushort Interpolate(ushort source, ushort target, float factor)
+        public override ushort Interpolate(ushort source, ushort target, float factor)
         {
             return (ushort) (source + (target - source) * factor);
         }
