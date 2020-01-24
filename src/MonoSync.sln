@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoSync", "MonoSync\MonoSy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoSync.Test", "MonoSync.Test\MonoSync.Test.csproj", "{D749EBB4-210D-444E-A6F9-58795C0D6F63}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tweening", "..\samples\NetworkSynchronization\Tweening.csproj", "{4098A801-A88F-4F1C-80D1-57F6B3E47748}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D749EBB4-210D-444E-A6F9-58795C0D6F63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D749EBB4-210D-444E-A6F9-58795C0D6F63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D749EBB4-210D-444E-A6F9-58795C0D6F63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4098A801-A88F-4F1C-80D1-57F6B3E47748}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4098A801-A88F-4F1C-80D1-57F6B3E47748}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4098A801-A88F-4F1C-80D1-57F6B3E47748}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4098A801-A88F-4F1C-80D1-57F6B3E47748}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
