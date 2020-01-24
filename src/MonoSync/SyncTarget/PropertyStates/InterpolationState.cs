@@ -15,6 +15,7 @@ namespace MonoSync.SyncTarget.PropertyStates
         public InterpolationState(SyncTargetProperty syncTargetProperty, SyncTargetRoot syncTargetRoot,
             IFieldSerializer fieldSerializer)
         {
+            _synchronizedValue = syncTargetProperty.Property;
             _syncTargetProperty = syncTargetProperty;
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
@@ -53,7 +54,7 @@ namespace MonoSync.SyncTarget.PropertyStates
         private void Update(object sender, EventArgs e)
         {
             float interpolationFactor = Math.Min(1f,
-                (_syncTargetRoot.Clock.OtherTick - _interpolatingStartTick) / _syncTargetRoot.SendRate);
+                (_syncTargetRoot.Clock.OtherTick - _interpolatingStartTick) / (float)_syncTargetRoot.SendRate);
 
             _syncTargetProperty.Property = _fieldSerializer.Interpolate(
                 _previousSynchronizedValue,

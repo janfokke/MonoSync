@@ -7,15 +7,15 @@ using MonoGame.Extended;
 using MonoSync.SyncSource;
 using MonoSync.SyncTarget;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public class Client : SimpleGameComponent
     {
-        private SyncTargetRoot<Map> _gameWorldSyncRoot;
-        private readonly TcpClient _tcpClient;
-        private NetworkStream _stream;
         private readonly byte[] _buffer = new byte [1024];
+        private readonly TcpClient _tcpClient;
         private Action<Map> _connectCallback;
+        private SyncTargetRoot<Map> _gameWorldSyncRoot;
+        private NetworkStream _stream;
 
         public Client()
         {
@@ -49,7 +49,7 @@ namespace Tweening
         {
             using var memoryStream = new MemoryStream();
             using var binaryWriter = new BinaryWriter(memoryStream);
-            binaryWriter.Write((byte)Commands.TICK_UPDATE);
+            binaryWriter.Write((byte) Commands.TICK_UPDATE);
             binaryWriter.Write(_gameWorldSyncRoot.OwnTick);
             _stream.Write(memoryStream.ToArray());
         }
@@ -61,37 +61,46 @@ namespace Tweening
 
         private void ReceiveCallback(IAsyncResult ar)
         {
-            int count = _stream.EndRead(ar);
-            if (count == 0)
+            try
+            {
+                int count = _stream.EndRead(ar);
+                if (count == 0)
+                {
+                    Environment.Exit(0);
+                }
+
+                if (_buffer[0] == Commands.WORLD_DATA)
+                {
+                    byte[] worldData = _buffer[1..];
+                    if (_gameWorldSyncRoot == null)
+                    {
+                        var settings = SyncTargetSettings.Default;
+                        settings.TypeEncoder = new TweenGameTypeEncoder();
+                        settings.FieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
+                        _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings);
+                        _gameWorldSyncRoot.SendRate = 15;
+                        _connectCallback(_gameWorldSyncRoot.Root);
+                        SendTick();
+                    }
+                    else
+                    {
+                        _gameWorldSyncRoot.Read(worldData);
+                    }
+                }
+
+                Receive();
+            }
+            catch
             {
                 Environment.Exit(0);
             }
-
-            if (_buffer[0] == Commands.WORLD_DATA)
-            {
-                byte[] worldData = _buffer[1..];
-                if (_gameWorldSyncRoot == null)
-                {
-                    var settings = SyncTargetSettings.Default;
-                    settings.TypeEncoder = new TweenGameTypeEncoder();
-                    settings.FieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
-                    _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings);
-                    _connectCallback(_gameWorldSyncRoot.Root);
-                    SendTick();
-                }
-                else
-                {
-                    _gameWorldSyncRoot.Read(worldData);
-                }
-            }
-            Receive();
         }
 
         public void SendMouseClick(Vector2 position)
         {
             using var memoryStream = new MemoryStream();
             using var binaryWriter = new BinaryWriter(memoryStream);
-            binaryWriter.Write((byte)Commands.CLICK_COMMAND);
+            binaryWriter.Write((byte) Commands.CLICK_COMMAND);
             binaryWriter.Write(position.X);
             binaryWriter.Write(position.Y);
             _stream.Write(memoryStream.ToArray());

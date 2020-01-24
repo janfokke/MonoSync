@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using MonoSync;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public class TweenGameTypeEncoder : TypeEncoder
     {

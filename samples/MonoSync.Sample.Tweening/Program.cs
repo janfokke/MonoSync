@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public static class Program
     {
@@ -8,7 +8,9 @@ namespace Tweening
         public static void Main()
         {
             using (var game = new MainGame())
+            {
                 game.Run();
+            }
         }
     }
 }

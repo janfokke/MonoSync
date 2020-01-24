@@ -6,24 +6,25 @@ using MonoGame.Extended.Input;
 using MonoGame.Extended.Screens;
 using MonoGame.Extended.Tweening;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public class TweenGame : GameScreen
     {
         private readonly Map _map;
-        private SpriteBatch _spriteBatch;
         private readonly Tweener _tweener = new Tweener();
-        public event EventHandler<Vector2> Click;
+        private SpriteBatch _spriteBatch;
 
         public TweenGame(Game game, Map map) : base(game)
         {
             _map = map;
         }
 
+        public event EventHandler<Vector2> Click;
+
         public override void Update(GameTime gameTime)
         {
-            var mouseState = MouseExtended.GetState();
-            var elapsedSeconds = gameTime.GetElapsedSeconds();
+            MouseStateExtended mouseState = MouseExtended.GetState();
+            float elapsedSeconds = gameTime.GetElapsedSeconds();
 
             foreach (Player player in _map.Players.Values)
             {
@@ -34,6 +35,7 @@ namespace Tweening
             {
                 Click?.Invoke(this, mouseState.Position.ToVector2());
             }
+
             _tweener.Update(elapsedSeconds);
         }
 
@@ -59,6 +61,7 @@ namespace Tweening
             {
                 _spriteBatch.FillRectangle(player.Position.X, player.Position.Y, 50, 50, player.Color);
             }
+
             _spriteBatch.End();
         }
     }

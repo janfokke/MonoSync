@@ -1,18 +1,28 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
-using MonoGame.Extended.BitmapFonts;
 using MonoGame.Extended.Screens;
+using MonoSync.Attributes;
 using Myra;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public class MainGame : Game
     {
         private readonly ScreenManager _screenManager = new ScreenManager();
-        private Server _server;
         private Client _client;
+        private Server _server;
+
+        public MainGame()
+        {
+            _ = new GraphicsDeviceManager(this);
+            Content.RootDirectory = "Content";
+            IsMouseVisible = true;
+            IsFixedTimeStep = true;
+            TargetElapsedTime = TimeSpan.FromSeconds(1f / 60f);
+        }
+
+        public Vector2 Linear { get; set; } = new Vector2(200, 50);
 
         public void LoadMenu()
         {
@@ -32,25 +42,21 @@ namespace Tweening
             _client = new Client();
             _client.Connect(map =>
             {
-                int playerId = map.Players.Last().Key;
+                Player self = map.Players.Last().Value;
+
+                // Configure Position property synchronization behaviour to highestTick to avoid player snapping back, because server version is older
+                self.GetSyncTargetProperty(x => x.Position).SynchronizationBehaviour =
+                    SynchronizationBehaviour.HighestTick;
+
                 Components.Add(_client);
                 var tweenGame = new TweenGame(this, map);
                 tweenGame.Click += (o, e) =>
                 {
-                    map.Players[playerId].TargetPosition = e;
+                    self.TargetPosition = e;
                     _client.SendMouseClick(new Vector2(e.X, e.Y));
                 };
                 _screenManager.LoadScreen(tweenGame);
             });
-        }
-
-        public MainGame()
-        {
-            _ = new GraphicsDeviceManager(this);
-            Content.RootDirectory = "Content";
-            IsMouseVisible = true;
-            IsFixedTimeStep = true;
-            TargetElapsedTime = TimeSpan.FromSeconds(1f / 60f);
         }
 
         protected override void LoadContent()
@@ -58,8 +64,6 @@ namespace Tweening
             base.LoadContent();
             MyraEnvironment.Game = this;
         }
-
-        public Vector2 Linear { get; set; } = new Vector2(200, 50);
 
         protected override void Initialize()
         {

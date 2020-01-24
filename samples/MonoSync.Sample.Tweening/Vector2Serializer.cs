@@ -1,25 +1,26 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using MonoSync.FieldSerializers;
+using MonoSync.Utils;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public class Vector2Serializer : FieldSerializer<Vector2>
     {
-        public override void Serialize(Vector2 value, MonoSync.Utils.ExtendedBinaryWriter writer)
+        public override bool CanInterpolate => true;
+
+        public override void Serialize(Vector2 value, ExtendedBinaryWriter writer)
         {
             writer.Write(value.X);
             writer.Write(value.Y);
         }
 
-        public override void Deserialize(MonoSync.Utils.ExtendedBinaryReader reader, Action<Vector2> valueFixup)
+        public override void Deserialize(ExtendedBinaryReader reader, Action<Vector2> valueFixup)
         {
             float x = reader.ReadSingle();
             float y = reader.ReadSingle();
             valueFixup(new Vector2(x, y));
         }
-
-        public override bool CanInterpolate => true;
 
         public override Vector2 Interpolate(Vector2 source, Vector2 target, float factor)
         {

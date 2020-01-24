@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
+    <AssemblyName>MonoSync.Sample.Tweening</AssemblyName>
+    <RootNamespace>MonoSync.Sample.Tweening</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <MonoGameContentReference Include="**\*.mgcb" />

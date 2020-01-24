@@ -1,6 +1,6 @@
-﻿namespace Tweening
+﻿namespace MonoSync.Sample.Tweening
 {
-    class Commands
+    internal class Commands
     {
         public const int CLICK_COMMAND = 1;
         public const int WORLD_DATA = 2;

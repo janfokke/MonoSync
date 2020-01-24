@@ -40,7 +40,11 @@ namespace MonoSync.SyncTarget
         public int OtherTick => Clock.OtherTick;
 
         public SyncTargetSettings Settings { get; }
-        public float SendRate { get; set; } = 15f;
+
+        /// <summary>
+        /// The amount of tick between synchronizations
+        /// </summary>
+        public int SendRate { get; set; } = 15;
 
         public void Read(byte[] data)
         {

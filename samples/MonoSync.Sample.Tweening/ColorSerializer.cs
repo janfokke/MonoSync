@@ -1,12 +1,13 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using MonoSync.FieldSerializers;
+using MonoSync.Utils;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
     public class ColorSerializer : FieldSerializer<Color>
     {
-        public override void Serialize(Color value, MonoSync.Utils.ExtendedBinaryWriter writer)
+        public override void Serialize(Color value, ExtendedBinaryWriter writer)
         {
             writer.Write(value.R);
             writer.Write(value.G);
@@ -14,13 +15,13 @@ namespace Tweening
             writer.Write(value.A);
         }
 
-        public override void Deserialize(MonoSync.Utils.ExtendedBinaryReader reader, Action<Color> valueFixup)
+        public override void Deserialize(ExtendedBinaryReader reader, Action<Color> valueFixup)
         {
             byte r = reader.ReadByte();
             byte g = reader.ReadByte();
             byte b = reader.ReadByte();
             byte a = reader.ReadByte();
-            valueFixup(Color.FromNonPremultiplied(r,g,b,a));
+            valueFixup(Color.FromNonPremultiplied(r, g, b, a));
         }
     }
 }

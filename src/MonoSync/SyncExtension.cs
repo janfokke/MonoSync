@@ -19,7 +19,7 @@ namespace MonoSync
         /// <param name="source">The Synchronization-object that contains the target member</param>
         /// <param name="selector">The Expression to the intended member Property</param>
         public static SyncTargetProperty GetSyncTargetProperty<TSyncType>(this TSyncType source,
-            Expression<Func<TSyncType, object>> selector) where TSyncType : INotifyPropertyChanged
+            Expression<Func<TSyncType, object>> selector)
         {
             return GetSyncTargetProperties(source, selector).Single();
         }
@@ -31,7 +31,6 @@ namespace MonoSync
         /// <param name="selector">The Expression to the intended member Property</param>
         public static IEnumerable<SyncTargetProperty> GetSyncTargetProperties<TSyncType>(this TSyncType source,
             Expression<Func<TSyncType, object>> selector)
-            where TSyncType : INotifyPropertyChanged
         {
             string propertyName = GetMemberName(selector.Body);
             List<NotifyPropertyChangedSyncTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();

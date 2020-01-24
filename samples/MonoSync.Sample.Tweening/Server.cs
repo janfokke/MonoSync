@@ -2,31 +2,20 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended;
 using MonoSync.SyncSource;
 
-namespace Tweening
+namespace MonoSync.Sample.Tweening
 {
-    public class Utils
-    {
-        public static Color RandomColor()
-        {
-            var rnd = new Random(Guid.NewGuid().GetHashCode());
-            return new Color(rnd.Next(0,256), rnd.Next(0,256), rnd.Next(0,256));
-        }
-    }
-
     public class Server : SimpleGameComponent
     {
-        private readonly TcpListener _tcpListener;
-        private int _playerCounter = 0;
-        public  Map Map { get; }
         private readonly Dictionary<int, ServerSideClient> _clients = new Dictionary<int, ServerSideClient>();
-        private int _serverTick;
-        private readonly List<ServerSideClient> _newClients = new List<ServerSideClient>();
         private readonly SyncSourceRoot _gameWorldSyncSourceRoot;
+        private readonly List<ServerSideClient> _newClients = new List<ServerSideClient>();
+        private readonly TcpListener _tcpListener;
+        private int _playerCounter;
+        private int _serverTick;
 
         public Server()
         {
@@ -37,18 +26,19 @@ namespace Tweening
             settings.TypeEncoder = new TweenGameTypeEncoder();
             settings.FieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
             _gameWorldSyncSourceRoot = new SyncSourceRoot(Map, settings);
-
             _tcpListener = new TcpListener(IPAddress.Loopback, 1234);
             _tcpListener.Start();
             _tcpListener.BeginAcceptTcpClient(ConnectionCallback, null);
         }
+
+        public Map Map { get; }
 
         private void ConnectionCallback(IAsyncResult ar)
         {
             TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(ar);
             int playerId = ++_playerCounter;
             Map.Players.Add(playerId, new Player(Utils.RandomColor()));
-            var client = new ServerSideClient(tcpClient, playerId,pos => Map.Players[playerId].TargetPosition = pos);
+            var client = new ServerSideClient(tcpClient, playerId, pos => Map.Players[playerId].TargetPosition = pos);
             client.Disconnected += ServerSideClientOnDisconnect;
             _newClients.Add(client);
             _tcpListener.BeginAcceptTcpClient(ConnectionCallback, null);
@@ -89,7 +79,7 @@ namespace Tweening
         private void BroadcastWorld()
         {
             using WriteSession writeSession = _gameWorldSyncSourceRoot.BeginWrite();
-            
+
             SynchronizationPacket synchronizationPacket = writeSession.WriteChanges();
 
             if (_clients.Count != 0)
@@ -100,16 +90,17 @@ namespace Tweening
                     client.SendWorld(data);
                 }
             }
-            
+
             if (_newClients.Count != 0)
             {
                 byte[] fullSerialize = writeSession.WriteFull();
 
                 foreach (ServerSideClient newClient in _newClients)
                 {
-                    _clients.Add(newClient.PlayerId,newClient);
+                    _clients.Add(newClient.PlayerId, newClient);
                     newClient.SendWorld(fullSerialize);
                 }
+
                 _newClients.Clear();
             }
         }
