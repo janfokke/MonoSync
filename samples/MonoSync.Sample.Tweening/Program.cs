@@ -7,10 +7,8 @@ namespace MonoSync.Sample.Tweening
         [STAThread]
         public static void Main()
         {
-            using (var game = new MainGame())
-            {
-                game.Run();
-            }
+            using var game = new MainGame();
+            game.Run();
         }
     }
 }

@@ -16,6 +16,9 @@ namespace MonoSync.Sample.Tweening
         private readonly TcpListener _tcpListener;
         private int _playerCounter;
         private int _serverTick;
+        private int _sendRate = 4;
+
+        public Map Map { get; }
 
         public Server()
         {
@@ -28,20 +31,20 @@ namespace MonoSync.Sample.Tweening
             _gameWorldSyncSourceRoot = new SyncSourceRoot(Map, settings);
             _tcpListener = new TcpListener(IPAddress.Loopback, 1234);
             _tcpListener.Start();
-            _tcpListener.BeginAcceptTcpClient(ConnectionCallback, null);
         }
 
-        public Map Map { get; }
-
-        private void ConnectionCallback(IAsyncResult ar)
+        public async void StartListening()
         {
-            TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(ar);
-            int playerId = ++_playerCounter;
-            Map.Players.Add(playerId, new Player(Utils.RandomColor()));
-            var client = new ServerSideClient(tcpClient, playerId, pos => Map.Players[playerId].TargetPosition = pos);
-            client.Disconnected += ServerSideClientOnDisconnect;
-            _newClients.Add(client);
-            _tcpListener.BeginAcceptTcpClient(ConnectionCallback, null);
+            while (true)
+            {
+                TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                int playerId = ++_playerCounter;
+                Map.Players.Add(playerId, new Player(Utils.RandomColor()));
+                var client = new ServerSideClient(tcpClient, playerId, pos => Map.Players[playerId].TargetPosition = pos);
+                client.BeginReceiving();
+                client.Disconnected += ClientDisconnected;
+                _newClients.Add(client);
+            }
         }
 
         public void HandleClick(Vector2 position)
@@ -49,7 +52,7 @@ namespace MonoSync.Sample.Tweening
             Map.Players[0].TargetPosition = position;
         }
 
-        private void ServerSideClientOnDisconnect(object sender, EventArgs e)
+        private void ClientDisconnected(object sender, EventArgs e)
         {
             if (sender is ServerSideClient serverSideClient)
             {
@@ -62,9 +65,23 @@ namespace MonoSync.Sample.Tweening
         {
             IncrementClientTicks();
 
-            if (_serverTick++ % 15 == 0)
+            if (_serverTick++ % (60 / SendRate) == 0)
             {
                 BroadcastWorld();
+            }
+        }
+
+        public int SendRate
+        {
+            get => _sendRate;
+            set
+            {
+                value = Math.Clamp(value, 1, 60);
+                _sendRate = value;
+                foreach (ServerSideClient client in _clients.Values)
+                {
+                    client.NotifySendRate(value);
+                }
             }
         }
 
@@ -94,15 +111,16 @@ namespace MonoSync.Sample.Tweening
             if (_newClients.Count != 0)
             {
                 byte[] fullSerialize = writeSession.WriteFull();
-
                 foreach (ServerSideClient newClient in _newClients)
                 {
                     _clients.Add(newClient.PlayerId, newClient);
                     newClient.SendWorld(fullSerialize);
+                    newClient.NotifySendRate(SendRate);
                 }
-
                 _newClients.Clear();
             }
         }
+
+        
     }
 }

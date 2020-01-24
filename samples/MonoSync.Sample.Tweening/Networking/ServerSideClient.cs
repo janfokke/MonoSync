@@ -18,7 +18,6 @@ namespace MonoSync.Sample.Tweening
             _clickHandler = clickHandler;
             PlayerId = playerId;
             _networkStream = client.GetStream();
-            Read();
         }
 
         public int PlayerId { get; }
@@ -26,39 +25,35 @@ namespace MonoSync.Sample.Tweening
 
         public event EventHandler Disconnected;
 
-        private void Read()
+        public async void BeginReceiving()
         {
-            _networkStream.BeginRead(_buffer, 0, _buffer.Length, BeginReadCallback, null);
-        }
-
-        private void BeginReadCallback(IAsyncResult ar)
-        {
-            try
+            while (true)
             {
-                int length = _networkStream.EndRead(ar);
-                if (length == 0)
+                try
+                {
+                    int length = await _networkStream.ReadAsync(_buffer, 0, _buffer.Length);
+                    if (length == 0)
+                    {
+                        Disconnect();
+                        return;
+                    }
+                    if (_buffer[0] == Commands.CLICK_COMMAND)
+                    {
+                        var x = BitConverter.ToSingle(_buffer, 1);
+                        var y = BitConverter.ToSingle(_buffer, 5);
+                        _clickHandler(new Vector2(x, y));
+                    }
+                    else if (_buffer[0] == Commands.TICK_UPDATE)
+                    {
+                        // Refine Tick
+                        Tick = BitConverter.ToInt32(_buffer, 1);
+                    }
+                }
+                catch
                 {
                     Disconnect();
                     return;
                 }
-
-                if (_buffer[0] == Commands.CLICK_COMMAND)
-                {
-                    var x = BitConverter.ToSingle(_buffer, 1);
-                    var y = BitConverter.ToSingle(_buffer, 5);
-                    _clickHandler(new Vector2(x, y));
-                }
-                else if (_buffer[0] == Commands.TICK_UPDATE)
-                {
-                    // Refine Tick
-                    Tick = BitConverter.ToInt32(_buffer, 1);
-                }
-
-                Read();
-            }
-            catch
-            {
-                Disconnect();
             }
         }
 
@@ -74,6 +69,15 @@ namespace MonoSync.Sample.Tweening
             using var binaryWriter = new BinaryWriter(memoryStream);
             binaryWriter.Write((byte) Commands.WORLD_DATA);
             binaryWriter.Write(worldData);
+            _networkStream.Write(memoryStream.ToArray());
+        }
+
+        public void NotifySendRate(in int newSendRate)
+        {
+            using var memoryStream = new MemoryStream();
+            using var binaryWriter = new BinaryWriter(memoryStream);
+            binaryWriter.Write(Commands.SEND_RATE);
+            binaryWriter.Write(newSendRate);
             _networkStream.Write(memoryStream.ToArray());
         }
     }
