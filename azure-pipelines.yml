@@ -24,7 +24,7 @@ steps:
   inputs:
     command: 'pack'
     packagesToPack: 'src/MonoSync/MonoSync.csproj'
-    versioningScheme: 'byBuildNumber'
+    versioningScheme: 'ByPrereleaseNumber'
 
 - task: DotNetCoreCLI@2
   inputs:
