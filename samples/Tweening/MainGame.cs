@@ -24,8 +24,6 @@ namespace MonoSync.Sample.Tweening
             TargetElapsedTime = TimeSpan.FromSeconds(1f / 60f);
         }
 
-        public Vector2 Linear { get; set; } = new Vector2(200, 50);
-
         public void LoadMenu()
         {
             _screenManager.LoadScreen(new Menu(this));

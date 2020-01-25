@@ -37,16 +37,19 @@ namespace MonoSync.Sample.Tweening
                         Disconnect();
                         return;
                     }
-                    if (_buffer[0] == Commands.CLICK_COMMAND)
+                    switch (_buffer[0])
                     {
-                        var x = BitConverter.ToSingle(_buffer, 1);
-                        var y = BitConverter.ToSingle(_buffer, 5);
-                        _clickHandler(new Vector2(x, y));
-                    }
-                    else if (_buffer[0] == Commands.TICK_UPDATE)
-                    {
-                        // Refine Tick
-                        Tick = BitConverter.ToInt32(_buffer, 1);
+                        case Commands.CLICK_COMMAND:
+                        {
+                            var x = BitConverter.ToSingle(_buffer, 1);
+                            var y = BitConverter.ToSingle(_buffer, 5);
+                            _clickHandler(new Vector2(x, y));
+                            break;
+                        }
+                        case Commands.TICK_UPDATE:
+                            // Refine Tick
+                            Tick = BitConverter.ToInt32(_buffer, 1);
+                            break;
                     }
                 }
                 catch
@@ -67,7 +70,7 @@ namespace MonoSync.Sample.Tweening
         {
             using var memoryStream = new MemoryStream();
             using var binaryWriter = new BinaryWriter(memoryStream);
-            binaryWriter.Write((byte) Commands.WORLD_DATA);
+            binaryWriter.Write(Commands.WORLD_DATA);
             binaryWriter.Write(worldData);
             _networkStream.Write(memoryStream.ToArray());
         }

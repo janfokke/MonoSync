@@ -43,6 +43,7 @@ namespace MonoSync.Sample.Tweening
                 _gameWorldSyncRoot.Update();
                 if (_gameWorldSyncRoot.OwnTick % 60 == 0)
                 {
+                    // Sending tick every second to refine precision on the server
                     SendTick();
                 }
             }

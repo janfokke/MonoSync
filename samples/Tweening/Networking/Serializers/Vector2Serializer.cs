@@ -22,6 +22,9 @@ namespace MonoSync.Sample.Tweening
             valueFixup(new Vector2(x, y));
         }
 
+        /// <remarks>
+        /// When implementing <see cref="Interpolate"/>, make sure to also override <see cref="CanInterpolate"/> to return true.
+        /// </remarks>
         public override Vector2 Interpolate(Vector2 source, Vector2 target, float factor)
         {
             var tmp = new Vector2

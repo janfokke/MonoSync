@@ -12,7 +12,6 @@ namespace MonoSync.Sample.Tweening
         }
 
         /// <summary>
-        ///     Example of using SyncConstructor
         ///     Properties can be accessed during construction using parameters.
         ///     The parameter name should be camelCase or Marked with the <see cref="SyncConstructorParameterAttribute" />.
         ///     MonoSync will use the default constructor if no <see cref="SyncConstructorAttribute" /> Marked constructor is
