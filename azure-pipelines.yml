@@ -13,8 +13,22 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
     projects: 'src/MonoSync/MonoSync.csproj'
-    
+    arguments: '--configuration $(BuildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'pack'
+    packagesToPack: 'src/MonoSync/MonoSync.csproj'
+    versioningScheme: 'byBuildNumber'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    nuGetFeedType: 'external'
+    publishFeedCredentials: 'Nuget.org'
