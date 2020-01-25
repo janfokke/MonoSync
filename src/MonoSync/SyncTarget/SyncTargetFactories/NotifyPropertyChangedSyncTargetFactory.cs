@@ -6,8 +6,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncTarget.SyncTargetFactories
 {
-    // ReSharper disable once InconsistentNaming
-    public class SyncSyncTargetFactory : ISyncTargetFactory
+    public class NotifyPropertyChangedSyncTargetFactory : ISyncTargetFactory
     {
         public bool CanCreate(Type baseType)
         {

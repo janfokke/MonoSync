@@ -13,7 +13,7 @@ namespace MonoSync.SyncTarget
         public SyncTargetFactoryResolver()
         {
             // Order is important, because ObservableDictionarySyncTargetObjectFactory also inherits INotifyPropertyChanged
-            AddSyncTargetObjectFactory(new SyncSyncTargetFactory());
+            AddSyncTargetObjectFactory(new NotifyPropertyChangedSyncTargetFactory());
             AddSyncTargetObjectFactory(new ObservableDictionarySyncTargetFactory());
             AddSyncTargetObjectFactory(new StringSyncTargetFactory());
         }
