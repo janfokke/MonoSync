@@ -2,7 +2,7 @@
 # MonoSync
 An efficient and easy to implement synchronization layer for games
 
-![Nuget](https://img.shields.io/nuget/v/MonoSync?color=8a2be2)
+[![Nuget](https://img.shields.io/nuget/v/MonoSync?color=8a2be2)](https://www.nuget.org/packages/MonoSync/)
 
 # Features
 
