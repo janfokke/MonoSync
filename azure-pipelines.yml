@@ -16,20 +16,24 @@ variables:
 steps:
 
 - task: DotNetCoreCLI@2
+  displayName: "Build"
   inputs:
     command: 'build'
     projects: 'src/MonoSync/MonoSync.csproj'
     arguments: '--configuration $(BuildConfiguration)'
 
-- task: DotNetCoreCLI@2
+- task: NuGetCommand@2
+  displayName: "Pack"
   inputs:
     command: 'pack'
     packagesToPack: 'src/MonoSync/MonoSync.csproj'
     versioningScheme: 'byBuildNumber'
 
 - task: NuGetCommand@2
+  displayName: "Publish to nuget.org"
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'Nuget.org'
+
