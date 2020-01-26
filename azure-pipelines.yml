@@ -22,7 +22,8 @@ steps:
     projects: 'src/MonoSync/MonoSync.csproj'
     arguments: '--configuration $(BuildConfiguration)'
 
-- task: NuGetCommand@2
+
+- task: DotNetCoreCLI@2
   displayName: "Pack"
   inputs:
     command: 'pack'
