@@ -3,6 +3,7 @@
 An efficient and easy to implement synchronization layer for games
 
 [![Nuget](https://img.shields.io/nuget/v/MonoSync?color=8a2be2)](https://www.nuget.org/packages/MonoSync/)
+[![Azure DevOps builds](https://img.shields.io/azure-devops/build/janfokkeurk/318f0567-2f7e-47d9-b32b-69fb0257ee68/1)](https://dev.azure.com/janfokkeurk/MonoSync/_build?definitionId=1&_a=summary&view=runs)
 
 # Features
 
