@@ -9,12 +9,25 @@
   <PropertyGroup>
     <PackageId>MonoSync</PackageId>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.0.0</Version>
     <Authors>JanFokke</Authors>
     <icon>icon.png</icon>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageIconUrl />
+    <RepositoryUrl>https://github.com/janfokke/MonoSync</RepositoryUrl>
+    <Description>An efficient and easy to implement synchronization layer for games</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="LICENSE.txt" Pack="true" PackagePath="LICENSE.txt"/>
+    <None Include="icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="icon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
