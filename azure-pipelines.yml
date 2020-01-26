@@ -22,6 +22,11 @@ steps:
     projects: 'src/MonoSync/MonoSync.csproj'
     arguments: '--configuration $(BuildConfiguration)'
 
+- task: DotNetCoreCLI@2
+  displayName: "test"
+  inputs:
+    command: 'test'
+    projects: 'src\MonoSync.Test\MonoSync.Test.csproj'
 
 - task: DotNetCoreCLI@2
   displayName: "Pack"
@@ -31,7 +36,7 @@ steps:
     versioningScheme: 'byBuildNumber'
 
 - task: NuGetCommand@2
-  displayName: "Publish to nuget.org"
+  displayName: "publish to nuget.org"
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
