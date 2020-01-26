@@ -27,13 +27,13 @@ namespace MonoSync.SyncTarget.PropertyStates
         {
             _previousSynchronizedValue = _synchronizedValue;
             _synchronizedValue = value;
+            _interpolatingStartTick = _syncTargetRoot.Clock.OwnTick;
             if (
                 _previousSynchronizedValue != null &&
                 _synchronizedValue != null &&
                 _previousSynchronizedValue != _synchronizedValue
             )
             {
-                _interpolatingStartTick = _syncTargetRoot.Clock.OtherTick;
                 if (IsInterpolating == false)
                 {
                     IsInterpolating = true;
@@ -54,8 +54,7 @@ namespace MonoSync.SyncTarget.PropertyStates
         private void Update(object sender, EventArgs e)
         {
             float interpolationFactor = Math.Min(1f,
-                (_syncTargetRoot.Clock.OtherTick - _interpolatingStartTick) / (float)_syncTargetRoot.SendRate);
-
+                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float)_syncTargetRoot.SendRate);
             _syncTargetProperty.Property = _fieldSerializer.Interpolate(
                 _previousSynchronizedValue,
                 _synchronizedValue,
@@ -70,7 +69,6 @@ namespace MonoSync.SyncTarget.PropertyStates
 
         private void FinishInterpolation()
         {
-            Console.WriteLine("Done interpolating");
             IsInterpolating = false;
             _syncTargetRoot.Updated -= Update;
         }

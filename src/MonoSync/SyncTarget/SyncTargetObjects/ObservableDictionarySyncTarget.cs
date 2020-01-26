@@ -52,8 +52,6 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
 
         private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            Console.WriteLine($"Changed {_changing}");
-
             if (_changing)
             {
                 return;
