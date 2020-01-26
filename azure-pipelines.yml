@@ -26,7 +26,7 @@ steps:
   displayName: "test"
   inputs:
     command: 'test'
-    projects: 'src\MonoSync.Test\MonoSync.Test.csproj'
+    projects: 'src/MonoSync.Test/MonoSync.Test.csproj'
 
 - task: DotNetCoreCLI@2
   displayName: "Pack"
