@@ -4,9 +4,6 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 name: 1.0.$(DayOfYear).$(rev:r)
 
-trigger:
-- master
-
 pool:
   vmImage: 'ubuntu-latest'
 
