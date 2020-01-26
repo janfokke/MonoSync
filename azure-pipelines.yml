@@ -27,9 +27,9 @@ steps:
     packagesToPack: 'src/MonoSync/MonoSync.csproj'
     versioningScheme: 'byBuildNumber'
 
-- task: DotNetCoreCLI@2
+- task: NuGetCommand@2
   inputs:
     command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'Nuget.org'
