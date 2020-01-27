@@ -44,6 +44,8 @@ namespace MonoSync.Test.Synchronization
 
             syncSourceRoot.GarbageCollect();
 
+            syncSourceRoot.WriteChangesAndDispose();
+
             Assert.Single(syncSourceRoot.TrackedReferences);
         }
 
@@ -65,6 +67,23 @@ namespace MonoSync.Test.Synchronization
         }
 
         [Fact]
+        public void SyncRemovedAndChangedTest()
+        {
+            var world = new TestGameWorld();
+            var player = new TestPlayer();
+            world.Players.Add("player", player);
+            var syncSourceRoot = new SyncSourceRoot(world, _sourceSettings);
+            
+            var syncTargetRoot = new SyncTargetRoot(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+
+            player.Health = 3;
+
+            world.Players.Remove("player");
+
+            syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(0));
+        }
+
+        [Fact]
         public void RemovingReferenceShouldReferenceCountCollectTest()
         {
             var observableDictionary = new ObservableDictionary<int, string>();
@@ -76,6 +95,9 @@ namespace MonoSync.Test.Synchronization
             Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
 
             observableDictionary.Remove(1);
+
+            // Object are removed after write
+            syncSourceRoot.WriteChangesAndDispose();
 
             Assert.Single(syncSourceRoot.TrackedReferences);
         }

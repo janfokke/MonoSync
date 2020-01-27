@@ -72,6 +72,21 @@ namespace MonoSync.SyncSource
             return new SynchronizationPacket(memoryStream.ToArray());
         }
 
+        private void RemoveSyncSourceObjects()
+        {
+            foreach (SyncSource removedSyncSourceObject in _removedSyncSourceObjects)
+            {
+                RemoveSyncSourceObject(removedSyncSourceObject);
+            }
+            _removedSyncSourceObjects.Clear();
+        }
+
+        private void RemoveSyncSourceObject(SyncSource removedSyncSourceObject)
+        {
+            _referencePool.RemoveSyncObject(removedSyncSourceObject);
+            _dirtySyncSourceObjects.Remove(removedSyncSourceObject);
+        }
+
         private void WriteRemovedReferences(ExtendedBinaryWriter writer)
         {
             writer.Write7BitEncodedInt(_removedSyncSourceObjects.Count);
@@ -138,9 +153,11 @@ namespace MonoSync.SyncSource
 
             _writeSessionOpen = false;
 
+            RemoveSyncSourceObjects();
+
             _dirtySyncSourceObjects.Clear();
             _addedSyncSourceObjects.Clear();
-            _removedSyncSourceObjects.Clear();
+            
         }
 
         public void RemoveReference(object reference)
@@ -158,13 +175,17 @@ namespace MonoSync.SyncSource
 
             if (--syncObject.ReferenceCount <= 0)
             {
-                _referencePool.RemoveReference(reference);
-                _dirtySyncSourceObjects.Remove(syncObject);
-                if (_addedSyncSourceObjects.Remove(syncObject) == false)
+                bool isAlreadySynchronized = _addedSyncSourceObjects.Remove(syncObject) == false;
+                if (isAlreadySynchronized)
                 {
                     // Clients do not need to be notified of deleted objects
                     // that have not yet been synchronized.
                     _removedSyncSourceObjects.Add(syncObject);
+                }
+                // If reference is not tracked by targets remove immediately
+                else
+                {
+                    RemoveSyncSourceObject(syncObject);
                 }
             }
         }
@@ -201,25 +222,22 @@ namespace MonoSync.SyncSource
             }
             else
             {
+                // Mark un-removed if removed
+                _removedSyncSourceObjects.Remove(syncSource);
                 syncSource.ReferenceCount++;
             }
         }
 
         public void GarbageCollect()
         {
-            // Find references that are accessible from the root
             HashSet<object> referenceThatAreAccessibleFromRoot = TraverseReferences();
 
             List<SyncSource> removeSyncSources =
-                _referencePool.RemoveNonOccuringReferences(referenceThatAreAccessibleFromRoot);
-            for (var i = 0; i < removeSyncSources.Count; i++)
+                _referencePool.GetNonOccuringReferences(referenceThatAreAccessibleFromRoot);
+
+            foreach (SyncSource removeSyncSource in removeSyncSources)
             {
-                if (_addedSyncSourceObjects.Remove(removeSyncSources[i]) == false)
-                {
-                    // Clients do not need to be notified of deleted objects
-                    // that have not yet been synchronized.
-                    _removedSyncSourceObjects.Add(removeSyncSources[i]);
-                }
+                _removedSyncSourceObjects.Add(removeSyncSource);
             }
         }
 

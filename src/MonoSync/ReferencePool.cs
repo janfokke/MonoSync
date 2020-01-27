@@ -130,28 +130,19 @@ namespace MonoSync
         ///     Removes all references that do not occur in <see cref="occuringReferences" />
         /// </summary>
         /// <param name="occuringReferences"></param>
-        public List<TSync> RemoveNonOccuringReferences(HashSet<object> occuringReferences)
+        public List<TSync> GetNonOccuringReferences(HashSet<object> occuringReferences)
         {
             var nonOccuringReferences = new List<object>();
             var removedSyncObjects = new List<TSync>();
-
             // find non-occuring references
             foreach (object reference in _syncObjectReferenceIdLookup.Keys)
             {
                 if (occuringReferences.Contains(reference) == false)
                 {
                     nonOccuringReferences.Add(reference);
+                    removedSyncObjects.Add(GetSyncObject(reference)); 
                 }
             }
-
-            // remove non-occuring references
-            for (var index = 0; index < nonOccuringReferences.Count; index++)
-            {
-                TSync syncObject = GetSyncObject(nonOccuringReferences[index]);
-                RemoveSyncObject(syncObject);
-                removedSyncObjects.Add(syncObject);
-            }
-
             return removedSyncObjects;
         }
 
