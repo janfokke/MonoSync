@@ -1,3 +1,4 @@
+using System;
 using MonoSync.SyncSource;
 using MonoSync.SyncTarget;
 using MonoSync.Test.TestObjects;
@@ -14,6 +15,7 @@ namespace MonoSync.Test.Synchronization
             var typeEncoder = new TypeEncoder();
             typeEncoder.RegisterType<SynchronizeConstructorMock>(StartingIndexNonReservedTypes);
             typeEncoder.RegisterType<TestPlayer>(StartingIndexNonReservedTypes + 1);
+            typeEncoder.RegisterType<SynchronizeManySyncAttributesTest>(StartingIndexNonReservedTypes + 2);
 
             _sourceSettings = SyncSourceSettings.Default;
             _sourceSettings.TypeEncoder = typeEncoder;
@@ -24,6 +26,30 @@ namespace MonoSync.Test.Synchronization
 
         private readonly SyncTargetSettings _targetSettings;
         private readonly SyncSourceSettings _sourceSettings;
+
+        [Fact]
+        public void MoreThanEightSyncAttributesTest()
+        {
+            var sourceTestMock = new SynchronizeManySyncAttributesTest()
+            {
+                Test  = 0,
+                Test2 = 2,
+                Test3 = 34,
+                Test4 = 43,
+                Test5 = 122,
+                Test6 = 99999999.32423,
+                Test7 = 3434,
+                Test8 = 23,
+                Test9 = 2
+            };
+
+            var syncSourceRoot = new SyncSourceRoot(sourceTestMock, _sourceSettings);
+
+            var target =
+                new SyncTargetRoot<SynchronizeManySyncAttributesTest>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+
+            AssertExtension.AssertCloneEqual(sourceTestMock, target.Root);
+        }
 
         [Fact]
         public void PropertiesUsedInConstructorShouldNotSynchronizeOnConstructionTest()

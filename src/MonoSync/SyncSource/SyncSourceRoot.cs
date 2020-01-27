@@ -159,7 +159,7 @@ namespace MonoSync.SyncSource
             if (--syncObject.ReferenceCount <= 0)
             {
                 _referencePool.RemoveReference(reference);
-
+                _dirtySyncSourceObjects.Remove(syncObject);
                 if (_addedSyncSourceObjects.Remove(syncObject) == false)
                 {
                     // Clients do not need to be notified of deleted objects
