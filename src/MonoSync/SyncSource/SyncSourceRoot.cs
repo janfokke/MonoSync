@@ -72,6 +72,9 @@ namespace MonoSync.SyncSource
             return new SynchronizationPacket(memoryStream.ToArray());
         }
 
+        /// <summary>
+        /// Removes all SyncSourceObjects from reference pool
+        /// </summary>
         private void RemoveSyncSourceObjects()
         {
             foreach (SyncSource removedSyncSourceObject in _removedSyncSourceObjects)
@@ -81,10 +84,13 @@ namespace MonoSync.SyncSource
             _removedSyncSourceObjects.Clear();
         }
 
+        /// <summary>
+        /// Removes the SyncSourceObject from referencePool.
+        /// </summary>
+        /// <param name="removedSyncSourceObject">The removed synchronize source object.</param>
         private void RemoveSyncSourceObject(SyncSource removedSyncSourceObject)
         {
             _referencePool.RemoveSyncObject(removedSyncSourceObject);
-            _dirtySyncSourceObjects.Remove(removedSyncSourceObject);
         }
 
         private void WriteRemovedReferences(ExtendedBinaryWriter writer)
@@ -157,7 +163,6 @@ namespace MonoSync.SyncSource
 
             _dirtySyncSourceObjects.Clear();
             _addedSyncSourceObjects.Clear();
-            
         }
 
         public void RemoveReference(object reference)
@@ -222,7 +227,6 @@ namespace MonoSync.SyncSource
             }
             else
             {
-                // Mark un-removed if removed
                 _removedSyncSourceObjects.Remove(syncSource);
                 syncSource.ReferenceCount++;
             }
@@ -237,7 +241,7 @@ namespace MonoSync.SyncSource
 
             foreach (SyncSource removeSyncSource in removeSyncSources)
             {
-                _removedSyncSourceObjects.Add(removeSyncSource);
+                RemoveReference(removeSyncSource.BaseObject);
             }
         }
 
@@ -261,7 +265,6 @@ namespace MonoSync.SyncSource
                     }
                 }
             }
-
             var occuringReferences = new HashSet<object> {_rootReference};
             TraverseReferencesRecursive(_rootReference, occuringReferences);
             return occuringReferences;

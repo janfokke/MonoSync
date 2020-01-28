@@ -5,7 +5,7 @@
         /// <summary>
         ///     Only synchronizes value on construction and ignores and further synchronizations
         /// </summary>
-        ConstructOnly,
+        Ignore,
 
         /// <summary>
         ///     Always overrides the target with the synchronized value

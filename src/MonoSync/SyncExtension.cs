@@ -51,13 +51,27 @@ namespace MonoSync
         /// </summary>
         private static IEnumerable<NotifyPropertyChangedSyncTarget> GetSyncTargetObjects<T>(this T sync)
         {
-            return GetSyncTargetObjects(typeof(T), sync);
+            return GetSyncTargetObjects(sync.GetType(), sync);
         }
 
         public static IEnumerable<NotifyPropertyChangedSyncTarget> GetSyncTargetObjects(Type type, object sync)
         {
-            FieldInfo fieldInfo = type.GetField(nameof(INotifyPropertyChanged.PropertyChanged),
-                BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo fieldInfo = null;
+            while (type != null)
+            {
+                fieldInfo = type.GetField(nameof(INotifyPropertyChanged.PropertyChanged),
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+
+                if (fieldInfo != null) break;
+
+                type = type.BaseType;
+            }
+
+            if (fieldInfo == null)
+            {
+                throw new Exception($"{nameof(INotifyPropertyChanged.PropertyChanged)} not found");
+            }
+
             var eventDelegate =
                 // ReSharper disable once PossibleNullReferenceException
                 (MulticastDelegate) fieldInfo

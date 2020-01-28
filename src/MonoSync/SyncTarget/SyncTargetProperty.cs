@@ -76,7 +76,7 @@ namespace MonoSync.SyncTarget
 
                 switch (value)
                 {
-                    case SynchronizationBehaviour.ConstructOnly:
+                    case SynchronizationBehaviour.Ignore:
                         _state = new IgnoreState();
                         break;
                     case SynchronizationBehaviour.Interpolated:

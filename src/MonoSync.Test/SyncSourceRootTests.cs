@@ -50,7 +50,7 @@ namespace MonoSync.Test.Synchronization
         }
 
         [Fact]
-        public void ReferenceCycleShouldNotReferenceCountCollectTest()
+        public void ReferenceCycleShouldNotBeCollectedByReferenceCountTest()
         {
             var selfReferencingChild = new ReferencingCircleHelper();
             selfReferencingChild.Other = selfReferencingChild;
@@ -67,7 +67,7 @@ namespace MonoSync.Test.Synchronization
         }
 
         [Fact]
-        public void SyncRemovedAndChangedTest()
+        public void RemovingAChangedReferenceShouldAlsoRemoveItFromDirtyListTest()
         {
             var world = new TestGameWorld();
             var player = new TestPlayer();
@@ -80,11 +80,14 @@ namespace MonoSync.Test.Synchronization
 
             world.Players.Remove("player");
 
-            syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(0));
+            // Changes are removed after write
+            syncSourceRoot.WriteChangesAndDispose().SetTick(0);
+
+            Assert.DoesNotContain(player, syncSourceRoot.DirtyReferences);
         }
 
         [Fact]
-        public void RemovingReferenceShouldReferenceCountCollectTest()
+        public void RemovedReferenceShouldBeCollectedByReferenceCounterTest()
         {
             var observableDictionary = new ObservableDictionary<int, string>();
             var syncSourceRoot = new SyncSourceRoot(observableDictionary, _sourceSettings);
@@ -103,18 +106,33 @@ namespace MonoSync.Test.Synchronization
         }
 
         [Fact]
-        public void WriteChangesShouldNotDoubleSynchronizeTest()
+        public void AddingReferenceThatWasPreviouslyRemovedShouldBeRemovedFromTheRemovedReferences()
+        {
+            var observableDictionary = new ObservableDictionary<int, string>();
+            var syncSourceRoot = new SyncSourceRoot(observableDictionary, _sourceSettings);
+           
+            observableDictionary.Add(1, "1");
+            Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
+            Assert.Empty(syncSourceRoot.RemovedReferences);
+            
+            // Simulate write to mark synchronized
+            syncSourceRoot.BeginWrite().Dispose();
+            
+            observableDictionary.Remove(1);
+            Assert.Single(syncSourceRoot.RemovedReferences);
+            
+            observableDictionary.Add(1, "1");
+            Assert.Empty(syncSourceRoot.RemovedReferences);
+        }
+
+        [Fact]
+        public void WriteChangesShouldCreateNewReferenceTest()
         {
             var sourceGameWorld = new TestGameWorld {RandomIntProperty = 5};
-
             var syncSourceRoot = new SyncSourceRoot(sourceGameWorld, _sourceSettings);
 
-
-            var syncTargetRoot =
-                new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
-
+            var syncTargetRoot = new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
             TestGameWorld previousTargetTestGameWorld = syncTargetRoot.Root;
-
 
             syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(0));
 

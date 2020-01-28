@@ -55,10 +55,13 @@ namespace MonoSync.SyncTarget
 
             Clock.OtherTick = reader.Read7BitEncodedInt();
 
+            // References are removed after read
             int[] readRemovedReferencesIds = ReadRemovedReferencesIds(reader);
 
             ReadAddedAndChangedReferences(reader);
+
             ReferencePool.RemoveReferences(readRemovedReferencesIds);
+
             OnEndRead();
         }
 
