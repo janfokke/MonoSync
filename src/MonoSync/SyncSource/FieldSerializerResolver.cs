@@ -37,19 +37,12 @@ namespace MonoSync.SyncSource
 
         public IFieldSerializer FindMatchingSerializer(Type type)
         {
-            if (type.IsEnum)
-            {
-                type = type.GetEnumUnderlyingType();
-            }
+            if (type.IsEnum) type = type.GetEnumUnderlyingType();
 
             // serializers are looped in reverse because the last added serializers should be prioritized.
-            for (int i = _serializers.Count - 1; i >= 0; i--)
-            {
+            for (var i = _serializers.Count - 1; i >= 0; i--)
                 if (_serializers[i].CanSerialize(type))
-                {
                     return _serializers[i];
-                }
-            }
 
             throw new FieldSerializerNotFoundException(type);
         }

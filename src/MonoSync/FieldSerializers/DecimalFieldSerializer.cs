@@ -1,11 +1,12 @@
 ﻿using System;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers
 {
     public class DecimalFieldSerializer : FieldSerializer<decimal>
     {
+        public override bool CanInterpolate => true;
+
         public override void Serialize(decimal value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
@@ -15,8 +16,6 @@ namespace MonoSync.FieldSerializers
         {
             valueFixup(reader.ReadDecimal());
         }
-
-        public override bool CanInterpolate => true;
 
         public override decimal Interpolate(decimal source, decimal target, float factor)
         {

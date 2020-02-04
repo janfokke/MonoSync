@@ -46,21 +46,12 @@ namespace MonoSync.SyncSource.SyncSourceObjects
             }
             else
             {
-                if (oldItems != null)
-                {
-                    RemoveOldItemReferences(oldItems);
-                }
+                if (oldItems != null) RemoveOldItemReferences(oldItems);
 
-                if (newItems != null)
-                {
-                    AddNewItemReferences(newItems);
-                }
+                if (newItems != null) AddNewItemReferences(newItems);
             }
 
-            if (_commandsInvalidated)
-            {
-                return;
-            }
+            if (_commandsInvalidated) return;
 
             switch (e.Action)
             {
@@ -88,15 +79,9 @@ namespace MonoSync.SyncSource.SyncSourceObjects
         {
             foreach (KeyValuePair<TKey, TValue> oldItem in oldItems)
             {
-                if (typeof(TKey).IsValueType == false)
-                {
-                    RemoveReference(oldItem.Key);
-                }
+                if (typeof(TKey).IsValueType == false) RemoveReference(oldItem.Key);
 
-                if (typeof(TValue).IsValueType == false)
-                {
-                    RemoveReference(oldItem.Value);
-                }
+                if (typeof(TValue).IsValueType == false) RemoveReference(oldItem.Value);
             }
         }
 
@@ -104,15 +89,9 @@ namespace MonoSync.SyncSource.SyncSourceObjects
         {
             foreach (KeyValuePair<TKey, TValue> newItem in newItems)
             {
-                if (typeof(TKey).IsValueType == false)
-                {
-                    AddReference(newItem.Key);
-                }
+                if (typeof(TKey).IsValueType == false) AddReference(newItem.Key);
 
-                if (typeof(TValue).IsValueType == false)
-                {
-                    AddReference(newItem.Value);
-                }
+                if (typeof(TValue).IsValueType == false) AddReference(newItem.Value);
             }
         }
 
@@ -124,25 +103,16 @@ namespace MonoSync.SyncSource.SyncSourceObjects
         public override IEnumerable<object> GetReferences()
         {
             // Making sure to collect TKeys and TValues if they are reference types
-            bool shouldAddKeys = typeof(TKey).IsValueType == false;
-            bool shouldAddValues = typeof(TValue).IsValueType == false;
+            var shouldAddKeys = typeof(TKey).IsValueType == false;
+            var shouldAddValues = typeof(TValue).IsValueType == false;
 
-            if (!shouldAddKeys && !shouldAddValues)
-            {
-                yield break;
-            }
+            if (!shouldAddKeys && !shouldAddValues) yield break;
 
             foreach (KeyValuePair<TKey, TValue> item in BaseObject)
             {
-                if (shouldAddKeys)
-                {
-                    yield return item.Key;
-                }
+                if (shouldAddKeys) yield return item.Key;
 
-                if (shouldAddValues)
-                {
-                    yield return item.Value;
-                }
+                if (shouldAddValues) yield return item.Value;
             }
         }
 
@@ -156,10 +126,7 @@ namespace MonoSync.SyncSource.SyncSourceObjects
             else
             {
                 binaryWriter.Write7BitEncodedInt(_commands.Count);
-                foreach (Command command in _commands)
-                {
-                    command.Write(binaryWriter, _keySerializer, _valueSerializer);
-                }
+                foreach (Command command in _commands) command.Write(binaryWriter, _keySerializer, _valueSerializer);
 
                 _commands.Clear();
             }
@@ -274,21 +241,14 @@ namespace MonoSync.SyncSource.SyncSourceObjects
 
         private void RemoveReference(object reference)
         {
-            if (reference == null)
-            {
-                return;
-            }
+            if (reference == null) return;
 
-            if (_trackedReferences.TryGetValue(reference, out int count))
+            if (_trackedReferences.TryGetValue(reference, out var count))
             {
                 if (--count <= 0)
-                {
                     _trackedReferences.Remove(reference);
-                }
                 else
-                {
                     _trackedReferences[reference] = count;
-                }
             }
             else
             {
@@ -300,19 +260,12 @@ namespace MonoSync.SyncSource.SyncSourceObjects
 
         private void AddReference(object reference)
         {
-            if (reference == null)
-            {
-                return;
-            }
+            if (reference == null) return;
 
-            if (_trackedReferences.TryGetValue(reference, out int count))
-            {
+            if (_trackedReferences.TryGetValue(reference, out var count))
                 _trackedReferences[reference] = ++count;
-            }
             else
-            {
                 _trackedReferences[reference] = 1;
-            }
 
             SyncSourceRoot.AddReference(reference);
         }
@@ -320,12 +273,8 @@ namespace MonoSync.SyncSource.SyncSourceObjects
         private void RemoveAllReference()
         {
             foreach (KeyValuePair<object, int> referenceCounter in _trackedReferences)
-            {
                 for (var i = 0; i < referenceCounter.Value; i++)
-                {
                     SyncSourceRoot.RemoveReference(referenceCounter.Key);
-                }
-            }
 
             _trackedReferences.Clear();
         }

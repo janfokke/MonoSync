@@ -2,7 +2,7 @@
 using MonoSync.SyncSource;
 using MonoSync.Utils;
 
-namespace MonoSync.FieldSerializers
+namespace MonoSync
 {
     public abstract class FieldSerializer<T> : IFieldSerializer
     {
@@ -18,22 +18,22 @@ namespace MonoSync.FieldSerializers
             return Interpolate((T) source, (T) target, factor);
         }
 
-        public virtual T Interpolate(T source, T target, float factor)
-        {
-            throw new NotImplementedException();
-        }
-        
         public virtual void Serialize(object value, ExtendedBinaryWriter writer)
         {
             Serialize((T) value, writer);
         }
 
-        public abstract void Serialize(T value, ExtendedBinaryWriter writer);
-
         public virtual void Deserialize(ExtendedBinaryReader reader, Action<object> valueFixup)
         {
-            Deserialize(reader,  (Action<T>) (value => valueFixup(value)));
+            Deserialize(reader, (Action<T>) (value => valueFixup(value)));
         }
+
+        public virtual T Interpolate(T source, T target, float factor)
+        {
+            throw new NotImplementedException();
+        }
+
+        public abstract void Serialize(T value, ExtendedBinaryWriter writer);
 
         /// <param name="valueFixup">
         ///     Because reference types may not be read yet, the deserialization is fixed up when it becomes

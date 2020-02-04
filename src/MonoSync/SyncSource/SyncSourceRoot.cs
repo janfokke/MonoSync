@@ -46,10 +46,7 @@ namespace MonoSync.SyncSource
 
         public WriteSession BeginWrite()
         {
-            if (_writeSessionOpen)
-            {
-                throw new WriteSessionNotClosedException();
-            }
+            if (_writeSessionOpen) throw new WriteSessionNotClosedException();
 
             _writeSessionOpen = true;
 
@@ -73,19 +70,17 @@ namespace MonoSync.SyncSource
         }
 
         /// <summary>
-        /// Removes all SyncSourceObjects from reference pool
+        ///     Removes all SyncSourceObjects from reference pool
         /// </summary>
         private void RemoveSyncSourceObjects()
         {
             foreach (SyncSource removedSyncSourceObject in _removedSyncSourceObjects)
-            {
                 RemoveSyncSourceObject(removedSyncSourceObject);
-            }
             _removedSyncSourceObjects.Clear();
         }
 
         /// <summary>
-        /// Removes the SyncSourceObject from referencePool.
+        ///     Removes the SyncSourceObject from referencePool.
         /// </summary>
         /// <param name="removedSyncSourceObject">The removed synchronize source object.</param>
         private void RemoveSyncSourceObject(SyncSource removedSyncSourceObject)
@@ -97,9 +92,7 @@ namespace MonoSync.SyncSource
         {
             writer.Write7BitEncodedInt(_removedSyncSourceObjects.Count);
             foreach (SyncSource removedSyncSourceObject in _removedSyncSourceObjects)
-            {
                 writer.Write7BitEncodedInt(removedSyncSourceObject.ReferenceId);
-            }
         }
 
         private void WriteAddedAndChangedReferences(ExtendedBinaryWriter writer)
@@ -110,7 +103,7 @@ namespace MonoSync.SyncSource
             // Because it is possible for references to be both added and changed as wel
             changedAndNewReferenceUnion.UnionWith(changedSyncSourceObjects);
 
-            int referenceCount = changedAndNewReferenceUnion.Count;
+            var referenceCount = changedAndNewReferenceUnion.Count;
 
             writer.Write7BitEncodedInt(referenceCount);
 
@@ -152,10 +145,7 @@ namespace MonoSync.SyncSource
 
         internal void EndWrite()
         {
-            if (_writeSessionOpen == false)
-            {
-                throw new WriteSessionNotOpenException();
-            }
+            if (_writeSessionOpen == false) throw new WriteSessionNotOpenException();
 
             _writeSessionOpen = false;
 
@@ -167,40 +157,27 @@ namespace MonoSync.SyncSource
 
         public void RemoveReference(object reference)
         {
-            if (reference == null)
-            {
-                throw new ArgumentNullException(nameof(reference));
-            }
+            if (reference == null) throw new ArgumentNullException(nameof(reference));
 
             SyncSource syncObject = _referencePool.GetSyncObject(reference);
-            if (syncObject == null)
-            {
-                throw new InvalidOperationException($"{nameof(reference)} is not tracked");
-            }
+            if (syncObject == null) throw new InvalidOperationException($"{nameof(reference)} is not tracked");
 
             if (--syncObject.ReferenceCount <= 0)
             {
-                bool isAlreadySynchronized = _addedSyncSourceObjects.Remove(syncObject) == false;
+                var isAlreadySynchronized = _addedSyncSourceObjects.Remove(syncObject) == false;
                 if (isAlreadySynchronized)
-                {
                     // Clients do not need to be notified of deleted objects
                     // that have not yet been synchronized.
                     _removedSyncSourceObjects.Add(syncObject);
-                }
                 // If reference is not tracked by targets remove immediately
                 else
-                {
                     RemoveSyncSourceObject(syncObject);
-                }
             }
         }
 
         public void AddReference(object reference)
         {
-            if (reference == null)
-            {
-                throw new ArgumentNullException(nameof(reference));
-            }
+            if (reference == null) throw new ArgumentNullException(nameof(reference));
 
             if (_pendingForCreationReferenceCount.ContainsKey(reference))
             {
@@ -213,7 +190,7 @@ namespace MonoSync.SyncSource
             {
                 ISyncSourceFactory sourceFactory = Settings.SyncSourceFactoryResolver
                     .FindMatchingSyncSourceFactory(reference);
-                int referenceId = _referenceIdIncrementer++;
+                var referenceId = _referenceIdIncrementer++;
 
                 _pendingForCreationReferenceCount[reference] = 1;
                 syncSource =
@@ -239,10 +216,7 @@ namespace MonoSync.SyncSource
             List<SyncSource> removeSyncSources =
                 _referencePool.GetNonOccuringReferences(referenceThatAreAccessibleFromRoot);
 
-            foreach (SyncSource removeSyncSource in removeSyncSources)
-            {
-                RemoveReference(removeSyncSource.BaseObject);
-            }
+            foreach (SyncSource removeSyncSource in removeSyncSources) RemoveReference(removeSyncSource.BaseObject);
         }
 
         private HashSet<object> TraverseReferences()
@@ -253,18 +227,13 @@ namespace MonoSync.SyncSource
 
                 // Add the new references to the referencePool
                 foreach (object occuringReference in references)
-                {
                     // Check if referencePool contains reference if it is not yet added to output
                     if (output.Add(occuringReference))
-                    {
                         if (_referencePool.ContainsReference(occuringReference) == false)
-                        {
                             // This error occurs when a SyncSource doesn't track a reference it should have tracked
                             throw new UntrackedReferenceException(reference, occuringReference);
-                        }
-                    }
-                }
             }
+
             var occuringReferences = new HashSet<object> {_rootReference};
             TraverseReferencesRecursive(_rootReference, occuringReferences);
             return occuringReferences;

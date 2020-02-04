@@ -42,7 +42,7 @@ namespace MonoSync.SyncTarget
         public SyncTargetSettings Settings { get; }
 
         /// <summary>
-        /// The amount of tick between synchronizations
+        ///     The amount of tick between synchronizations
         /// </summary>
         public int SendRate { get; set; } = 15;
 
@@ -67,23 +67,20 @@ namespace MonoSync.SyncTarget
 
         private int[] ReadRemovedReferencesIds(ExtendedBinaryReader reader)
         {
-            int count = reader.Read7BitEncodedInt();
+            var count = reader.Read7BitEncodedInt();
             var removedReferencesIds = new int[count];
-            for (var i = 0; i < count; i++)
-            {
-                removedReferencesIds[i] = reader.Read7BitEncodedInt();
-            }
+            for (var i = 0; i < count; i++) removedReferencesIds[i] = reader.Read7BitEncodedInt();
 
             return removedReferencesIds;
         }
 
         private void ReadAddedAndChangedReferences(ExtendedBinaryReader reader)
         {
-            int count = reader.Read7BitEncodedInt();
+            var count = reader.Read7BitEncodedInt();
 
             for (var i = 0; i < count; i++)
             {
-                int referenceId = reader.Read7BitEncodedInt();
+                var referenceId = reader.Read7BitEncodedInt();
 
                 if (ReferencePool.TryGetSyncByIdentifier(referenceId, out SyncTarget syncTargetObject))
                 {

@@ -22,7 +22,7 @@ namespace MonoSync.FieldSerializers
 
         public void Serialize(object value, ExtendedBinaryWriter writer)
         {
-            int referenceIdentifier = _referenceResolver.ResolveIdentifier(value);
+            var referenceIdentifier = _referenceResolver.ResolveIdentifier(value);
             writer.Write7BitEncodedInt(referenceIdentifier);
         }
 
@@ -33,7 +33,7 @@ namespace MonoSync.FieldSerializers
 
         public void Deserialize(ExtendedBinaryReader reader, Action<object> valueFixup)
         {
-            int referenceId = reader.Read7BitEncodedInt();
+            var referenceId = reader.Read7BitEncodedInt();
             _referenceResolver.ResolveReference(referenceId, valueFixup);
         }
     }

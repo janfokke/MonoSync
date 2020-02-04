@@ -1,11 +1,12 @@
 ﻿using System;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers
 {
     public class UInt16FieldSerializer : FieldSerializer<ushort>
     {
+        public override bool CanInterpolate => true;
+
         public override void Serialize(ushort value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
@@ -15,8 +16,6 @@ namespace MonoSync.FieldSerializers
         {
             valueFixup(reader.ReadUInt16());
         }
-
-        public override bool CanInterpolate => true;
 
         public override ushort Interpolate(ushort source, ushort target, float factor)
         {

@@ -1,11 +1,12 @@
 ﻿using System;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers
 {
     public class Int32FieldSerializer : FieldSerializer<int>
     {
+        public override bool CanInterpolate => true;
+
         public override void Serialize(int value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
@@ -15,8 +16,6 @@ namespace MonoSync.FieldSerializers
         {
             valueFixup(reader.ReadInt32());
         }
-
-        public override bool CanInterpolate => true;
 
         public override int Interpolate(int source, int target, float factor)
         {

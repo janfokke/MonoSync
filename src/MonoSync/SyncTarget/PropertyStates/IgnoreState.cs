@@ -1,7 +1,7 @@
 ﻿namespace MonoSync.SyncTarget.PropertyStates
 {
     /// <summary>
-    ///     Null object that ignores synchronization
+    ///     ignores synchronization
     /// </summary>
     internal class IgnoreState : ISyncTargetPropertyState
     {

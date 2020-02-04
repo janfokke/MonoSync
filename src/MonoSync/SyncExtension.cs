@@ -32,17 +32,12 @@ namespace MonoSync
         public static IEnumerable<SyncTargetProperty> GetSyncTargetProperties<TSyncType>(this TSyncType source,
             Expression<Func<TSyncType, object>> selector)
         {
-            string propertyName = GetMemberName(selector.Body);
+            var propertyName = GetMemberName(selector.Body);
             List<NotifyPropertyChangedSyncTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();
-            if (syncTargetObjects.Count == 0)
-            {
-                throw new SyncTargetPropertyNotFoundException(propertyName);
-            }
+            if (syncTargetObjects.Count == 0) throw new SyncTargetPropertyNotFoundException(propertyName);
 
             foreach (NotifyPropertyChangedSyncTarget targetObject in syncTargetObjects)
-            {
                 yield return targetObject.GetSyncTargetProperty(propertyName);
-            }
         }
 
         /// <summary>
@@ -67,10 +62,7 @@ namespace MonoSync
                 type = type.BaseType;
             }
 
-            if (fieldInfo == null)
-            {
-                throw new Exception($"{nameof(INotifyPropertyChanged.PropertyChanged)} not found");
-            }
+            if (fieldInfo == null) throw new Exception($"{nameof(INotifyPropertyChanged.PropertyChanged)} not found");
 
             var eventDelegate =
                 // ReSharper disable once PossibleNullReferenceException
@@ -80,15 +72,9 @@ namespace MonoSync
             var syncSyncTargetObjects = new List<NotifyPropertyChangedSyncTarget>();
 
             if (eventDelegate != null)
-            {
                 foreach (Delegate handler in eventDelegate.GetInvocationList())
-                {
                     if (handler.Target is NotifyPropertyChangedSyncTarget syncSyncTargetObject)
-                    {
                         syncSyncTargetObjects.Add(syncSyncTargetObject);
-                    }
-                }
-            }
 
             return syncSyncTargetObjects;
         }

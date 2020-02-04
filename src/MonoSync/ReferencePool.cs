@@ -52,10 +52,7 @@ namespace MonoSync
 
         public int ResolveIdentifier(object reference)
         {
-            if (reference == null)
-            {
-                return 0;
-            }
+            if (reference == null) return 0;
 
             return _syncObjectReferenceIdLookup[reference];
         }
@@ -86,10 +83,7 @@ namespace MonoSync
             if (_referenceFixups.TryGetValue(referenceId, out List<Action<object>> fixups))
             {
                 _referenceFixups.Remove(referenceId);
-                foreach (Action<object> action in fixups)
-                {
-                    action(baseObject);
-                }
+                foreach (Action<object> action in fixups) action(baseObject);
             }
         }
 
@@ -99,13 +93,9 @@ namespace MonoSync
         /// <returns>The <see cref="TSync" /> if available. Else it returns null</returns>
         public TSync GetSyncObject(object reference)
         {
-            if (_syncObjectReferenceIdLookup.TryGetValue(reference, out int referenceId))
-            {
+            if (_syncObjectReferenceIdLookup.TryGetValue(reference, out var referenceId))
                 if (_syncObjectLookup.TryGetValue(referenceId, out TSync syncObject))
-                {
                     return syncObject;
-                }
-            }
 
             return null;
         }
@@ -136,13 +126,12 @@ namespace MonoSync
             var removedSyncObjects = new List<TSync>();
             // find non-occuring references
             foreach (object reference in _syncObjectReferenceIdLookup.Keys)
-            {
                 if (occuringReferences.Contains(reference) == false)
                 {
                     nonOccuringReferences.Add(reference);
-                    removedSyncObjects.Add(GetSyncObject(reference)); 
+                    removedSyncObjects.Add(GetSyncObject(reference));
                 }
-            }
+
             return removedSyncObjects;
         }
 
@@ -152,10 +141,7 @@ namespace MonoSync
         public int RemoveReference(object reference)
         {
             TSync syncObject = GetSyncObject(reference);
-            if (syncObject == null)
-            {
-                return 0;
-            }
+            if (syncObject == null) return 0;
 
             RemoveSyncObject(syncObject);
             return syncObject.ReferenceId;
@@ -164,13 +150,9 @@ namespace MonoSync
         public void RemoveReference(int referenceId)
         {
             if (TryGetSyncByIdentifier(referenceId, out TSync syncObject))
-            {
                 RemoveSyncObject(syncObject);
-            }
             else
-            {
                 throw new MonoSyncException("Cannot Remove untracked reference");
-            }
         }
 
         public void RemoveSyncObject(TSync syncObject)
@@ -182,10 +164,7 @@ namespace MonoSync
 
         public void RemoveReferences(int[] removedReferenceIds)
         {
-            for (var i = 0; i < removedReferenceIds.Length; i++)
-            {
-                RemoveReference(removedReferenceIds[i]);
-            }
+            for (var i = 0; i < removedReferenceIds.Length; i++) RemoveReference(removedReferenceIds[i]);
         }
     }
 }

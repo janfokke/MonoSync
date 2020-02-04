@@ -15,10 +15,7 @@ namespace MonoSync.Utils
             {
                 PropertyInfo propertyInfo = properties[i];
                 SyncAttribute syncAttribute = GetSyncAttribute(propertyInfo);
-                if (syncAttribute == null)
-                {
-                    continue;
-                }
+                if (syncAttribute == null) continue;
 
                 yield return (properties[i], syncAttribute);
             }
@@ -30,10 +27,7 @@ namespace MonoSync.Utils
             for (var index = 0; index < attributes.Length; index++)
             {
                 object attribute = attributes[index];
-                if (attribute is SyncAttribute syncAttribute)
-                {
-                    return syncAttribute;
-                }
+                if (attribute is SyncAttribute syncAttribute) return syncAttribute;
             }
 
             return null;
@@ -43,11 +37,7 @@ namespace MonoSync.Utils
         public static Func<object> CreateGetterDelegate(PropertyInfo propertyInfo, object propertyOwner)
         {
             MethodInfo method = propertyInfo.GetGetMethod();
-            if (method == null)
-            {
-                throw new GetterNotFoundException(propertyInfo.Name);
-            }
-
+            if (method == null) throw new GetterNotFoundException(propertyInfo.Name);
             MethodCallExpression methodCall = Expression.Call(Expression.Constant(propertyOwner), method);
             UnaryExpression convert = Expression.Convert(methodCall, typeof(object));
             return Expression.Lambda<Func<object>>(convert).Compile();
@@ -56,10 +46,7 @@ namespace MonoSync.Utils
         public static Action<object> CreateSetterDelegate(PropertyInfo propertyInfo, object propertyOwner)
         {
             MethodInfo method = propertyInfo.GetSetMethod();
-            if (method == null)
-            {
-                return _ => throw new SetterNotFoundException(propertyInfo.Name);
-            }
+            if (method == null) return null;
 
             Type parameterType = method.GetParameters()[0].ParameterType;
             ParameterExpression parameter = Expression.Parameter(typeof(object), "value");

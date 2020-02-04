@@ -53,10 +53,7 @@ namespace MonoSync.SyncSource.SyncSourceObjects
                 if (!propertyType.IsValueType)
                 {
                     object propertyValue = property.Value;
-                    if (propertyValue != null)
-                    {
-                        syncSourceRoot.AddReference(propertyValue);
-                    }
+                    if (propertyValue != null) syncSourceRoot.AddReference(propertyValue);
 
                     ReferenceProperties.Add(property);
                 }
@@ -79,15 +76,9 @@ namespace MonoSync.SyncSource.SyncSourceObjects
 
                 if (syncSourceProperty.PropertyType.IsValueType == false)
                 {
-                    if (previousValue != null)
-                    {
-                        SyncSourceRoot.RemoveReference(previousValue);
-                    }
+                    if (previousValue != null) SyncSourceRoot.RemoveReference(previousValue);
 
-                    if (newValue != null)
-                    {
-                        SyncSourceRoot.AddReference(newValue);
-                    }
+                    if (newValue != null) SyncSourceRoot.AddReference(newValue);
                 }
 
                 _changeTracker.MarkDirty(syncSourceProperty);
@@ -112,16 +103,11 @@ namespace MonoSync.SyncSource.SyncSourceObjects
 
             // Mark changed properties bitArray
             foreach (SyncSourceProperty syncSourceProperty in syncSourceProperties)
-            {
                 changedPropertiesBitArray[syncSourceProperty.Index] = true;
-            }
 
             binaryWriter.Write(changedPropertiesBitArray);
 
-            foreach (SyncSourceProperty sourceProperty in syncSourceProperties)
-            {
-                sourceProperty.Serialize(binaryWriter);
-            }
+            foreach (SyncSourceProperty sourceProperty in syncSourceProperties) sourceProperty.Serialize(binaryWriter);
 
             _changeTracker.Clear();
         }

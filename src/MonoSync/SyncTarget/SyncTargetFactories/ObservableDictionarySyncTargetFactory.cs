@@ -10,10 +10,7 @@ namespace MonoSync.SyncTarget.SyncTargetFactories
     {
         public bool CanCreate(Type baseType)
         {
-            if (baseType.IsGenericType)
-            {
-                return baseType.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
-            }
+            if (baseType.IsGenericType) return baseType.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
 
             return false;
         }

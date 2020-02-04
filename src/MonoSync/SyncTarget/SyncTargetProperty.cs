@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Reflection;
 using MonoSync.Attributes;
+using MonoSync.Exceptions;
 using MonoSync.SyncSource;
 using MonoSync.SyncTarget.PropertyStates;
 using MonoSync.Utils;
@@ -21,11 +23,13 @@ namespace MonoSync.SyncTarget
         private object _synchronizedValue;
 
         public SyncTargetProperty(int index, Action<object> setter, Func<object> getter,
+            PropertyInfo propertyInfo,
             SyncTargetRoot syncTargetRoot,
             IFieldSerializer fieldSerializer) : base(index)
         {
             _setter = setter;
             _getter = getter;
+
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
             _state = IgnoreState.Instance;
@@ -35,6 +39,8 @@ namespace MonoSync.SyncTarget
         {
             set
             {
+                CheckSetter();
+
                 _changing = true;
                 _setter(value);
                 _changing = false;
@@ -79,14 +85,20 @@ namespace MonoSync.SyncTarget
                     case SynchronizationBehaviour.Ignore:
                         _state = new IgnoreState();
                         break;
+                    case SynchronizationBehaviour.Construction:
+                        _state = new ConstructionState();
+                        break;
                     case SynchronizationBehaviour.Interpolated:
                         _state = new InterpolationState(this, _syncTargetRoot, _fieldSerializer);
+                        CheckSetter();
                         break;
                     case SynchronizationBehaviour.HighestTick:
                         _state = new LatestTickState(this, _syncTargetRoot);
+                        CheckSetter();
                         break;
                     case SynchronizationBehaviour.TakeSynchronized:
                         _state = new TakeSynchronizedState(this);
+                        CheckSetter();
                         break;
                 }
             }
@@ -96,10 +108,7 @@ namespace MonoSync.SyncTarget
         {
             get
             {
-                if (_state is InterpolationState interpolationState)
-                {
-                    return interpolationState.IsInterpolating;
-                }
+                if (_state is InterpolationState interpolationState) return interpolationState.IsInterpolating;
 
                 return false;
             }
@@ -108,6 +117,11 @@ namespace MonoSync.SyncTarget
         public void Dispose()
         {
             _state?.Dispose();
+        }
+
+        private void CheckSetter()
+        {
+            if (_setter == null) throw new SetterNotFoundException();
         }
 
         internal void ReadChanges(ExtendedBinaryReader reader)
@@ -124,10 +138,7 @@ namespace MonoSync.SyncTarget
         /// </summary>
         internal void NotifyChanged()
         {
-            if (_changing)
-            {
-                return;
-            }
+            if (_changing) return;
 
             TickWhenDirty = _syncTargetRoot.OwnTick;
         }

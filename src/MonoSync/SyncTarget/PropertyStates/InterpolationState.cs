@@ -33,13 +33,11 @@ namespace MonoSync.SyncTarget.PropertyStates
                 _synchronizedValue != null &&
                 _previousSynchronizedValue != _synchronizedValue
             )
-            {
                 if (IsInterpolating == false)
                 {
                     IsInterpolating = true;
                     _syncTargetRoot.Updated += Update;
                 }
-            }
         }
 
         public void Dispose()
@@ -53,18 +51,15 @@ namespace MonoSync.SyncTarget.PropertyStates
 
         private void Update(object sender, EventArgs e)
         {
-            float interpolationFactor = Math.Min(1f,
-                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float)_syncTargetRoot.SendRate);
+            var interpolationFactor = Math.Min(1f,
+                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float) _syncTargetRoot.SendRate);
             _syncTargetProperty.Property = _fieldSerializer.Interpolate(
                 _previousSynchronizedValue,
                 _synchronizedValue,
                 interpolationFactor);
 
             //Done interpolating
-            if (interpolationFactor >= 1f)
-            {
-                FinishInterpolation();
-            }
+            if (interpolationFactor >= 1f) FinishInterpolation();
         }
 
         private void FinishInterpolation()

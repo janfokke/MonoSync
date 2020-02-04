@@ -9,10 +9,7 @@ namespace MonoSync.SyncSource.SyncSourceObjectFactorties
         public bool CanCreate(object baseType)
         {
             Type type = baseType.GetType();
-            if (type.IsGenericType)
-            {
-                return type.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
-            }
+            if (type.IsGenericType) return type.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
 
             return false;
         }

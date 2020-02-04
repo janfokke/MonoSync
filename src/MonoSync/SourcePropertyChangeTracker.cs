@@ -29,10 +29,7 @@ namespace MonoSync
             if (_changedProperties.ContainsKey(value.Index) == false)
             {
                 _changedProperties.Add(value.Index, value);
-                if (_changedProperties.Count == 1)
-                {
-                    OnDirty();
-                }
+                if (_changedProperties.Count == 1) OnDirty();
             }
         }
 

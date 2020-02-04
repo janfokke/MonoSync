@@ -19,13 +19,9 @@ namespace MonoSync.SyncSource
         public ISyncSourceFactory FindMatchingSyncSourceFactory(object baseObject)
         {
             // Factories are looped in reverse because the last added Factory should be prioritized.
-            for (int i = _syncSourceObjectFactories.Count - 1; i >= 0; i--)
-            {
+            for (var i = _syncSourceObjectFactories.Count - 1; i >= 0; i--)
                 if (_syncSourceObjectFactories[i].CanCreate(baseObject))
-                {
                     return _syncSourceObjectFactories[i];
-                }
-            }
 
             throw new SyncTargetObjectFactoryNotFoundException(baseObject);
         }

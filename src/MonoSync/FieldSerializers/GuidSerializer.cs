@@ -1,5 +1,4 @@
 ﻿using System;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
 namespace MonoSync.FieldSerializers

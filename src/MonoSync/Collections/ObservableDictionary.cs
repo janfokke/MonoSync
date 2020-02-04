@@ -167,7 +167,7 @@ namespace MonoSync.Collections
         public bool Remove(TKey key)
         {
             TValue local = underlyingDictionary[key];
-            bool flag = underlyingDictionary.Remove(key);
+            var flag = underlyingDictionary.Remove(key);
             OnNotifyRemove(new KeyValuePair<TKey, TValue>(key, local));
 
             return flag;
@@ -190,11 +190,8 @@ namespace MonoSync.Collections
         /// </exception>
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
-            bool flag = underlyingDictionary.Remove(item);
-            if (flag)
-            {
-                OnNotifyRemove(item);
-            }
+            var flag = underlyingDictionary.Remove(item);
+            if (flag) OnNotifyRemove(item);
 
             return flag;
         }
@@ -400,10 +397,7 @@ namespace MonoSync.Collections
         /// <param name="e">Arguments of the event being raised.</param>
         protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            if (shouldRaiseNotifications)
-            {
-                CollectionChanged?.Invoke(this, e);
-            }
+            if (shouldRaiseNotifications) CollectionChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -412,10 +406,7 @@ namespace MonoSync.Collections
         /// <param name="e">Property event args.</param>
         protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
         {
-            if (shouldRaiseNotifications)
-            {
-                PropertyChanged?.Invoke(this, e);
-            }
+            if (shouldRaiseNotifications) PropertyChanged?.Invoke(this, e);
         }
 
         /// <summary>

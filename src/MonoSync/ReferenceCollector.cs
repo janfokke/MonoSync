@@ -25,17 +25,11 @@ namespace MonoSync
         {
             SyncBase syncBase = _referencePool.GetSyncObject(reference);
 
-            if (syncBase == null)
-            {
-                return;
-            }
+            if (syncBase == null) return;
 
             foreach (object childReference in syncBase.GetReferences())
             {
-                if (childReference == null || output.Add(childReference) == false)
-                {
-                    continue;
-                }
+                if (childReference == null || output.Add(childReference) == false) continue;
 
                 TraverseReferencesRecursive(childReference, output);
             }

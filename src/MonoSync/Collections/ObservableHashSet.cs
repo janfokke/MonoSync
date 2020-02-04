@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace MonoSync.Collections
@@ -96,10 +95,7 @@ namespace MonoSync.Collections
         /// </summary>
         public virtual void Clear()
         {
-            if (_set.Count == 0)
-            {
-                return;
-            }
+            if (_set.Count == 0) return;
 
             OnCountPropertyChanging();
 
@@ -147,10 +143,7 @@ namespace MonoSync.Collections
         /// </returns>
         public virtual bool Remove(T item)
         {
-            if (!_set.Contains(item))
-            {
-                return false;
-            }
+            if (!_set.Contains(item)) return false;
 
             OnCountPropertyChanging();
 
@@ -194,10 +187,7 @@ namespace MonoSync.Collections
         /// </returns>
         public virtual bool Add(T item)
         {
-            if (_set.Contains(item))
-            {
-                return false;
-            }
+            if (_set.Contains(item)) return false;
 
             OnCountPropertyChanging();
 
@@ -219,10 +209,7 @@ namespace MonoSync.Collections
 
             copy.UnionWith(other);
 
-            if (copy.Count == _set.Count)
-            {
-                return;
-            }
+            if (copy.Count == _set.Count) return;
 
             List<T> added = copy.Where(i => !_set.Contains(i)).ToList();
 
@@ -246,10 +233,7 @@ namespace MonoSync.Collections
 
             copy.IntersectWith(other);
 
-            if (copy.Count == _set.Count)
-            {
-                return;
-            }
+            if (copy.Count == _set.Count) return;
 
             List<T> removed = _set.Where(i => !copy.Contains(i)).ToList();
 
@@ -272,10 +256,7 @@ namespace MonoSync.Collections
 
             copy.ExceptWith(other);
 
-            if (copy.Count == _set.Count)
-            {
-                return;
-            }
+            if (copy.Count == _set.Count) return;
 
             List<T> removed = _set.Where(i => !copy.Contains(i)).ToList();
 
@@ -304,9 +285,7 @@ namespace MonoSync.Collections
 
             if (removed.Count == 0
                 && added.Count == 0)
-            {
                 return;
-            }
 
             OnCountPropertyChanging();
 
@@ -439,12 +418,9 @@ namespace MonoSync.Collections
         {
             var copy = new HashSet<T>(_set, _set.Comparer);
 
-            int removedCount = copy.RemoveWhere(match);
+            var removedCount = copy.RemoveWhere(match);
 
-            if (removedCount == 0)
-            {
-                return 0;
-            }
+            if (removedCount == 0) return 0;
 
             List<T> removed = _set.Where(i => !copy.Contains(i)).ToList();
 
