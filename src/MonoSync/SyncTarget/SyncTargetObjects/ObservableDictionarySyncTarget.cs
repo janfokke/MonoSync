@@ -140,11 +140,12 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
         {
             _changing = true;
 
-            RollBackLeadingTargetCommands(_clock.OtherTick);
-
-            PerformSynchronizationCommands();
-
-            RestoreLeadingTargetCommands();
+            using (BaseObject.BeginMassUpdate())
+            {
+                RollBackLeadingTargetCommands(_clock.OtherTick);
+                PerformSynchronizationCommands();
+                PerformLeadingTargetCommands();
+            }
 
             _changing = false;
         }
@@ -159,12 +160,11 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
         /// <summary>
         ///     Restores commands that had a higher tick than the synchronization
         /// </summary>
-        private void RestoreLeadingTargetCommands()
+        private void PerformLeadingTargetCommands()
         {
             foreach (TargetCommand leadingTargetCommand in _leadingTargetCommands)
                 if (leadingTargetCommand.Perform(BaseObject))
                     _targetCommands.Push(leadingTargetCommand);
-
             _leadingTargetCommands.Clear();
         }
 
@@ -369,7 +369,13 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
 
             public void Perform(IDictionary<TKey, TValue> target)
             {
-                if (_keyResolved) target.Remove(_key);
+                if (_keyResolved)
+                {
+                    if (target.ContainsKey(_key))
+                    {
+                        target.Remove(_key);
+                    }
+                }
             }
         }
 

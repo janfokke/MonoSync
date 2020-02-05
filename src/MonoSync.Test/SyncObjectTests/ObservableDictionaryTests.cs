@@ -153,8 +153,7 @@ namespace MonoSync.Test.Synchronization
             var syncSourceRoot = new SyncSourceRoot(sourceGameWorld, _sourceSettings);
 
 
-            var syncTargetRoot =
-                new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+            var syncTargetRoot = new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
             TestGameWorld targetGameWorld = syncTargetRoot.Root;
 
             AssertExtension.AssertCloneEqual(sourceGameWorld, targetGameWorld);

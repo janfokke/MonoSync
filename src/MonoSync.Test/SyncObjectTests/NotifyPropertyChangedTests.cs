@@ -1,6 +1,8 @@
 using System;
+using MonoSync.Exceptions;
 using MonoSync.SyncSource;
 using MonoSync.SyncTarget;
+using MonoSync.SyncTarget.SyncTargetObjects;
 using MonoSync.Test.TestObjects;
 using MonoSync.Test.TestUtils;
 using Xunit;
@@ -13,9 +15,15 @@ namespace MonoSync.Test.Synchronization
         public NotifyPropertyChangedTests()
         {
             var typeEncoder = new TypeEncoder();
-            typeEncoder.RegisterType<SynchronizeConstructorMock>(StartingIndexNonReservedTypes);
-            typeEncoder.RegisterType<TestPlayer>(StartingIndexNonReservedTypes + 1);
-            typeEncoder.RegisterType<SynchronizeManySyncAttributesTest>(StartingIndexNonReservedTypes + 2);
+            int index = StartingIndexNonReservedTypes;
+            typeEncoder.RegisterType<SynchronizeConstructorMock>(index++);
+            typeEncoder.RegisterType<TestPlayer>(index++);
+            typeEncoder.RegisterType<SynchronizeManySyncAttributesTest>(index++);
+            typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodMock>(index++);
+            typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodMockChild>(index++);
+            typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodWithParametersMock>(index++);
+            typeEncoder.RegisterType<GetterOnlyMock>(index++);
+            typeEncoder.RegisterType<GetterOnlyConstructorMock>(index++);
 
             _sourceSettings = SyncSourceSettings.Default;
             _sourceSettings.TypeEncoder = typeEncoder;
@@ -49,6 +57,80 @@ namespace MonoSync.Test.Synchronization
                 new SyncTargetRoot<SynchronizeManySyncAttributesTest>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
 
             AssertExtension.AssertCloneEqual(sourceTestMock, target.Root);
+        }
+
+        [Fact]
+        public void InitializingPropertyWithoutSetterShouldCauseSetterNotFoundException()
+        {
+            var attributeMarkedMethodMockSource = new GetterOnlyMock();
+
+            var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
+
+            Assert.Throws<SetterNotFoundException>(() =>
+            {
+                var syncTargetRoot = new SyncTargetRoot<GetterOnlyMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+            });
+        }
+
+        [Fact]
+        public void InitializingPropertyWithoutSetterThroughConstructorTest()
+        {
+            var getterOnlyConstructorMockSource = new GetterOnlyConstructorMock(5);
+            var syncSourceRoot = new SyncSourceRoot(getterOnlyConstructorMockSource, _sourceSettings);
+            var syncTargetRoot = new SyncTargetRoot<GetterOnlyConstructorMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+            var getterOnlyConstructorMockRoot = syncTargetRoot.Root;
+            Assert.Equal(getterOnlyConstructorMockSource.IntProperty, getterOnlyConstructorMockRoot.IntProperty);
+        }
+
+        [Fact]
+        public void OnSynchronizedMarkedMethodShouldBeCalledAfterSynchronizationTest()
+        {
+            var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodMock
+            {
+                intProperty = 123
+            };
+
+            var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
+            var syncTargetRoot = new SyncTargetRoot<OnSynchronizedAttributeMarkedMethodMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+
+            OnSynchronizedAttributeMarkedMethodMock attributeMarkedMethodMockTarget = syncTargetRoot.Root;
+            
+            Assert.Equal(
+                attributeMarkedMethodMockSource.intProperty, 
+                attributeMarkedMethodMockTarget.intPropertyWhenSynchronizedMethodWasCalled
+                );
+        }
+
+        [Fact]
+        public void OnSynchronizedMarkedBaseMethodShouldBeCalledAfterSynchronizationTest()
+        {
+            var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodMockChild
+            {
+                intProperty = 123
+            };
+
+            var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
+            var syncTargetRoot = new SyncTargetRoot<OnSynchronizedAttributeMarkedMethodMockChild>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+
+            OnSynchronizedAttributeMarkedMethodMockChild attributeMarkedMethodMockTarget = syncTargetRoot.Root;
+
+            Assert.Equal(
+                attributeMarkedMethodMockSource.intProperty,
+                attributeMarkedMethodMockTarget.intPropertyWhenSynchronizedMethodWasCalled
+            );
+        }
+
+        [Fact]
+        public void OnSynchronizedMarkedMethodShouldCauseSynchronizedMarkedMethodParameterException()
+        {
+            var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodWithParametersMock();
+
+            var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
+
+            Assert.Throws<SynchronizedMarkedMethodParameterException>(() =>
+            {
+                var syncTargetRoot = new SyncTargetRoot<OnSynchronizedAttributeMarkedMethodWithParametersMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+            });
         }
 
         [Fact]
