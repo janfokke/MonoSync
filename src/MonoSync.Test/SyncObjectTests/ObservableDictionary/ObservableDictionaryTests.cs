@@ -29,39 +29,27 @@ namespace MonoSync.Test.Synchronization
         private readonly SyncSourceSettings _sourceSettings;
 
         [Fact]
-        public void ObservableDictionaryAddItemTest()
+        public void ClientSideAddedItemRollbackOnSynchronizeTest()
         {
             var sourceDictionary = new ObservableDictionary<int, string>();
-            sourceDictionary.Add(1, "1");
-            sourceDictionary.Add(2, "2");
-
-            // Full write
+            
             var syncSourceRoot = new SyncSourceRoot(sourceDictionary, _sourceSettings);
 
+            var syncTargetRoot = new SyncTargetRoot<ObservableDictionary<int, string>>(
+                syncSourceRoot.WriteFullAndDispose(),
+                _targetSettings);
 
-            var syncTargetRoot =
-                new SyncTargetRoot<ObservableDictionary<int, string>>(syncSourceRoot.WriteFullAndDispose(),
-                    _targetSettings);
             ObservableDictionary<int, string> targetDictionary = syncTargetRoot.Root;
+            targetDictionary.Add(1, "2");
 
-            foreach (KeyValuePair<int, string> keyValuePair in sourceDictionary)
-            {
-                Assert.Equal(keyValuePair.Value, targetDictionary[keyValuePair.Key]);
-            }
+            syncTargetRoot.Clock.OwnTick = 5;
 
-            // Changes
-
-            sourceDictionary.Add(3, "3");
-
-
-            byte[] changesSynchronization = syncSourceRoot.WriteChangesAndDispose().SetTick(0);
-
-            syncTargetRoot.Read(changesSynchronization);
-
-            foreach (KeyValuePair<int, string> keyValuePair in sourceDictionary)
-            {
-                Assert.Equal(keyValuePair.Value, targetDictionary[keyValuePair.Key]);
-            }
+            //Set tick older than client tick
+            byte[] changes =syncSourceRoot.WriteChangesAndDispose().SetTick(6);
+            syncTargetRoot.Read(changes);
+            
+            // Recently added item should be rolled back
+            Assert.Empty(targetDictionary);
         }
 
         [Fact]
@@ -110,7 +98,6 @@ namespace MonoSync.Test.Synchronization
         public void ObservableDictionaryReferenceTrackOnRemoveTest()
         {
             var sourceDictionary = new ObservableDictionary<int, string>();
-
             var syncSourceRoot = new SyncSourceRoot(sourceDictionary, SyncSourceSettings.Default);
 
             sourceDictionary.Add(1, "1");
