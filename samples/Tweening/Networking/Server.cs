@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended;
-using MonoSync.SyncSource;
 
 namespace MonoSync.Sample.Tweening
 {
@@ -27,7 +26,7 @@ namespace MonoSync.Sample.Tweening
 
             var settings = SyncSourceSettings.Default;
             settings.TypeEncoder = new TweenGameTypeEncoder();
-            settings.FieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
+            settings.SourceFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
             _gameWorldSyncSourceRoot = new SyncSourceRoot(Map, settings);
             _tcpListener = new TcpListener(IPAddress.Loopback, 1234);
             _tcpListener.Start();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using MonoSync.Collections;
 using MonoSync.Exceptions;
 using MonoSync.Utils;
@@ -11,6 +12,8 @@ namespace MonoSync
     {
         private readonly Dictionary<Type, int> _idLookup = new Dictionary<Type, int>();
         private readonly Dictionary<int, Type> _typeLookup = new Dictionary<int, Type>();
+
+        public Dictionary<Type, byte[]> TypeEncodingCache = new Dictionary<Type, byte[]>();
 
         public TypeEncoder()
         {
@@ -41,7 +44,10 @@ namespace MonoSync
         {
             var count = reader.Read7BitEncodedInt();
             var identifiers = new int[count];
-            for (var i = 0; i < count; i++) identifiers[i] = reader.Read7BitEncodedInt();
+            for (var i = 0; i < count; i++)
+            {
+                identifiers[i] = reader.Read7BitEncodedInt();
+            }
 
             var queue = new Queue<int>(identifiers);
             return DecodeTypeRecursive(queue);
@@ -53,10 +59,25 @@ namespace MonoSync
         /// <returns></returns>
         public void WriteType(Type type, ExtendedBinaryWriter writer)
         {
-            var output = new Queue<int>();
-            EncodeTypeRecursive(output, type);
-            writer.Write7BitEncodedInt(output.Count);
-            foreach (var identifier in output) writer.Write7BitEncodedInt(identifier);
+            if (TypeEncodingCache.TryGetValue(type, out byte[] encoding) == false)
+            {
+                using var encodingMemoryStream = new MemoryStream();
+                using var encodingWriter = new ExtendedBinaryWriter(encodingMemoryStream);
+                var output = new Queue<int>();
+                EncodeTypeRecursive(output, type);
+
+                encodingWriter.Write7BitEncodedInt(output.Count);
+
+                foreach (var identifier in output)
+                {
+                    encodingWriter.Write7BitEncodedInt(identifier);
+                }
+
+                encoding = encodingMemoryStream.ToArray();
+                TypeEncodingCache.Add(type, encoding);
+            }
+
+            writer.Write(encoding);
         }
 
         private Type DecodeTypeRecursive(Queue<int> typeIdentifiers)
@@ -79,7 +100,10 @@ namespace MonoSync
                 {
                     var typeCount = type.GetGenericArguments().Length;
                     var typeArgs = new Type[typeCount];
-                    for (var i = 0; i < typeCount; i++) typeArgs[i] = DecodeTypeRecursive(typeIdentifiers);
+                    for (var i = 0; i < typeCount; i++)
+                    {
+                        typeArgs[i] = DecodeTypeRecursive(typeIdentifiers);
+                    }
 
                     return type.MakeGenericType(typeArgs);
                 }
@@ -94,7 +118,10 @@ namespace MonoSync
         /// <param name="type"></param>
         private void EncodeTypeRecursive(Queue<int> output, Type type)
         {
-            if (type.IsGenericTypeDefinition) throw new ArgumentException($"{nameof(type)} is a GenericTypeDefinition");
+            if (type.IsGenericTypeDefinition)
+            {
+                throw new ArgumentException($"{nameof(type)} is a GenericTypeDefinition");
+            }
 
             if (type.IsArray)
             {
@@ -112,7 +139,9 @@ namespace MonoSync
             else if (type.IsGenericType)
             {
                 if (_idLookup.TryGetValue(type.GetGenericTypeDefinition(), out var identifier))
+                {
                     output.Enqueue(identifier);
+                }
 
                 for (var index = 0; index < type.GenericTypeArguments.Length; index++)
                 {
@@ -123,21 +152,32 @@ namespace MonoSync
             else
             {
                 if (_idLookup.TryGetValue(type, out var identifier))
+                {
                     output.Enqueue(identifier);
+                }
                 else
+                {
                     throw new TypeNotRegisteredException(type);
+                }
             }
         }
 
         public void RegisterType(Type type, int identifier)
         {
             if (type.IsGenericType && type.IsGenericTypeDefinition == false)
+            {
                 throw new ArgumentException($"{nameof(type)} must be a GenericTypeDefinition");
+            }
 
             if (_typeLookup.TryGetValue(identifier, out Type registeredType))
+            {
                 throw new IdentifierAlreadyRegisteredException(identifier, registeredType);
+            }
 
-            if (_idLookup.ContainsKey(type)) throw new TypeAlreadyRegisteredException(type);
+            if (_idLookup.ContainsKey(type))
+            {
+                throw new TypeAlreadyRegisteredException(type);
+            }
 
             _idLookup.Add(type, identifier);
             _typeLookup.Add(identifier, type);

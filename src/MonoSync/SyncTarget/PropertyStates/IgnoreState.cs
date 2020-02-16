@@ -1,4 +1,4 @@
-﻿namespace MonoSync.SyncTarget.PropertyStates
+﻿namespace MonoSync.PropertyStates
 {
     /// <summary>
     ///     ignores synchronization

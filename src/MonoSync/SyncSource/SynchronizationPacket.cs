@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     /// <summary>
     ///     Helper class to pad Synchronization packets with their synchronization tick.

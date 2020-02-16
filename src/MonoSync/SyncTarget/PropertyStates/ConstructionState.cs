@@ -1,6 +1,6 @@
 ﻿using MonoSync.Attributes;
 
-namespace MonoSync.SyncTarget.PropertyStates
+namespace MonoSync.PropertyStates
 {
     /// <summary>
     ///     Only sets value on construction.

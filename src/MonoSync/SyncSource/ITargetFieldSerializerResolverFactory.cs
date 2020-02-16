@@ -1,6 +1,6 @@
-﻿namespace MonoSync.SyncSource
+﻿namespace MonoSync
 {
-    public interface IFieldSerializerResolverFactory
+    public interface ITargetFieldSerializerResolverFactory
     {
         IFieldSerializerResolver Create(IReferenceResolver referenceResolver);
     }

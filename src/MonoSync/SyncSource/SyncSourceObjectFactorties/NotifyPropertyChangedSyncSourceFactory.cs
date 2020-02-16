@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
-using MonoSync.SyncSource.SyncSourceObjects;
+using MonoSync.SyncSourceObjects;
 
-namespace MonoSync.SyncSource.SyncSourceObjectFactorties
+namespace MonoSync.SyncSourceObjectFactorties
 {
     internal class NotifyPropertyChangedSyncSourceFactory : ISyncSourceFactory
     {
@@ -13,8 +13,7 @@ namespace MonoSync.SyncSource.SyncSourceObjectFactorties
         public SyncSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType,
             IFieldSerializerResolver fieldSerializerResolver)
         {
-            return new NotifyPropertyChangedSyncSource(syncSourceRoot, referenceId, baseType as INotifyPropertyChanged,
-                fieldSerializerResolver);
+            return new NotifyPropertyChangedSyncSource(syncSourceRoot, referenceId, (INotifyPropertyChanged) baseType);
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿using System;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
     public interface ISyncTargetFactory
     {

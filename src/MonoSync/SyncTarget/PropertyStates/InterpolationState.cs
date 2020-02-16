@@ -1,7 +1,6 @@
 ﻿using System;
-using MonoSync.SyncSource;
 
-namespace MonoSync.SyncTarget.PropertyStates
+namespace MonoSync.PropertyStates
 {
     internal class InterpolationState : ISyncTargetPropertyState
     {
@@ -10,21 +9,22 @@ namespace MonoSync.SyncTarget.PropertyStates
         private readonly SyncTargetRoot _syncTargetRoot;
         private int _interpolatingStartTick;
         private object _previousSynchronizedValue;
+        private bool _synchronized;
         private object _synchronizedValue;
+
+        public bool IsInterpolating { get; set; }
 
         public InterpolationState(SyncTargetProperty syncTargetProperty, SyncTargetRoot syncTargetRoot,
             IFieldSerializer fieldSerializer)
         {
-            _synchronizedValue = syncTargetProperty.Property;
             _syncTargetProperty = syncTargetProperty;
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
         }
 
-        public bool IsInterpolating { get; set; }
-
         public void HandleRead(object value)
         {
+            _previousSynchronizedValue = _synchronized == false ? value : _synchronizedValue;
             _previousSynchronizedValue = _synchronizedValue;
             _synchronizedValue = value;
             _interpolatingStartTick = _syncTargetRoot.Clock.OwnTick;
@@ -33,11 +33,15 @@ namespace MonoSync.SyncTarget.PropertyStates
                 _synchronizedValue != null &&
                 _previousSynchronizedValue != _synchronizedValue
             )
+            {
                 if (IsInterpolating == false)
                 {
                     IsInterpolating = true;
                     _syncTargetRoot.Updated += Update;
                 }
+            }
+
+            _synchronized = true;
         }
 
         public void Dispose()
@@ -59,7 +63,10 @@ namespace MonoSync.SyncTarget.PropertyStates
                 interpolationFactor);
 
             //Done interpolating
-            if (interpolationFactor >= 1f) FinishInterpolation();
+            if (interpolationFactor >= 1f)
+            {
+                FinishInterpolation();
+            }
         }
 
         private void FinishInterpolation()

@@ -1,36 +1,18 @@
-﻿using System;
-using MonoSync.Utils;
-
-namespace MonoSync.SyncSource
+﻿namespace MonoSync
 {
-    public class SyncSourceProperty : SyncProperty
+    public class SyncSourceProperty
     {
-        private readonly IFieldSerializer _fieldSerializer;
-        private readonly Func<object> _getter;
+        public readonly IFieldSerializer FieldSerializer;
+        public readonly bool IsValueType;
+        public short Index;
+        public string Name { get; }
 
-        public SyncSourceProperty(int index, Type propertyType, Func<object> getter, IFieldSerializer fieldSerializer) :
-            base(index)
+        public SyncSourceProperty(short index, string name, IFieldSerializer fieldSerializer, bool isValueType)
         {
-            PropertyType = propertyType;
-            _getter = getter;
-            _fieldSerializer = fieldSerializer;
-        }
-
-        public Type PropertyType { get; }
-
-        internal object Value { get; private set; }
-
-        internal object PreviousValue { get; private set; }
-
-        internal void UpdateValue()
-        {
-            PreviousValue = Value;
-            Value = _getter();
-        }
-
-        internal void Serialize(ExtendedBinaryWriter writer)
-        {
-            _fieldSerializer.Serialize(Value, writer);
+            Name = name;
+            FieldSerializer = fieldSerializer;
+            IsValueType = isValueType;
+            Index = index;
         }
     }
 }

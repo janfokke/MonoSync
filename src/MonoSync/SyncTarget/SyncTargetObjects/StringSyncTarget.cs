@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using MonoSync.Utils;
+﻿using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget.SyncTargetObjects
+namespace MonoSync.SyncTargetObjects
 {
     public class StringSyncTarget : SyncTarget
     {
@@ -13,11 +12,6 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
         public override void Dispose()
         {
             // Ignore
-        }
-
-        public override IEnumerable<object> GetReferences()
-        {
-            yield break;
         }
 
         public sealed override void Read(ExtendedBinaryReader reader)

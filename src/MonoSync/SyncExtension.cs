@@ -5,8 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using MonoSync.Exceptions;
-using MonoSync.SyncTarget;
-using MonoSync.SyncTarget.SyncTargetObjects;
+using MonoSync.SyncTargetObjects;
 
 namespace MonoSync
 {
@@ -34,10 +33,15 @@ namespace MonoSync
         {
             var propertyName = GetMemberName(selector.Body);
             List<NotifyPropertyChangedSyncTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();
-            if (syncTargetObjects.Count == 0) throw new SyncTargetPropertyNotFoundException(propertyName);
+            if (syncTargetObjects.Count == 0)
+            {
+                throw new SyncTargetPropertyNotFoundException(propertyName);
+            }
 
             foreach (NotifyPropertyChangedSyncTarget targetObject in syncTargetObjects)
+            {
                 yield return targetObject.GetSyncTargetProperty(propertyName);
+            }
         }
 
         /// <summary>
@@ -57,12 +61,18 @@ namespace MonoSync
                 fieldInfo = type.GetField(nameof(INotifyPropertyChanged.PropertyChanged),
                     BindingFlags.Instance | BindingFlags.NonPublic);
 
-                if (fieldInfo != null) break;
+                if (fieldInfo != null)
+                {
+                    break;
+                }
 
                 type = type.BaseType;
             }
 
-            if (fieldInfo == null) throw new Exception($"{nameof(INotifyPropertyChanged.PropertyChanged)} not found");
+            if (fieldInfo == null)
+            {
+                throw new Exception($"{nameof(INotifyPropertyChanged.PropertyChanged)} not found");
+            }
 
             var eventDelegate =
                 // ReSharper disable once PossibleNullReferenceException
@@ -72,9 +82,15 @@ namespace MonoSync
             var syncSyncTargetObjects = new List<NotifyPropertyChangedSyncTarget>();
 
             if (eventDelegate != null)
+            {
                 foreach (Delegate handler in eventDelegate.GetInvocationList())
+                {
                     if (handler.Target is NotifyPropertyChangedSyncTarget syncSyncTargetObject)
+                    {
                         syncSyncTargetObjects.Add(syncSyncTargetObject);
+                    }
+                }
+            }
 
             return syncSyncTargetObjects;
         }

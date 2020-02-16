@@ -1,18 +1,17 @@
 ﻿using System;
 using System.IO;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
     public class SyncTargetRoot<T> : SyncTargetRoot where T : class
     {
+        public new T Root => base.Root as T;
+
         public SyncTargetRoot(byte[] initialFullSynchronization, SyncTargetSettings settings) : base(
             initialFullSynchronization, settings)
         {
         }
-
-        public new T Root => base.Root as T;
     }
 
     public class SyncTargetRoot
@@ -21,20 +20,9 @@ namespace MonoSync.SyncTarget
 
         public readonly object Root;
 
-        public SyncTargetRoot(byte[] initialFullSynchronization, SyncTargetSettings settings)
-        {
-            Settings = settings;
-            _fieldDeserializerResolver = settings.FieldDeserializerResolverFactory.Create(ReferencePool);
-            Read(initialFullSynchronization);
-
-            // SyncObject 1 is always root object.
-            ReferencePool.TryGetSyncByIdentifier(1, out SyncTarget syncTargetObject);
-            Root = syncTargetObject.BaseObject;
-        }
-
         public Clock Clock { get; } = new Clock();
 
-        internal ReferencePool<SyncTarget> ReferencePool { get; } = new ReferencePool<SyncTarget>();
+        internal TargetReferencePool TargetReferencePool { get; } = new TargetReferencePool();
 
         public int OwnTick => Clock.OwnTick;
         public int OtherTick => Clock.OtherTick;
@@ -45,6 +33,17 @@ namespace MonoSync.SyncTarget
         ///     The amount of tick between synchronizations
         /// </summary>
         public int SendRate { get; set; } = 15;
+
+        public SyncTargetRoot(byte[] initialFullSynchronization, SyncTargetSettings settings)
+        {
+            Settings = settings;
+            _fieldDeserializerResolver = settings.TargetFieldDeserializerResolverFactory.Create(TargetReferencePool);
+            Read(initialFullSynchronization);
+
+            // SyncObject 1 is always root object.
+            TargetReferencePool.TryGetSyncTargetByIdentifier(1, out SyncTarget syncTargetObject);
+            Root = syncTargetObject.BaseObject;
+        }
 
         public void Read(byte[] data)
         {
@@ -60,7 +59,7 @@ namespace MonoSync.SyncTarget
 
             ReadAddedAndChangedReferences(reader);
 
-            ReferencePool.RemoveReferences(readRemovedReferencesIds);
+            TargetReferencePool.RemoveReferences(readRemovedReferencesIds);
 
             OnEndRead();
         }
@@ -69,7 +68,10 @@ namespace MonoSync.SyncTarget
         {
             var count = reader.Read7BitEncodedInt();
             var removedReferencesIds = new int[count];
-            for (var i = 0; i < count; i++) removedReferencesIds[i] = reader.Read7BitEncodedInt();
+            for (var i = 0; i < count; i++)
+            {
+                removedReferencesIds[i] = reader.Read7BitEncodedInt();
+            }
 
             return removedReferencesIds;
         }
@@ -82,7 +84,7 @@ namespace MonoSync.SyncTarget
             {
                 var referenceId = reader.Read7BitEncodedInt();
 
-                if (ReferencePool.TryGetSyncByIdentifier(referenceId, out SyncTarget syncTargetObject))
+                if (TargetReferencePool.TryGetSyncTargetByIdentifier(referenceId, out SyncTarget syncTargetObject))
                 {
                     syncTargetObject.Read(reader);
                 }
@@ -95,7 +97,7 @@ namespace MonoSync.SyncTarget
 
                     syncTargetObject =
                         syncTargetFactory.Create(referenceId, type, reader, _fieldDeserializerResolver, this);
-                    ReferencePool.AddSyncObject(referenceId, syncTargetObject);
+                    TargetReferencePool.AddSyncObject(referenceId, syncTargetObject);
                 }
             }
         }

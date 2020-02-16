@@ -10,11 +10,11 @@ namespace MonoSync.Attributes
     [AttributeUsage(AttributeTargets.Parameter)]
     public class SyncConstructorParameterAttribute : Attribute
     {
+        public string PropertyName { get; }
+
         public SyncConstructorParameterAttribute(string propertyName)
         {
             PropertyName = propertyName;
         }
-
-        public string PropertyName { get; }
     }
 }

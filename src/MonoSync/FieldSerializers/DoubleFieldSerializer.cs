@@ -5,14 +5,12 @@ namespace MonoSync.FieldSerializers
 {
     public class DoubleFieldSerializer : FieldSerializer<double>
     {
-        public override bool CanInterpolate => true;
-
-        public override void Serialize(double value, ExtendedBinaryWriter writer)
+        public override void Write(double value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
         }
 
-        public override void Deserialize(ExtendedBinaryReader reader, Action<double> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<double> valueFixup)
         {
             valueFixup(reader.ReadDouble());
         }

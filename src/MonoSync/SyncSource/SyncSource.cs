@@ -1,37 +1,80 @@
 ﻿using System;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
-    public abstract class SyncSource : SyncBase, IDisposable
+    public abstract class SyncSource : SyncBase
     {
-        protected SyncSource(SyncSourceRoot syncSourceRoot, int referenceId, object baseObject) : base(
-            referenceId)
-        {
-            SyncSourceRoot = syncSourceRoot;
-            BaseObject = baseObject;
-        }
-
-        public int ReferenceCount { get; internal set; }
+        private bool _disposed;
 
         public SyncSourceRoot SyncSourceRoot { get; }
 
         /// <summary>
-        ///     This synchronization method is used to only synchronize the changes
+        ///     Reference to the target object
+        /// </summary>
+        public object Reference { get; }
+
+        /// <summary>
+        ///     Indicating whether a property has changed.
+        /// </summary>
+        public bool Dirty { get; private set; }
+
+        protected SyncSource(SyncSourceRoot syncSourceRoot, int referenceId, object reference) : base(referenceId)
+        {
+            SyncSourceRoot = syncSourceRoot;
+            Reference = reference;
+        }
+
+        /// <summary>
+        ///     Writes the changes to the <see cref="binaryWriter" />
         /// </summary>
         /// <param name="binaryWriter"></param>
         public abstract void WriteChanges(ExtendedBinaryWriter binaryWriter);
 
         /// <summary>
-        ///     This synchronization method is used when an item is synchronized for the first time or when the synchronization
-        ///     changes have become obsolete due to, for example, a reset of a collection.
+        ///     Writes the full object to the <see cref="binaryWriter" />.
         /// </summary>
-        /// <param name="binaryWriter"></param>
+        /// <param name="binaryWriter">The binary writer.</param>
         public abstract void WriteFull(ExtendedBinaryWriter binaryWriter);
 
+        /// <summary>
+        ///     Marks the target object dirty.
+        /// </summary>
         protected virtual void MarkDirty()
         {
-            SyncSourceRoot.MarkDirty(this);
+            Dirty = true;
+            SyncSourceRoot.MarkSyncSourceDirty(this);
+        }
+
+        /// <summary>
+        ///     Marks the target object clean.
+        /// </summary>
+        public virtual void MarkClean()
+        {
+            Dirty = false;
+        }
+
+        public override void Dispose()
+        {
+            DisposeImpl();
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void DisposeImpl()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            SyncSourceRoot.RegisterSyncSourceToBeUntracked(this);
+
+            _disposed = true;
+        }
+
+        ~SyncSource()
+        {
+            DisposeImpl();
         }
     }
 }

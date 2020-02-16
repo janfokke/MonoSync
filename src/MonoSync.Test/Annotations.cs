@@ -897,7 +897,7 @@ namespace MonoSync.Test
 
     /// <summary>
     ///     ASP.NET MVC attribute. Indicates that the marked parameter is an MVC model type. Use this attribute
-    ///     for custom wrappers similar to <c>System.Web.Mvc.Controller.View(String, Object)</c>.
+    ///     for custom wrappers similar to <c>System.Web.Mvc.Controller.View(String, Reference)</c>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
     public sealed class AspMvcModelTypeAttribute : Attribute
@@ -958,7 +958,7 @@ namespace MonoSync.Test
     ///     ASP.NET MVC attribute. If applied to a parameter, indicates that the parameter
     ///     is an MVC view component. If applied to a method, the MVC view name is calculated implicitly
     ///     from the context. Use this attribute for custom wrappers similar to
-    ///     <c>System.Web.Mvc.Controller.View(Object)</c>.
+    ///     <c>System.Web.Mvc.Controller.View(Reference)</c>.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Method | AttributeTargets.Field |
                     AttributeTargets.Property)]

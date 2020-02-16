@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using MonoSync.Exceptions;
-using MonoSync.SyncTarget.SyncTargetFactories;
+using MonoSync.SyncTargetFactories;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
     public class SyncTargetFactoryResolver : ISyncTargetFactoryResolver
     {
         private readonly List<ISyncTargetFactory> _syncTargetObjectFactories =
             new List<ISyncTargetFactory>();
+
+        public Dictionary<Type, ISyncTargetFactory> FactoriesByType = new Dictionary<Type, ISyncTargetFactory>();
 
         public SyncTargetFactoryResolver()
         {
@@ -20,12 +22,24 @@ namespace MonoSync.SyncTarget
 
         public ISyncTargetFactory FindMatchingSyncTargetObjectFactory(Type baseType)
         {
-            // Factories are looped in reverse because the last added Factory should be prioritized.
-            for (var i = _syncTargetObjectFactories.Count - 1; i >= 0; i--)
-                if (_syncTargetObjectFactories[i].CanCreate(baseType))
-                    return _syncTargetObjectFactories[i];
+            if (FactoriesByType.TryGetValue(baseType, out ISyncTargetFactory factory) == false)
+            {
+                // Factories are looped in reverse because the last added Factory should be prioritized.
+                for (var i = _syncTargetObjectFactories.Count - 1; i >= 0; i--)
+                {
+                    ISyncTargetFactory syncTargetObjectFactory = _syncTargetObjectFactories[i];
+                    if (syncTargetObjectFactory.CanCreate(baseType))
+                    {
+                        factory = syncTargetObjectFactory;
+                        FactoriesByType.Add(baseType, syncTargetObjectFactory);
+                        return factory;
+                    }
+                }
 
-            throw new SyncTargetObjectFactoryNotFoundException(baseType);
+                throw new SyncObjectFactoryNotFoundException(baseType);
+            }
+
+            return factory;
         }
 
         public void AddSyncTargetObjectFactory(ISyncTargetFactory syncTargetFactory)

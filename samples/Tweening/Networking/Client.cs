@@ -5,8 +5,6 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using MonoGame.Extended;
-using MonoSync.SyncSource;
-using MonoSync.SyncTarget;
 
 namespace MonoSync.Sample.Tweening
 {
@@ -39,7 +37,7 @@ namespace MonoSync.Sample.Tweening
             {
                 var settings = SyncSourceSettings.Default;
                 settings.TypeEncoder = new TweenGameTypeEncoder();
-                settings.FieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
+                settings.SourceFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
                 _gameWorldSyncRoot.Update();
                 if (_gameWorldSyncRoot.OwnTick % 60 == 0)
                 {
@@ -106,7 +104,7 @@ namespace MonoSync.Sample.Tweening
         {
             var settings = SyncTargetSettings.Default;
             settings.TypeEncoder = new TweenGameTypeEncoder();
-            settings.FieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
+            settings.TargetFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
             _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings);
             _gameWorldSyncRoot.SendRate = 15;
             _connectionTaskCompletionSource.SetResult(_gameWorldSyncRoot.Root);

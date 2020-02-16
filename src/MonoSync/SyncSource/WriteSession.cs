@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     public class WriteSession : IDisposable
     {
@@ -33,7 +33,10 @@ namespace MonoSync.SyncSource
 
         private void CheckDisposed()
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(WriteSession));
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(WriteSession));
+            }
         }
     }
 }

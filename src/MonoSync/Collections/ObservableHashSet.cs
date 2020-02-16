@@ -14,6 +14,11 @@ namespace MonoSync.Collections
         private HashSet<T> _set;
 
         /// <summary>
+        ///     Gets the <see cref="IEqualityComparer{T}" /> object that is used to determine equality for the values in the set.
+        /// </summary>
+        public virtual IEqualityComparer<T> Comparer => _set.Comparer;
+
+        /// <summary>
         ///     Initializes a new instance of the <see cref="ObservableHashSet{T}" /> class
         ///     that is empty and uses the default equality comparer for the set type.
         /// </summary>
@@ -66,11 +71,6 @@ namespace MonoSync.Collections
         }
 
         /// <summary>
-        ///     Gets the <see cref="IEqualityComparer{T}" /> object that is used to determine equality for the values in the set.
-        /// </summary>
-        public virtual IEqualityComparer<T> Comparer => _set.Comparer;
-
-        /// <summary>
         ///     Occurs when the contents of the hash set changes.
         /// </summary>
         public virtual event NotifyCollectionChangedEventHandler CollectionChanged;
@@ -95,7 +95,10 @@ namespace MonoSync.Collections
         /// </summary>
         public virtual void Clear()
         {
-            if (_set.Count == 0) return;
+            if (_set.Count == 0)
+            {
+                return;
+            }
 
             OnCountPropertyChanging();
 
@@ -143,7 +146,10 @@ namespace MonoSync.Collections
         /// </returns>
         public virtual bool Remove(T item)
         {
-            if (!_set.Contains(item)) return false;
+            if (!_set.Contains(item))
+            {
+                return false;
+            }
 
             OnCountPropertyChanging();
 
@@ -187,7 +193,10 @@ namespace MonoSync.Collections
         /// </returns>
         public virtual bool Add(T item)
         {
-            if (_set.Contains(item)) return false;
+            if (_set.Contains(item))
+            {
+                return false;
+            }
 
             OnCountPropertyChanging();
 
@@ -209,7 +218,10 @@ namespace MonoSync.Collections
 
             copy.UnionWith(other);
 
-            if (copy.Count == _set.Count) return;
+            if (copy.Count == _set.Count)
+            {
+                return;
+            }
 
             List<T> added = copy.Where(i => !_set.Contains(i)).ToList();
 
@@ -233,7 +245,10 @@ namespace MonoSync.Collections
 
             copy.IntersectWith(other);
 
-            if (copy.Count == _set.Count) return;
+            if (copy.Count == _set.Count)
+            {
+                return;
+            }
 
             List<T> removed = _set.Where(i => !copy.Contains(i)).ToList();
 
@@ -256,7 +271,10 @@ namespace MonoSync.Collections
 
             copy.ExceptWith(other);
 
-            if (copy.Count == _set.Count) return;
+            if (copy.Count == _set.Count)
+            {
+                return;
+            }
 
             List<T> removed = _set.Where(i => !copy.Contains(i)).ToList();
 
@@ -285,7 +303,9 @@ namespace MonoSync.Collections
 
             if (removed.Count == 0
                 && added.Count == 0)
+            {
                 return;
+            }
 
             OnCountPropertyChanging();
 
@@ -420,7 +440,10 @@ namespace MonoSync.Collections
 
             var removedCount = copy.RemoveWhere(match);
 
-            if (removedCount == 0) return 0;
+            if (removedCount == 0)
+            {
+                return 0;
+            }
 
             List<T> removed = _set.Where(i => !copy.Contains(i)).ToList();
 
@@ -496,10 +519,10 @@ namespace MonoSync.Collections
     internal static class ObservableHashSetSingletons
     {
         public static readonly PropertyChangedEventArgs _countPropertyChanged
-            = new PropertyChangedEventArgs("Count");
+            = new PropertyChangedEventArgs("Length");
 
         public static readonly PropertyChangingEventArgs _countPropertyChanging
-            = new PropertyChangingEventArgs("Count");
+            = new PropertyChangingEventArgs("Length");
 
         public static readonly object[] _noItems = Array.Empty<object>();
     }

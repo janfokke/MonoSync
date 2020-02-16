@@ -5,14 +5,12 @@ namespace MonoSync.FieldSerializers
 {
     public class UInt16FieldSerializer : FieldSerializer<ushort>
     {
-        public override bool CanInterpolate => true;
-
-        public override void Serialize(ushort value, ExtendedBinaryWriter writer)
+        public override void Write(ushort value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
         }
 
-        public override void Deserialize(ExtendedBinaryReader reader, Action<ushort> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<ushort> valueFixup)
         {
             valueFixup(reader.ReadUInt16());
         }

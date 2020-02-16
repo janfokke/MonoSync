@@ -1,6 +1,6 @@
-﻿using MonoSync.SyncSource.SyncSourceObjects;
+﻿using MonoSync.SyncSourceObjects;
 
-namespace MonoSync.SyncSource.SyncSourceObjectFactorties
+namespace MonoSync.SyncSourceObjectFactorties
 {
     internal class StringSyncSourceFactory : ISyncSourceFactory
     {

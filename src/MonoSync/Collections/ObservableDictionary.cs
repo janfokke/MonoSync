@@ -12,7 +12,7 @@ namespace MonoSync.Collections
     /// </summary>
     /// <typeparam name="TKey">Key</typeparam>
     /// <typeparam name="TValue">Value type</typeparam>
-    [DebuggerDisplay("Count={Count}")]
+    [DebuggerDisplay("Length={Count}")]
     public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
         INotifyCollectionChanged, INotifyPropertyChanged
     {
@@ -94,6 +94,7 @@ namespace MonoSync.Collections
         /// </exception>
         public void Clear()
         {
+            OnBeginReset();
             underlyingDictionary.Clear();
             OnNotifyReset();
         }
@@ -191,7 +192,10 @@ namespace MonoSync.Collections
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
             var flag = underlyingDictionary.Remove(item);
-            if (flag) OnNotifyRemove(item);
+            if (flag)
+            {
+                OnNotifyRemove(item);
+            }
 
             return flag;
         }
@@ -330,12 +334,23 @@ namespace MonoSync.Collections
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
+        ///     Event raised when the dictionary is about to be reset.
+        /// </summary>
+        public event EventHandler BeginReset;
+
+        /// <summary>
         ///     This method turns off notifications until the returned object
         ///     is Disposed. At that point, the entire dictionary is invalidated.
         /// </summary>
         /// <returns>IDisposable</returns>
         public IDisposable BeginMassUpdate()
         {
+            if (shouldRaiseNotifications == false)
+            {
+                throw new InvalidOperationException($"Previous {nameof(MassUpdater)} is not disposed yet");
+            }
+
+            OnBeginReset();
             return new MassUpdater(this);
         }
 
@@ -345,6 +360,11 @@ namespace MonoSync.Collections
         /// <param name="item">Item</param>
         protected void OnNotifyAdd(KeyValuePair<TKey, TValue> item)
         {
+            if (!shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
@@ -359,6 +379,11 @@ namespace MonoSync.Collections
         /// <param name="item">Item</param>
         protected void OnNotifyRemove(KeyValuePair<TKey, TValue> item)
         {
+            if (!shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
@@ -373,6 +398,11 @@ namespace MonoSync.Collections
         /// <param name="oldItem">Old item</param>
         protected void OnNotifyReplace(KeyValuePair<TKey, TValue> newItem, KeyValuePair<TKey, TValue> oldItem)
         {
+            if (!shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(
                 new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItem, oldItem));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Values)));
@@ -384,6 +414,11 @@ namespace MonoSync.Collections
         /// </summary>
         protected void OnNotifyReset()
         {
+            if (!shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
@@ -397,7 +432,7 @@ namespace MonoSync.Collections
         /// <param name="e">Arguments of the event being raised.</param>
         protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            if (shouldRaiseNotifications) CollectionChanged?.Invoke(this, e);
+            CollectionChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -406,7 +441,20 @@ namespace MonoSync.Collections
         /// <param name="e">Property event args.</param>
         protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
         {
-            if (shouldRaiseNotifications) PropertyChanged?.Invoke(this, e);
+            if (shouldRaiseNotifications)
+            {
+                PropertyChanged?.Invoke(this, e);
+            }
+        }
+
+        protected virtual void OnBeginReset()
+        {
+            if (!shouldRaiseNotifications)
+            {
+                return;
+            }
+
+            BeginReset?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

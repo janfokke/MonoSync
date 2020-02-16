@@ -5,16 +5,15 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using FastMember;
 using MonoSync.Attributes;
 using MonoSync.Exceptions;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget.SyncTargetObjects
+namespace MonoSync.SyncTargetObjects
 {
     public class NotifyPropertyChangedSyncTarget : SyncTarget
     {
-        private readonly List<SyncTargetProperty> _referenceProperties = new List<SyncTargetProperty>();
         private readonly SyncTargetRoot _syncTargetRoot;
         private readonly SyncTargetProperty[] _targetPropertyByIndexLookup;
 
@@ -23,19 +22,27 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
 
         private bool _constructing;
         private Action<List<object>> _constructor;
+        private readonly TypeAccessor _typeAccessor;
+
+        public new INotifyPropertyChanged BaseObject
+        {
+            get => (INotifyPropertyChanged) base.BaseObject;
+            set => base.BaseObject = value;
+        }
 
         public NotifyPropertyChangedSyncTarget(int referenceId, Type baseType, ExtendedBinaryReader reader,
             SyncTargetRoot syncTargetRoot,
             IFieldSerializerResolver fieldDeserializerResolver) : base(referenceId)
         {
             _syncTargetRoot = syncTargetRoot;
+            _typeAccessor = TypeAccessor.Create(baseType, false);
 
             ConstructorInfo attributeMarkedConstructor = GetAttributeMarkedConstructor(baseType);
             var attributeMarkedConstructorPresent = attributeMarkedConstructor != null;
 
-            base.BaseObject = attributeMarkedConstructorPresent
+            BaseObject = (INotifyPropertyChanged) (attributeMarkedConstructorPresent
                 ? FormatterServices.GetUninitializedObject(baseType)
-                : Activator.CreateInstance(baseType);
+                : Activator.CreateInstance(baseType));
             BaseObject.PropertyChanged += TargetOnPropertyChanged;
 
             (PropertyInfo info, SyncAttribute attibute)[] syncPropertiesInfo = GetProperties();
@@ -48,38 +55,46 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
                     CreateSyncTargetProperty(fieldDeserializerResolver, propertyInfo, syncPropertyIndex);
                 _targetPropertyByNameLookup[propertyInfo.Name] = syncTargetProperty;
                 _targetPropertyByIndexLookup[syncPropertyIndex] = syncTargetProperty;
-                // Reference properties getters will be used for reference collection.
-                if (propertyInfo.PropertyType.IsValueType == false) _referenceProperties.Add(syncTargetProperty);
             }
 
             Read(reader);
             _constructor = constructionPath =>
             {
                 if (attributeMarkedConstructorPresent)
+                {
                     InvokeAttributeMarkedConstructor(attributeMarkedConstructor, syncPropertiesInfo, constructionPath);
+                }
                 else
+                {
                     InitializeProperties(syncPropertiesInfo);
+                }
 
                 foreach (MethodInfo synchronizedMarkedMethod in GetSynchronizedMarkedMethods(baseType))
                 {
                     if (synchronizedMarkedMethod.GetParameters().Length != 0)
-                        throw new SynchronizedMarkedMethodParameterException();
+                    {
+                        throw new ParameterizedSynchronizedCallbackException();
+                    }
+
                     synchronizedMarkedMethod.Invoke(BaseObject, new object[0]);
                 }
             };
             _syncTargetRoot.EndRead += SyncTargetRootOnEndRead;
         }
 
-        private new INotifyPropertyChanged BaseObject => (INotifyPropertyChanged) base.BaseObject;
 
         private SyncTargetProperty CreateSyncTargetProperty(IFieldSerializerResolver fieldDeserializerResolver,
             PropertyInfo propertyInfo, int syncPropertyIndex)
         {
-            Func<object> getter = PropertyInfoHelper.CreateGetterDelegate(propertyInfo, BaseObject);
-            Action<object> setter = PropertyInfoHelper.CreateSetterDelegate(propertyInfo, BaseObject);
             IFieldSerializer fieldSerializer =
-                fieldDeserializerResolver.FindMatchingSerializer(propertyInfo.PropertyType);
-            var syncTargetProperty = new SyncTargetProperty(syncPropertyIndex, setter, getter, propertyInfo,
+                fieldDeserializerResolver.ResolveSerializer(propertyInfo.PropertyType);
+
+            Action<object> setter = propertyInfo.SetMethod != null
+                ? (Action<object>) (value => { _typeAccessor[BaseObject, propertyInfo.Name] = value; })
+                : null;
+
+            var syncTargetProperty = new SyncTargetProperty(syncPropertyIndex,
+                setter, propertyInfo,
                 _syncTargetRoot, fieldSerializer);
             return syncTargetProperty;
         }
@@ -95,7 +110,10 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
                 SynchronizationBehaviour attributeSynchronizationBehaviour =
                     syncProperties[index].attribute.SynchronizationBehaviour;
                 if (attributeSynchronizationBehaviour != SynchronizationBehaviour.Ignore)
+                {
                     syncTargetProperty.Property = syncTargetProperty.SynchronizedValue;
+                }
+
                 syncTargetProperty.SynchronizationBehaviour = attributeSynchronizationBehaviour;
             }
         }
@@ -106,7 +124,9 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
             HashSet<SyncTargetProperty> parameterProperties = GetPropertiesFromConstructorParameters(constructor);
 
             foreach (SyncTargetProperty syncTargetProperty in parameterProperties)
+            {
                 ConstructProperty(syncTargetProperty, constructionPath);
+            }
 
             constructor.Invoke(BaseObject, parameterProperties.Select(x => x.SynchronizedValue).ToArray());
 
@@ -115,7 +135,10 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
             {
                 SyncTargetProperty syncTargetProperty = _targetPropertyByIndexLookup[index];
                 // Skip properties that are initialized from constructor
-                if (parameterProperties.Contains(syncTargetProperty)) continue;
+                if (parameterProperties.Contains(syncTargetProperty))
+                {
+                    continue;
+                }
 
                 syncTargetProperty.Property = syncTargetProperty.SynchronizedValue;
                 syncTargetProperty.SynchronizationBehaviour = syncProperties[index].attibute.SynchronizationBehaviour;
@@ -130,16 +153,21 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
                 Type type = synchronizedValue.GetType();
                 if (type.IsValueType == false)
                 {
-                    SyncTarget target = _syncTargetRoot.ReferencePool.GetSyncObject(synchronizedValue);
+                    SyncTarget target = _syncTargetRoot.TargetReferencePool.GetSyncObject(synchronizedValue);
                     if (target is NotifyPropertyChangedSyncTarget notifyPropertyChangedSyncTarget)
+                    {
                         notifyPropertyChangedSyncTarget.Construct(path);
+                    }
                 }
             }
         }
 
         private void Construct(List<object> path)
         {
-            if (_constructor == null) return;
+            if (_constructor == null)
+            {
+                return;
+            }
 
             path.Add(BaseObject);
 
@@ -162,7 +190,10 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
                 propertyName =>
                 {
                     if (_targetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty value))
+                    {
                         return value;
+                    }
+
                     throw new SyncTargetPropertyNotFoundException(propertyName);
                 }));
         }
@@ -187,9 +218,8 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
 
         private (PropertyInfo info, SyncAttribute attibute)[] GetProperties()
         {
-            PropertyInfo[] properties = BaseObject.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
             (PropertyInfo info, SyncAttribute attibute)[] syncProperties =
-                PropertyInfoHelper.GetSyncProperties(properties).ToArray();
+                PropertyInfoHelper.GetSyncProperties(BaseObject.GetType()).ToArray();
             return syncProperties;
         }
 
@@ -216,7 +246,10 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
 
         internal SyncTargetProperty GetSyncTargetProperty(string propertyName)
         {
-            if (_targetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty property)) return property;
+            if (_targetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty property))
+            {
+                return property;
+            }
 
             throw new SyncTargetPropertyNotFoundException(propertyName);
         }
@@ -225,7 +258,9 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
         {
             if (!_targetPropertyByNameLookup.TryGetValue(e.PropertyName, out SyncTargetProperty syncTargetProperty)
             )
+            {
                 return;
+            }
 
             syncTargetProperty.NotifyChanged();
         }
@@ -234,12 +269,9 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
         {
             BaseObject.PropertyChanged -= TargetOnPropertyChanged;
             foreach (SyncTargetProperty syncTargetProperty in _targetPropertyByIndexLookup)
+            {
                 syncTargetProperty.Dispose();
-        }
-
-        public override IEnumerable<object> GetReferences()
-        {
-            return _referenceProperties.Select(x => x.Property);
+            }
         }
 
         public sealed override void Read(ExtendedBinaryReader reader)
@@ -248,8 +280,10 @@ namespace MonoSync.SyncTarget.SyncTargetObjects
             for (var index = 0; index < _targetPropertyByIndexLookup.Length; index++)
             {
                 SyncTargetProperty syncTargetProperty = _targetPropertyByIndexLookup[index];
-
-                if (changedProperties[index]) syncTargetProperty.ReadChanges(reader);
+                if (changedProperties[index])
+                {
+                    syncTargetProperty.ReadChanges(reader);
+                }
             }
         }
     }

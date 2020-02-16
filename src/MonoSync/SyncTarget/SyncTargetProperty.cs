@@ -3,16 +3,14 @@ using System.ComponentModel;
 using System.Reflection;
 using MonoSync.Attributes;
 using MonoSync.Exceptions;
-using MonoSync.SyncSource;
-using MonoSync.SyncTarget.PropertyStates;
+using MonoSync.PropertyStates;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
-    public class SyncTargetProperty : SyncProperty, IDisposable
+    public class SyncTargetProperty : IDisposable
     {
         private readonly IFieldSerializer _fieldSerializer;
-        private readonly Func<object> _getter;
         private readonly Action<object> _setter;
         private readonly SyncTargetRoot _syncTargetRoot;
 
@@ -22,30 +20,15 @@ namespace MonoSync.SyncTarget
         private SynchronizationBehaviour _synchronizationBehaviour;
         private object _synchronizedValue;
 
-        public SyncTargetProperty(int index, Action<object> setter, Func<object> getter,
-            PropertyInfo propertyInfo,
-            SyncTargetRoot syncTargetRoot,
-            IFieldSerializer fieldSerializer) : base(index)
-        {
-            _setter = setter;
-            _getter = getter;
-
-            _syncTargetRoot = syncTargetRoot;
-            _fieldSerializer = fieldSerializer;
-            _state = IgnoreState.Instance;
-        }
-
         internal object Property
         {
             set
             {
                 CheckSetter();
-
                 _changing = true;
                 _setter(value);
                 _changing = false;
             }
-            get => _getter();
         }
 
         /// <summary>
@@ -108,10 +91,25 @@ namespace MonoSync.SyncTarget
         {
             get
             {
-                if (_state is InterpolationState interpolationState) return interpolationState.IsInterpolating;
+                if (_state is InterpolationState interpolationState)
+                {
+                    return interpolationState.IsInterpolating;
+                }
 
                 return false;
             }
+        }
+
+        public SyncTargetProperty(int index,
+            Action<object> setter,
+            PropertyInfo propertyInfo,
+            SyncTargetRoot syncTargetRoot,
+            IFieldSerializer fieldSerializer)
+        {
+            _setter = setter;
+            _syncTargetRoot = syncTargetRoot;
+            _fieldSerializer = fieldSerializer;
+            _state = IgnoreState.Instance;
         }
 
         public void Dispose()
@@ -121,12 +119,15 @@ namespace MonoSync.SyncTarget
 
         private void CheckSetter()
         {
-            if (_setter == null) throw new SetterNotFoundException();
+            if (_setter == null)
+            {
+                throw new SetterNotFoundException();
+            }
         }
 
         internal void ReadChanges(ExtendedBinaryReader reader)
         {
-            _fieldSerializer.Deserialize(reader, value =>
+            _fieldSerializer.Read(reader, value =>
             {
                 SynchronizedValue = value;
                 _state.HandleRead(value);
@@ -138,7 +139,10 @@ namespace MonoSync.SyncTarget
         /// </summary>
         internal void NotifyChanged()
         {
-            if (_changing) return;
+            if (_changing)
+            {
+                return;
+            }
 
             TickWhenDirty = _syncTargetRoot.OwnTick;
         }

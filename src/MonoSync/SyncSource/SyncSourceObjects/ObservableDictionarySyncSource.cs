@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using MonoSync.Collections;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncSource.SyncSourceObjects
+namespace MonoSync.SyncSourceObjects
 {
     public class ObservableDictionarySyncSource<TKey, TValue> : SyncSource
     {
         private readonly List<Command> _commands = new List<Command>();
 
         private readonly IFieldSerializer _keySerializer;
-
-        private readonly Dictionary<object, int> _trackedReferences = new Dictionary<object, int>();
         private readonly IFieldSerializer _valueSerializer;
 
         /// <summary>
@@ -22,18 +19,18 @@ namespace MonoSync.SyncSource.SyncSourceObjects
         /// </summary>
         private bool _commandsInvalidated;
 
-        public ObservableDictionarySyncSource(SyncSourceRoot syncSourceRoot, int referenceId,
-            ObservableDictionary<TKey, TValue> baseObject,
-            IFieldSerializerResolver fieldSerializerResolver) : base(syncSourceRoot, referenceId, baseObject)
-        {
-            _keySerializer = fieldSerializerResolver.FindMatchingSerializer(typeof(TKey));
-            _valueSerializer = fieldSerializerResolver.FindMatchingSerializer(typeof(TValue));
-            BaseObject.CollectionChanged += OnCollectionChanged;
-            AddNewItemReferences(BaseObject.ToList());
-        }
+        public ObservableDictionary<TKey, TValue> BaseObject =>
+            (ObservableDictionary<TKey, TValue>) Reference;
 
-        public new ObservableDictionary<TKey, TValue> BaseObject =>
-            (ObservableDictionary<TKey, TValue>) base.BaseObject;
+        public ObservableDictionarySyncSource(SyncSourceRoot syncSourceRoot, int referenceId,
+            ObservableDictionary<TKey, TValue> reference,
+            IFieldSerializerResolver fieldSerializerResolver) : base(syncSourceRoot, referenceId, reference)
+        {
+            _keySerializer = fieldSerializerResolver.ResolveSerializer(typeof(TKey));
+            _valueSerializer = fieldSerializerResolver.ResolveSerializer(typeof(TValue));
+            BaseObject.CollectionChanged += OnCollectionChanged;
+            AddReferences();
+        }
 
         private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -42,16 +39,20 @@ namespace MonoSync.SyncSource.SyncSourceObjects
 
             if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                RemoveAllReference();
+                AddReferences();
             }
-            else
+            else if (newItems != null)
             {
-                if (oldItems != null) RemoveOldItemReferences(oldItems);
-
-                if (newItems != null) AddNewItemReferences(newItems);
+                foreach (KeyValuePair<TKey, TValue> newItem in newItems)
+                {
+                    AddReferencesFromKeyValuePair(newItem);
+                }
             }
 
-            if (_commandsInvalidated) return;
+            if (_commandsInvalidated)
+            {
+                return;
+            }
 
             switch (e.Action)
             {
@@ -75,45 +76,36 @@ namespace MonoSync.SyncSource.SyncSourceObjects
             base.MarkDirty();
         }
 
-        private void RemoveOldItemReferences(IEnumerable<KeyValuePair<TKey, TValue>> oldItems)
+        private void AddReferencesFromKeyValuePair(KeyValuePair<TKey, TValue> newItem)
         {
-            foreach (KeyValuePair<TKey, TValue> oldItem in oldItems)
+            if (typeof(TKey).IsValueType == false)
             {
-                if (typeof(TKey).IsValueType == false) RemoveReference(oldItem.Key);
+                if (newItem.Key != null)
+                {
+                    SyncSourceRoot.TrackObject(newItem.Key);
+                }
+            }
 
-                if (typeof(TValue).IsValueType == false) RemoveReference(oldItem.Value);
+            if (typeof(TValue).IsValueType == false)
+            {
+                if (newItem.Value != null)
+                {
+                    SyncSourceRoot.TrackObject(newItem.Value);
+                }
             }
         }
 
-        private void AddNewItemReferences(IEnumerable<KeyValuePair<TKey, TValue>> newItems)
+        private void AddReferences()
         {
-            foreach (KeyValuePair<TKey, TValue> newItem in newItems)
+            foreach (KeyValuePair<TKey, TValue> item in BaseObject)
             {
-                if (typeof(TKey).IsValueType == false) AddReference(newItem.Key);
-
-                if (typeof(TValue).IsValueType == false) AddReference(newItem.Value);
+                AddReferencesFromKeyValuePair(item);
             }
         }
 
         public override void Dispose()
         {
             BaseObject.CollectionChanged -= OnCollectionChanged;
-        }
-
-        public override IEnumerable<object> GetReferences()
-        {
-            // Making sure to collect TKeys and TValues if they are reference types
-            var shouldAddKeys = typeof(TKey).IsValueType == false;
-            var shouldAddValues = typeof(TValue).IsValueType == false;
-
-            if (!shouldAddKeys && !shouldAddValues) yield break;
-
-            foreach (KeyValuePair<TKey, TValue> item in BaseObject)
-            {
-                if (shouldAddKeys) yield return item.Key;
-
-                if (shouldAddValues) yield return item.Value;
-            }
         }
 
         public override void WriteChanges(ExtendedBinaryWriter binaryWriter)
@@ -126,7 +118,10 @@ namespace MonoSync.SyncSource.SyncSourceObjects
             else
             {
                 binaryWriter.Write7BitEncodedInt(_commands.Count);
-                foreach (Command command in _commands) command.Write(binaryWriter, _keySerializer, _valueSerializer);
+                foreach (Command command in _commands)
+                {
+                    command.Write(binaryWriter, _keySerializer, _valueSerializer);
+                }
 
                 _commands.Clear();
             }
@@ -164,23 +159,23 @@ namespace MonoSync.SyncSource.SyncSourceObjects
                 switch (_action)
                 {
                     case NotifyCollectionChangedAction.Add:
-                        keySerializer.Serialize(_items[0].Key, writer);
-                        valueSerializer.Serialize(_items[0].Value, writer);
+                        keySerializer.Write(_items[0].Key, writer);
+                        valueSerializer.Write(_items[0].Value, writer);
                         break;
                     case NotifyCollectionChangedAction.Replace:
-                        keySerializer.Serialize(_items[0].Key, writer);
-                        valueSerializer.Serialize(_items[0].Value, writer);
+                        keySerializer.Write(_items[0].Key, writer);
+                        valueSerializer.Write(_items[0].Value, writer);
                         break;
                     case NotifyCollectionChangedAction.Remove:
-                        keySerializer.Serialize(_items[0].Key, writer);
+                        keySerializer.Write(_items[0].Key, writer);
                         break;
                     case NotifyCollectionChangedAction.Reset:
                     {
                         writer.Write7BitEncodedInt(_items.Count);
                         foreach (KeyValuePair<TKey, TValue> item in _items)
                         {
-                            keySerializer.Serialize(item.Key, writer);
-                            valueSerializer.Serialize(item.Value, writer);
+                            keySerializer.Write(item.Key, writer);
+                            valueSerializer.Write(item.Value, writer);
                         }
 
                         break;
@@ -230,55 +225,5 @@ namespace MonoSync.SyncSource.SyncSourceObjects
                     new List<KeyValuePair<TKey, TValue>> {removedItem});
             }
         }
-
-        /// <summary>
-        ///     References from the source <see cref="ObservableDictionary{TKey,TValue}" /> are tracked,
-        ///     because the <see cref="NotifyCollectionChangedAction.Reset" /> action doesn't specify the removed items
-        /// </summary>
-        /// <param name="reference"></param>
-
-        #region
-
-        private void RemoveReference(object reference)
-        {
-            if (reference == null) return;
-
-            if (_trackedReferences.TryGetValue(reference, out var count))
-            {
-                if (--count <= 0)
-                    _trackedReferences.Remove(reference);
-                else
-                    _trackedReferences[reference] = count;
-            }
-            else
-            {
-                throw new InvalidOperationException("removal of un-tracked reference");
-            }
-
-            SyncSourceRoot.RemoveReference(reference);
-        }
-
-        private void AddReference(object reference)
-        {
-            if (reference == null) return;
-
-            if (_trackedReferences.TryGetValue(reference, out var count))
-                _trackedReferences[reference] = ++count;
-            else
-                _trackedReferences[reference] = 1;
-
-            SyncSourceRoot.AddReference(reference);
-        }
-
-        private void RemoveAllReference()
-        {
-            foreach (KeyValuePair<object, int> referenceCounter in _trackedReferences)
-                for (var i = 0; i < referenceCounter.Value; i++)
-                    SyncSourceRoot.RemoveReference(referenceCounter.Key);
-
-            _trackedReferences.Clear();
-        }
-
-        #endregion
     }
 }

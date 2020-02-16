@@ -1,4 +1,4 @@
-﻿namespace MonoSync.SyncSource
+﻿namespace MonoSync
 {
     public interface ISyncSourceFactoryResolver
     {

@@ -1,13 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using MonoSync.Exceptions;
-using MonoSync.SyncSource.SyncSourceObjectFactorties;
+using MonoSync.SyncSourceObjectFactorties;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     public class SyncSourceFactoryResolver : ISyncSourceFactoryResolver
     {
         private readonly List<ISyncSourceFactory> _syncSourceObjectFactories =
             new List<ISyncSourceFactory>();
+
+        public Dictionary<Type, ISyncSourceFactory> FactoriesByType = new Dictionary<Type, ISyncSourceFactory>();
 
         public SyncSourceFactoryResolver()
         {
@@ -18,12 +21,25 @@ namespace MonoSync.SyncSource
 
         public ISyncSourceFactory FindMatchingSyncSourceFactory(object baseObject)
         {
-            // Factories are looped in reverse because the last added Factory should be prioritized.
-            for (var i = _syncSourceObjectFactories.Count - 1; i >= 0; i--)
-                if (_syncSourceObjectFactories[i].CanCreate(baseObject))
-                    return _syncSourceObjectFactories[i];
+            Type type = baseObject.GetType();
+            if (FactoriesByType.TryGetValue(type, out ISyncSourceFactory factory) == false)
+            {
+                // Factories are looped in reverse because the last added Factory should be prioritized.
+                for (var i = _syncSourceObjectFactories.Count - 1; i >= 0; i--)
+                {
+                    ISyncSourceFactory syncSourceObjectFactory = _syncSourceObjectFactories[i];
+                    if (syncSourceObjectFactory.CanCreate(baseObject))
+                    {
+                        factory = syncSourceObjectFactory;
+                        FactoriesByType.Add(type, syncSourceObjectFactory);
+                        return factory;
+                    }
+                }
 
-            throw new SyncTargetObjectFactoryNotFoundException(baseObject);
+                throw new SyncObjectFactoryNotFoundException(baseObject);
+            }
+
+            return factory;
         }
 
         public void AddSyncSourceObjectFactory(ISyncSourceFactory syncTargetFactory)

@@ -1,5 +1,4 @@
 ﻿using System;
-using MonoSync.SyncTarget;
 
 namespace MonoSync.Exceptions
 {

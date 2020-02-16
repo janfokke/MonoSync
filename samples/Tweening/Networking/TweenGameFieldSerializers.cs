@@ -1,6 +1,4 @@
-﻿using MonoSync.SyncSource;
-
-namespace MonoSync.Sample.Tweening
+﻿namespace MonoSync.Sample.Tweening
 {
     public class TweenGameFieldSerializers : FieldSerializerResolver
     {

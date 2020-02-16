@@ -1,15 +1,18 @@
 ﻿using System;
 using MonoSync.Collections;
-using MonoSync.SyncSource.SyncSourceObjects;
+using MonoSync.SyncSourceObjects;
 
-namespace MonoSync.SyncSource.SyncSourceObjectFactorties
+namespace MonoSync.SyncSourceObjectFactorties
 {
     internal class ObservableDictionarySyncSourceFactory : ISyncSourceFactory
     {
         public bool CanCreate(object baseType)
         {
             Type type = baseType.GetType();
-            if (type.IsGenericType) return type.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
+            if (type.IsGenericType)
+            {
+                return type.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
+            }
 
             return false;
         }

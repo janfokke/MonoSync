@@ -1,13 +1,10 @@
 ﻿using System;
-using MonoSync.SyncSource;
 using MonoSync.Utils;
 
 namespace MonoSync
 {
     public abstract class FieldSerializer<T> : IFieldSerializer
     {
-        public virtual bool CanInterpolate => false;
-
         public virtual bool CanSerialize(Type type)
         {
             return type == typeof(T);
@@ -18,14 +15,14 @@ namespace MonoSync
             return Interpolate((T) source, (T) target, factor);
         }
 
-        public virtual void Serialize(object value, ExtendedBinaryWriter writer)
+        public virtual void Write(object value, ExtendedBinaryWriter writer)
         {
-            Serialize((T) value, writer);
+            Write((T) value, writer);
         }
 
-        public virtual void Deserialize(ExtendedBinaryReader reader, Action<object> valueFixup)
+        public virtual void Read(ExtendedBinaryReader reader, Action<object> valueFixup)
         {
-            Deserialize(reader, (Action<T>) (value => valueFixup(value)));
+            Read(reader, (Action<T>) (value => valueFixup(value)));
         }
 
         public virtual T Interpolate(T source, T target, float factor)
@@ -33,12 +30,10 @@ namespace MonoSync
             throw new NotImplementedException();
         }
 
-        public abstract void Serialize(T value, ExtendedBinaryWriter writer);
+        /// <inheritdoc cref="Write(object,MonoSync.Utils.ExtendedBinaryWriter)" />
+        public abstract void Write(T value, ExtendedBinaryWriter writer);
 
-        /// <param name="valueFixup">
-        ///     Because reference types may not be read yet, the deserialization is fixed up when it becomes
-        ///     available
-        /// </param>
-        public abstract void Deserialize(ExtendedBinaryReader reader, Action<T> valueFixup);
+        /// <inheritdoc cref="Read(MonoSync.Utils.ExtendedBinaryReader,System.Action{object})" />
+        public abstract void Read(ExtendedBinaryReader reader, Action<T> valueFixup);
     }
 }

@@ -5,14 +5,12 @@ namespace MonoSync.FieldSerializers
 {
     public class SingleFieldSerializer : FieldSerializer<float>
     {
-        public override bool CanInterpolate => true;
-
-        public override void Serialize(float value, ExtendedBinaryWriter writer)
+        public override void Write(float value, ExtendedBinaryWriter writer)
         {
             writer.Write(value);
         }
 
-        public override void Deserialize(ExtendedBinaryReader reader, Action<float> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<float> valueFixup)
         {
             valueFixup(reader.ReadSingle());
         }

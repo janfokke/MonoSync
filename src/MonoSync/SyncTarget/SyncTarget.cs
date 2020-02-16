@@ -1,9 +1,11 @@
 ﻿using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
     public abstract class SyncTarget : SyncBase
     {
+        public object BaseObject { get; protected set; }
+
         protected SyncTarget(int referenceId) : base(referenceId)
         {
         }

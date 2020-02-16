@@ -2,9 +2,9 @@
 
 namespace MonoSync.Exceptions
 {
-    public class SynchronizedMarkedMethodParameterException : MonoSyncException
+    public class ParameterizedSynchronizedCallbackException : MonoSyncException
     {
-        public SynchronizedMarkedMethodParameterException() : base(
+        public ParameterizedSynchronizedCallbackException() : base(
             $"Methods marked with the {nameof(OnSynchronizedAttribute)} cannot have parameters")
         {
         }
