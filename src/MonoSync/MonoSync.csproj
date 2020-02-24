@@ -4,6 +4,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>MonoSync</AssemblyName>
     <RootNamespace>MonoSync</RootNamespace>
+    <Configurations>Debug;Release;Dedicated</Configurations>
   </PropertyGroup>
 
   <PropertyGroup>

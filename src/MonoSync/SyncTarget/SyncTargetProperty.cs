@@ -12,6 +12,7 @@ namespace MonoSync
     {
         private readonly IFieldSerializer _fieldSerializer;
         private readonly Action<object> _setter;
+        private readonly Func<object> _getter;
         private readonly SyncTargetRoot _syncTargetRoot;
 
         private bool _changing;
@@ -19,16 +20,18 @@ namespace MonoSync
         private ISyncTargetPropertyState _state;
         private SynchronizationBehaviour _synchronizationBehaviour;
         private object _synchronizedValue;
+        private PropertyInfo _propertyInfo;
 
         internal object Property
         {
             set
             {
-                CheckSetter();
+                HasSetter();
                 _changing = true;
                 _setter(value);
                 _changing = false;
             }
+            get => _getter();
         }
 
         /// <summary>
@@ -73,15 +76,15 @@ namespace MonoSync
                         break;
                     case SynchronizationBehaviour.Interpolated:
                         _state = new InterpolationState(this, _syncTargetRoot, _fieldSerializer);
-                        CheckSetter();
+                        HasSetter();
                         break;
                     case SynchronizationBehaviour.HighestTick:
                         _state = new LatestTickState(this, _syncTargetRoot);
-                        CheckSetter();
+                        HasSetter();
                         break;
                     case SynchronizationBehaviour.TakeSynchronized:
                         _state = new TakeSynchronizedState(this);
-                        CheckSetter();
+                        HasSetter();
                         break;
                 }
             }
@@ -100,13 +103,16 @@ namespace MonoSync
             }
         }
 
-        public SyncTargetProperty(int index,
-            Action<object> setter,
+        public SyncTargetProperty(
             PropertyInfo propertyInfo,
+            Action<object> setter,
+            Func<object> getter,
             SyncTargetRoot syncTargetRoot,
             IFieldSerializer fieldSerializer)
         {
+            _propertyInfo = propertyInfo;
             _setter = setter;
+            _getter = getter;
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
             _state = IgnoreState.Instance;
@@ -117,11 +123,11 @@ namespace MonoSync
             _state?.Dispose();
         }
 
-        private void CheckSetter()
+        private void HasSetter()
         {
             if (_setter == null)
             {
-                throw new SetterNotFoundException();
+                throw new SetterNotFoundException(_propertyInfo);
             }
         }
 

@@ -1,43 +1,10 @@
 ﻿using System;
-using MonoSync.Attributes;
-using MonoSync.Collections;
-using PropertyChanged;
 
 namespace MonoSync.Benchmark
 {
-    [AddINotifyPropertyChangedInterface]
-    class World
-    {
-        [Sync]
-        public ObservableDictionary<int, Entity> Entities { get; set; } = new ObservableDictionary<int, Entity>();
-    }
-
-    [AddINotifyPropertyChangedInterface]
-    class Entity
-    {
-        [Sync]
-        public int XPos { get; set; }
-        [Sync]
-        public int YPos { get; set; }
-        [Sync]
-        public int XVel { get; set; }
-        [Sync]
-        public int YVel { get; set; }
-    }
-
-    class TestTypeEncoder : TypeEncoder
-    {
-        public TestTypeEncoder()
-        {
-            var index = ReservedIdentifiers.StartingIndexNonReservedTypes;
-            RegisterType<World>(index++);
-            RegisterType<Entity>(index++);
-        }
-    }
-
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             RunTest(500);
             RunTest(1000000);

@@ -11,7 +11,6 @@ namespace MonoSync
     public class SyncSourceRoot
     {
         private readonly HashSet<SyncSource> _dirtySyncSourceObjects = new HashSet<SyncSource>();
-
         private readonly IFieldSerializerResolver _fieldDeserializerResolver;
 
         /// <summary>
@@ -120,10 +119,13 @@ namespace MonoSync
 
         private void WriteUntrackedReferences(ExtendedBinaryWriter writer)
         {
-            writer.Write7BitEncodedInt(_pendingUntrackedSyncSourceObjects.Count);
-            foreach (SyncSource syncSource in _pendingUntrackedSyncSourceObjects)
+            lock (_pendingUntrackedSyncSourceObjects)
             {
-                writer.Write7BitEncodedInt(syncSource.ReferenceId);
+                writer.Write7BitEncodedInt(_pendingUntrackedSyncSourceObjects.Count);
+                foreach (SyncSource syncSource in _pendingUntrackedSyncSourceObjects)
+                {
+                    writer.Write7BitEncodedInt(syncSource.ReferenceId);
+                }
             }
         }
 
@@ -184,12 +186,14 @@ namespace MonoSync
         /// <exception cref="ArgumentNullException">syncSource</exception>
         internal void RegisterSyncSourceToBeUntracked(SyncSource syncSource)
         {
-            if (syncSource == null)
+            lock (_pendingUntrackedSyncSourceObjects)
             {
-                throw new ArgumentNullException(nameof(syncSource));
+                if (syncSource == null)
+                {
+                    throw new ArgumentNullException(nameof(syncSource));
+                }
+                _pendingUntrackedSyncSourceObjects.Add(syncSource);
             }
-
-            _pendingUntrackedSyncSourceObjects.Add(syncSource);
         }
 
         /// <summary>

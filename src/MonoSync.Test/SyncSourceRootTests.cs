@@ -47,7 +47,7 @@ namespace MonoSync.Test.Synchronization
         public void GarbageCollection_UntracksObjectThatHaveNoReferences()
         {
             // Local function to avoid reference from stack when garbage collector runs
-            ReferencingCircleHelper ReferencingCircleHelper()
+            static ReferencingCircleHelper ReferencingCircleHelper()
             {
                 var selfReferencingObject = new ReferencingCircleHelper();
                 selfReferencingObject.Other = selfReferencingObject;

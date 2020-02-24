@@ -51,8 +51,7 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void SynchronizingFull_TargetObjectEqualsSource()
         {
-            var sourceGameWorld = new TestGameWorld();
-            sourceGameWorld.RandomIntProperty = 5;
+            var sourceGameWorld = new TestGameWorld {RandomIntProperty = 5};
             sourceGameWorld.Players.Add("player1", new TestPlayer { Health = 100, Level = 30 });
             sourceGameWorld.Players.Add("player2", new TestPlayer { Health = 44, Level = 1337 });
 

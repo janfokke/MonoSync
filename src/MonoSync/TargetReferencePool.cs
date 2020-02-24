@@ -41,9 +41,10 @@ namespace MonoSync
             }
             else
             {
-                var newReferenceFixups = new List<Action<object>>();
-                newReferenceFixups.Add(fixup);
-                _referenceFixups.Add(referenceId, newReferenceFixups);
+                _referenceFixups.Add(referenceId, new List<Action<object>>
+                {
+                    fixup
+                });
             }
         }
 

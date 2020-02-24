@@ -19,6 +19,7 @@ namespace MonoSync.Test.Synchronization
             typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodMock>(index++);
             typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodMockChild>(index++);
             typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodWithParametersMock>(index++);
+            typeEncoder.RegisterType<ConstructedPropertyChangeSynchronizationMock>(index++);
             typeEncoder.RegisterType<GetterOnlyMock>(index++);
             typeEncoder.RegisterType<GetterOnlyConstructorMock>(index++);
 
@@ -46,6 +47,23 @@ namespace MonoSync.Test.Synchronization
         }
 
         [Fact]
+        public void Changing_ConstructorProperty_Synchronizes()
+        {
+            var getterOnlyConstructorMockSource = new ConstructedPropertyChangeSynchronizationMock(5f);
+            
+            var syncSourceRoot = new SyncSourceRoot(getterOnlyConstructorMockSource, _sourceSettings);
+            var syncTargetRoot = new SyncTargetRoot<ConstructedPropertyChangeSynchronizationMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+
+            ConstructedPropertyChangeSynchronizationMock getterOnlyConstructorMockRoot = syncTargetRoot.Root;
+            Assert.Equal(getterOnlyConstructorMockSource.ChangeableProperty, getterOnlyConstructorMockRoot.ChangeableProperty);
+
+            getterOnlyConstructorMockSource.ChangeableProperty = 6;
+            syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(0));
+
+            Assert.Equal(getterOnlyConstructorMockSource.ChangeableProperty, getterOnlyConstructorMockRoot.ChangeableProperty);
+        }
+
+        [Fact]
         public void Synchronizing_PropertyWithoutSetterThroughConstructor_Synchronizes()
         {
             var getterOnlyConstructorMockSource = new GetterOnlyConstructorMock(5);
@@ -60,7 +78,7 @@ namespace MonoSync.Test.Synchronization
         {
             var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodMock
             {
-                intProperty = 123
+                IntProperty = 123
             };
 
             var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
@@ -69,8 +87,8 @@ namespace MonoSync.Test.Synchronization
             OnSynchronizedAttributeMarkedMethodMock attributeMarkedMethodMockTarget = syncTargetRoot.Root;
             
             Assert.Equal(
-                attributeMarkedMethodMockSource.intProperty, 
-                attributeMarkedMethodMockTarget.intPropertyWhenSynchronizedMethodWasCalled
+                attributeMarkedMethodMockSource.IntProperty, 
+                attributeMarkedMethodMockTarget.IntPropertyWhenSynchronizedMethodWasCalled
                 );
         }
 
@@ -79,7 +97,7 @@ namespace MonoSync.Test.Synchronization
         {
             var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodMockChild
             {
-                intProperty = 123
+                IntProperty = 123
             };
 
             var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
@@ -88,8 +106,8 @@ namespace MonoSync.Test.Synchronization
             OnSynchronizedAttributeMarkedMethodMockChild attributeMarkedMethodMockTarget = syncTargetRoot.Root;
 
             Assert.Equal(
-                attributeMarkedMethodMockSource.intProperty,
-                attributeMarkedMethodMockTarget.intPropertyWhenSynchronizedMethodWasCalled
+                attributeMarkedMethodMockSource.IntProperty,
+                attributeMarkedMethodMockTarget.IntPropertyWhenSynchronizedMethodWasCalled
             );
         }
 

@@ -8,6 +8,8 @@
     <AssemblyName>MonoSync.Test</AssemblyName>
 
     <RootNamespace>MonoSync.Test</RootNamespace>
+
+    <Configurations>Debug;Release;Dedicated</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

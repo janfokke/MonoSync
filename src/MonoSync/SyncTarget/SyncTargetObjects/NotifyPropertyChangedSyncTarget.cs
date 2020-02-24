@@ -51,8 +51,7 @@ namespace MonoSync.SyncTargetObjects
             for (var syncPropertyIndex = 0; syncPropertyIndex < syncPropertiesInfo.Length; syncPropertyIndex++)
             {
                 (PropertyInfo propertyInfo, SyncAttribute attribute) = syncPropertiesInfo[syncPropertyIndex];
-                SyncTargetProperty syncTargetProperty =
-                    CreateSyncTargetProperty(fieldDeserializerResolver, propertyInfo, syncPropertyIndex);
+                SyncTargetProperty syncTargetProperty = CreateSyncTargetProperty(fieldDeserializerResolver, propertyInfo);
                 _targetPropertyByNameLookup[propertyInfo.Name] = syncTargetProperty;
                 _targetPropertyByIndexLookup[syncPropertyIndex] = syncTargetProperty;
             }
@@ -83,18 +82,22 @@ namespace MonoSync.SyncTargetObjects
         }
 
 
-        private SyncTargetProperty CreateSyncTargetProperty(IFieldSerializerResolver fieldDeserializerResolver,
-            PropertyInfo propertyInfo, int syncPropertyIndex)
+        private SyncTargetProperty CreateSyncTargetProperty(IFieldSerializerResolver fieldDeserializerResolver, PropertyInfo propertyInfo)
         {
-            IFieldSerializer fieldSerializer =
-                fieldDeserializerResolver.ResolveSerializer(propertyInfo.PropertyType);
+            IFieldSerializer fieldSerializer = fieldDeserializerResolver.ResolveSerializer(propertyInfo.PropertyType);
 
             Action<object> setter = propertyInfo.SetMethod != null
                 ? (Action<object>) (value => { _typeAccessor[BaseObject, propertyInfo.Name] = value; })
                 : null;
 
-            var syncTargetProperty = new SyncTargetProperty(syncPropertyIndex,
-                setter, propertyInfo,
+            Func<object> getter = propertyInfo.GetMethod != null
+                ? (Func<object>) (() => _typeAccessor[BaseObject, propertyInfo.Name])
+                : null;
+
+            var syncTargetProperty = new SyncTargetProperty(
+                propertyInfo,
+                setter,
+                getter,
                 _syncTargetRoot, fieldSerializer);
             return syncTargetProperty;
         }
@@ -107,8 +110,7 @@ namespace MonoSync.SyncTargetObjects
             {
                 SyncTargetProperty syncTargetProperty = _targetPropertyByIndexLookup[index];
 
-                SynchronizationBehaviour attributeSynchronizationBehaviour =
-                    syncProperties[index].attribute.SynchronizationBehaviour;
+                SynchronizationBehaviour attributeSynchronizationBehaviour = syncProperties[index].attribute.SynchronizationBehaviour;
                 if (attributeSynchronizationBehaviour != SynchronizationBehaviour.Ignore)
                 {
                     syncTargetProperty.Property = syncTargetProperty.SynchronizedValue;
@@ -134,6 +136,14 @@ namespace MonoSync.SyncTargetObjects
             for (var index = 0; index < _targetPropertyByIndexLookup.Length; index++)
             {
                 SyncTargetProperty syncTargetProperty = _targetPropertyByIndexLookup[index];
+                try
+                {
+                    syncTargetProperty.SynchronizationBehaviour = syncProperties[index].attibute.SynchronizationBehaviour;
+                }
+                catch(SetterNotFoundException)
+                {
+                    throw new SetterNotFoundException(syncProperties[index].info);
+                }
                 // Skip properties that are initialized from constructor
                 if (parameterProperties.Contains(syncTargetProperty))
                 {
@@ -141,7 +151,6 @@ namespace MonoSync.SyncTargetObjects
                 }
 
                 syncTargetProperty.Property = syncTargetProperty.SynchronizedValue;
-                syncTargetProperty.SynchronizationBehaviour = syncProperties[index].attibute.SynchronizationBehaviour;
             }
         }
 

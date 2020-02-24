@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Numerics;
+using MonoSync.Attributes;
 
 namespace MonoSync.PropertyStates
 {
@@ -9,9 +11,8 @@ namespace MonoSync.PropertyStates
         private readonly SyncTargetRoot _syncTargetRoot;
         private int _interpolatingStartTick;
         private object _previousSynchronizedValue;
-        private bool _synchronized;
         private object _synchronizedValue;
-
+        
         public bool IsInterpolating { get; set; }
 
         public InterpolationState(SyncTargetProperty syncTargetProperty, SyncTargetRoot syncTargetRoot,
@@ -20,11 +21,11 @@ namespace MonoSync.PropertyStates
             _syncTargetProperty = syncTargetProperty;
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
+            _synchronizedValue = syncTargetProperty.Property;
         }
 
         public void HandleRead(object value)
         {
-            _previousSynchronizedValue = _synchronized == false ? value : _synchronizedValue;
             _previousSynchronizedValue = _synchronizedValue;
             _synchronizedValue = value;
             _interpolatingStartTick = _syncTargetRoot.Clock.OwnTick;
@@ -40,8 +41,6 @@ namespace MonoSync.PropertyStates
                     _syncTargetRoot.Updated += Update;
                 }
             }
-
-            _synchronized = true;
         }
 
         public void Dispose()

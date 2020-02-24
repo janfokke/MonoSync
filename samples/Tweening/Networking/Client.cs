@@ -105,8 +105,7 @@ namespace MonoSync.Sample.Tweening
             var settings = SyncTargetSettings.Default;
             settings.TypeEncoder = new TweenGameTypeEncoder();
             settings.TargetFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
-            _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings);
-            _gameWorldSyncRoot.SendRate = 15;
+            _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings) {SendRate = 15};
             _connectionTaskCompletionSource.SetResult(_gameWorldSyncRoot.Root);
         }
 
