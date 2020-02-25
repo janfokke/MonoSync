@@ -45,14 +45,14 @@ namespace MonoSync.SyncTargetObjects
                 : Activator.CreateInstance(baseType));
             BaseObject.PropertyChanged += TargetOnPropertyChanged;
 
-            (PropertyInfo info, SyncAttribute attibute)[] syncPropertiesInfo = GetProperties();
+            SyncPropertyInfo[] syncPropertiesInfo = GetProperties();
 
             _targetPropertyByIndexLookup = new SyncTargetProperty[syncPropertiesInfo.Length];
             for (var syncPropertyIndex = 0; syncPropertyIndex < syncPropertiesInfo.Length; syncPropertyIndex++)
             {
-                (PropertyInfo propertyInfo, SyncAttribute attribute) = syncPropertiesInfo[syncPropertyIndex];
-                SyncTargetProperty syncTargetProperty = CreateSyncTargetProperty(fieldDeserializerResolver, propertyInfo);
-                _targetPropertyByNameLookup[propertyInfo.Name] = syncTargetProperty;
+                var syncPropertyInfo = syncPropertiesInfo[syncPropertyIndex];
+                SyncTargetProperty syncTargetProperty = CreateSyncTargetProperty(fieldDeserializerResolver, syncPropertyInfo.PropertyInfo);
+                _targetPropertyByNameLookup[syncPropertyInfo.PropertyInfo.Name] = syncTargetProperty;
                 _targetPropertyByIndexLookup[syncPropertyIndex] = syncTargetProperty;
             }
 
@@ -81,7 +81,6 @@ namespace MonoSync.SyncTargetObjects
             _syncTargetRoot.EndRead += SyncTargetRootOnEndRead;
         }
 
-
         private SyncTargetProperty CreateSyncTargetProperty(IFieldSerializerResolver fieldDeserializerResolver, PropertyInfo propertyInfo)
         {
             IFieldSerializer fieldSerializer = fieldDeserializerResolver.ResolveSerializer(propertyInfo.PropertyType);
@@ -102,7 +101,7 @@ namespace MonoSync.SyncTargetObjects
             return syncTargetProperty;
         }
 
-        private void InitializeProperties((PropertyInfo info, SyncAttribute attribute)[] syncProperties)
+        private void InitializeProperties(SyncPropertyInfo[] syncProperties)
         {
             for (var index = 0;
                 index < _targetPropertyByIndexLookup.Length;
@@ -110,7 +109,7 @@ namespace MonoSync.SyncTargetObjects
             {
                 SyncTargetProperty syncTargetProperty = _targetPropertyByIndexLookup[index];
 
-                SynchronizationBehaviour attributeSynchronizationBehaviour = syncProperties[index].attribute.SynchronizationBehaviour;
+                SynchronizationBehaviour attributeSynchronizationBehaviour = syncProperties[index].SyncAttribute.SynchronizationBehaviour;
                 if (attributeSynchronizationBehaviour != SynchronizationBehaviour.Ignore)
                 {
                     syncTargetProperty.Property = syncTargetProperty.SynchronizedValue;
@@ -120,32 +119,85 @@ namespace MonoSync.SyncTargetObjects
             }
         }
 
-        private void InvokeAttributeMarkedConstructor(ConstructorInfo constructor,
-            (PropertyInfo info, SyncAttribute attibute)[] syncProperties, List<object> constructionPath)
+        /// <summary>
+        /// Gets the Property name of the constructor parameter.
+        /// </summary>
+        private static string GetConstructorParameterPropertyName(
+            ParameterInfo parameterInfo)
         {
-            HashSet<SyncTargetProperty> parameterProperties = GetPropertiesFromConstructorParameters(constructor);
+            SyncConstructorParameterAttribute syncConstructorParameterAttribute = parameterInfo.GetCustomAttributes()
+                .OfType<SyncConstructorParameterAttribute>()
+                .FirstOrDefault();
+            var name = syncConstructorParameterAttribute?.PropertyName;
 
-            foreach (SyncTargetProperty syncTargetProperty in parameterProperties)
+            // If Property doesn't have a SyncConstructorParameter attribute, use PascalCase.
+            return name ?? CapitalizeFirstLetter(parameterInfo.Name);
+        }
+
+        private void InvokeAttributeMarkedConstructor(ConstructorInfo constructor,
+            SyncPropertyInfo[] syncProperties, List<object> constructionPath)
+        {
+            ParameterInfo[] constructorParametersInfos = constructor.GetParameters();
+            
+            object[] constructorParameters = new object[constructorParametersInfos.Length];
+            HashSet<SyncTargetProperty> syncTargetPropertyParameters = new HashSet<SyncTargetProperty>();
+
+            for (var i = 0; i < constructorParametersInfos.Length; i++)
+            {
+                ParameterInfo constructorParametersInfo = constructorParametersInfos[i];
+
+                object ResolveParameterValue()
+                {
+                    foreach (Attribute customAttribute in constructorParametersInfo.GetCustomAttributes())
+                    {
+                        // Resolve property parameter explicit with attribute
+                        if (customAttribute is SyncConstructorParameterAttribute constructorParameterAttribute)
+                        {
+                            if (_targetPropertyByNameLookup.TryGetValue(constructorParameterAttribute.PropertyName, out SyncTargetProperty explicitSyncTargetProperty))
+                            {
+                                syncTargetPropertyParameters.Add(explicitSyncTargetProperty);
+                                return explicitSyncTargetProperty.SynchronizedValue;
+                            }
+                            throw new SyncTargetPropertyNotFoundException(constructorParameterAttribute.PropertyName);
+                        }
+                        // Resolve dependency parameter explicit with attribute
+                        if (customAttribute is SyncDependencyAttribute)
+                        {
+                            return _syncTargetRoot.Settings.DependencyResolver.ResolveDependency(constructorParametersInfo.ParameterType);
+                        }
+                    }
+                    // Resolve property implicit
+                    // If Property doesn't have a SyncConstructorParameter attribute, use PascalCase.
+                    string propertyName = CapitalizeFirstLetter(constructorParametersInfo.Name);
+                    if (_targetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty implicitSyncTargetProperty))
+                    {
+                        syncTargetPropertyParameters.Add(implicitSyncTargetProperty);
+                        return implicitSyncTargetProperty.SynchronizedValue;
+                    }
+                    //  Resolve dependency implicid
+                    return _syncTargetRoot.Settings.DependencyResolver.ResolveDependency(constructorParametersInfo.ParameterType);
+                }
+
+                constructorParameters[i] = ResolveParameterValue();
+            }
+
+            // Make sure properties are initialized before invoking constructor
+            foreach (SyncTargetProperty syncTargetProperty in syncTargetPropertyParameters)
             {
                 ConstructProperty(syncTargetProperty, constructionPath);
             }
 
-            constructor.Invoke(BaseObject, parameterProperties.Select(x => x.SynchronizedValue).ToArray());
+            constructor.Invoke(BaseObject, constructorParameters);
 
             // Initialize properties that where not given as constructor parameters
             for (var index = 0; index < _targetPropertyByIndexLookup.Length; index++)
             {
                 SyncTargetProperty syncTargetProperty = _targetPropertyByIndexLookup[index];
-                try
-                {
-                    syncTargetProperty.SynchronizationBehaviour = syncProperties[index].attibute.SynchronizationBehaviour;
-                }
-                catch(SetterNotFoundException)
-                {
-                    throw new SetterNotFoundException(syncProperties[index].info);
-                }
+
+                syncTargetProperty.SynchronizationBehaviour = syncProperties[index].SyncAttribute.SynchronizationBehaviour;
+               
                 // Skip properties that are initialized from constructor
-                if (parameterProperties.Contains(syncTargetProperty))
+                if (syncTargetPropertyParameters.Contains(syncTargetProperty))
                 {
                     continue;
                 }
@@ -154,7 +206,7 @@ namespace MonoSync.SyncTargetObjects
             }
         }
 
-        private void ConstructProperty(SyncTargetProperty syncTargetProperty, List<object> path)
+        private void ConstructProperty(SyncTargetProperty syncTargetProperty, List<object> constructionPath)
         {
             object synchronizedValue = syncTargetProperty.SynchronizedValue;
             if (synchronizedValue != null)
@@ -165,7 +217,7 @@ namespace MonoSync.SyncTargetObjects
                     SyncTarget target = _syncTargetRoot.TargetReferencePool.GetSyncObject(synchronizedValue);
                     if (target is NotifyPropertyChangedSyncTarget notifyPropertyChangedSyncTarget)
                     {
-                        notifyPropertyChangedSyncTarget.Construct(path);
+                        notifyPropertyChangedSyncTarget.Construct(constructionPath);
                     }
                 }
             }
@@ -193,42 +245,15 @@ namespace MonoSync.SyncTargetObjects
             _constructor = null;
         }
 
-        private HashSet<SyncTargetProperty> GetPropertiesFromConstructorParameters(ConstructorInfo constructor)
-        {
-            return new HashSet<SyncTargetProperty>(GetPropertyNameFromConstructorParameter(constructor).Select(
-                propertyName =>
-                {
-                    if (_targetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty value))
-                    {
-                        return value;
-                    }
-
-                    throw new SyncTargetPropertyNotFoundException(propertyName);
-                }));
-        }
-
-        private static IEnumerable<string> GetPropertyNameFromConstructorParameter(
-            ConstructorInfo attributeMarkedConstructor)
-        {
-            return attributeMarkedConstructor.GetParameters().Select(parameter =>
-            {
-                var name = parameter.GetCustomAttributes()
-                    .OfType<SyncConstructorParameterAttribute>()
-                    .FirstOrDefault()?.PropertyName;
-
-                return name ?? CapitalizeFirstLetter(parameter.Name);
-            });
-        }
-
         private static string CapitalizeFirstLetter(string input)
         {
             return input.First().ToString().ToUpper() + input.Substring(1);
         }
 
-        private (PropertyInfo info, SyncAttribute attibute)[] GetProperties()
+        private SyncPropertyInfo[] GetProperties()
         {
-            (PropertyInfo info, SyncAttribute attibute)[] syncProperties =
-                PropertyInfoHelper.GetSyncProperties(BaseObject.GetType()).ToArray();
+            SyncPropertyInfo[] syncProperties =
+                SyncPropertyResolver.GetSyncProperties(BaseObject.GetType()).ToArray();
             return syncProperties;
         }
 

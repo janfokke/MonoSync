@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using MonoSync.SyncTargetObjects;
 using MonoSync.Utils;
 
 namespace MonoSync

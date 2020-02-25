@@ -14,13 +14,13 @@ namespace MonoSync
         private readonly Action<object> _setter;
         private readonly Func<object> _getter;
         private readonly SyncTargetRoot _syncTargetRoot;
+        private readonly PropertyInfo _propertyInfo;
 
         private bool _changing;
 
         private ISyncTargetPropertyState _state;
         private SynchronizationBehaviour _synchronizationBehaviour;
         private object _synchronizedValue;
-        private PropertyInfo _propertyInfo;
 
         internal object Property
         {

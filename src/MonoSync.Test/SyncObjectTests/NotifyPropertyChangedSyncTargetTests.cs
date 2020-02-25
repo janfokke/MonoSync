@@ -22,12 +22,14 @@ namespace MonoSync.Test.Synchronization
             typeEncoder.RegisterType<ConstructedPropertyChangeSynchronizationMock>(index++);
             typeEncoder.RegisterType<GetterOnlyMock>(index++);
             typeEncoder.RegisterType<GetterOnlyConstructorMock>(index++);
+            typeEncoder.RegisterType<ConstructedDependencyMock>(index++);
 
             _sourceSettings = SyncSourceSettings.Default;
             _sourceSettings.TypeEncoder = typeEncoder;
 
             _targetSettings = SyncTargetSettings.Default;
             _targetSettings.TypeEncoder = typeEncoder;
+            _targetSettings.DependencyResolver = new SomeServiceResolver();
         }
 
         private readonly SyncTargetSettings _targetSettings;
@@ -44,6 +46,17 @@ namespace MonoSync.Test.Synchronization
             {
                 var syncTargetRoot = new SyncTargetRoot<GetterOnlyMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
             });
+        }
+
+        [Fact]
+        public void Constructing_DependencyConstructorParameter_ResolvesFromDependencyResolver()
+        {
+            var dependencyConstructorMock = new ConstructedDependencyMock(null);
+
+            var syncSourceRoot = new SyncSourceRoot(dependencyConstructorMock, _sourceSettings);
+
+            var syncTargetRoot = new SyncTargetRoot<ConstructedDependencyMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+            Assert.NotNull(syncTargetRoot.Root.SomeService);
         }
 
         [Fact]

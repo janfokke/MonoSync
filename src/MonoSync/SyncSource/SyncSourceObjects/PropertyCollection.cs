@@ -67,7 +67,6 @@ namespace MonoSync.SyncSourceObjects
             {
                 var result = new List<PropertyInfo>();
                 PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                var syncProperties = new List<SyncPropertyInfo>();
                 foreach (PropertyInfo propertyInfo in properties)
                 {
                     var hasSyncAttribute = propertyInfo

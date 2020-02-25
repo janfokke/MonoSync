@@ -1,4 +1,6 @@
-﻿namespace MonoSync
+﻿using MonoSync.SyncTargetObjects;
+
+namespace MonoSync
 {
     public class SyncTargetSettings
     {
@@ -12,5 +14,6 @@
         public ITargetFieldSerializerResolverFactory TargetFieldDeserializerResolverFactory { get; set; }
         public ITypeEncoder TypeEncoder { get; set; }
         public ISyncTargetFactoryResolver SyncTargetFactoryResolver { get; set; }
+        public IDependencyResolver DependencyResolver { get; set; }
     }
 }

@@ -6,30 +6,18 @@ using MonoSync.Attributes;
 
 namespace MonoSync.Utils
 {
-    internal class SyncPropertyInfo
+    internal class SyncPropertyResolver
     {
-        public string Name { get; }
-        public Type Type { get; }
+        private static readonly ConcurrentDictionary<Type, List<SyncPropertyInfo>> SyncPropertyInfoCache =
+            new ConcurrentDictionary<Type, List<SyncPropertyInfo>>();
 
-        public SyncPropertyInfo(string name, Type type)
+        public static List<SyncPropertyInfo> GetSyncProperties(Type type)
         {
-            Name = name;
-            Type = type;
-        }
-    }
-
-    internal class PropertyInfoHelper
-    {
-        private static readonly ConcurrentDictionary<Type, List<(PropertyInfo, SyncAttribute)>> PropertyInfoCache =
-            new ConcurrentDictionary<Type, List<(PropertyInfo, SyncAttribute)>>();
-
-        public static List<(PropertyInfo, SyncAttribute)> GetSyncProperties(Type type)
-        {
-            return PropertyInfoCache.GetOrAdd(type, type =>
+            return SyncPropertyInfoCache.GetOrAdd(type, type =>
             {
                 PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-                var syncProperties = new List<(PropertyInfo, SyncAttribute)>();
+                var syncProperties = new List<SyncPropertyInfo>();
                 for (var i = 0; i < properties.Length; i++)
                 {
                     PropertyInfo propertyInfo = properties[i];
@@ -38,8 +26,7 @@ namespace MonoSync.Utils
                     {
                         continue;
                     }
-
-                    syncProperties.Add((properties[i], syncAttribute));
+                    syncProperties.Add(new SyncPropertyInfo(syncAttribute,properties[i]));
                 }
 
                 return syncProperties;
@@ -49,14 +36,13 @@ namespace MonoSync.Utils
         private static SyncAttribute GetSyncAttribute(PropertyInfo propertyInfo)
         {
             object[] attributes = propertyInfo.GetCustomAttributes(true);
-            foreach (object attribute in attributes)
+            for (var i = 0; i < attributes.Length; i++)
             {
-                if (attribute is SyncAttribute syncAttribute)
+                if (attributes[i] is SyncAttribute syncAttribute)
                 {
                     return syncAttribute;
                 }
             }
-
             return null;
         }
     }
