@@ -140,7 +140,7 @@ namespace MonoSync.SyncTargetObjects
             ParameterInfo[] constructorParametersInfos = constructor.GetParameters();
             
             object[] constructorParameters = new object[constructorParametersInfos.Length];
-            HashSet<SyncTargetProperty> syncTargetPropertyParameters = new HashSet<SyncTargetProperty>();
+            var syncTargetPropertyParameters = new HashSet<SyncTargetProperty>();
 
             for (var i = 0; i < constructorParametersInfos.Length; i++)
             {

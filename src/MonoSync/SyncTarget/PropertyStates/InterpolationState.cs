@@ -21,7 +21,6 @@ namespace MonoSync.PropertyStates
             _syncTargetProperty = syncTargetProperty;
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
-            _synchronizedValue = syncTargetProperty.Property;
         }
 
         public void HandleRead(object value)
@@ -55,7 +54,7 @@ namespace MonoSync.PropertyStates
         private void Update(object sender, EventArgs e)
         {
             var interpolationFactor = Math.Min(1f,
-                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float) _syncTargetRoot.SendRate);
+                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float)_syncTargetRoot.SendRate);
             _syncTargetProperty.Property = _fieldSerializer.Interpolate(
                 _previousSynchronizedValue,
                 _synchronizedValue,
