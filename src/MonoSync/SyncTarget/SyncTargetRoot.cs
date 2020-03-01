@@ -25,15 +25,14 @@ namespace MonoSync
 
         internal TargetReferencePool TargetReferencePool { get; } = new TargetReferencePool();
 
-        public int OwnTick => Clock.OwnTick;
-        public int OtherTick => Clock.OtherTick;
-
         public SyncTargetSettings Settings { get; }
 
         /// <summary>
-        ///     The amount of tick between synchronizations
+        /// Amount of updates between reads
         /// </summary>
-        public int SendRate { get; set; } = 15;
+        public int UpdateRate { get; private set; }
+
+        private int _updateRateCounter;
 
         public SyncTargetRoot(byte[] initialFullSynchronization, SyncTargetSettings settings)
         {
@@ -48,6 +47,9 @@ namespace MonoSync
 
         public void Read(byte[] data)
         {
+            UpdateRate = _updateRateCounter;
+            _updateRateCounter = 0;
+
             OnBeginRead();
 
             using var memoryStream = new MemoryStream(data);
@@ -111,6 +113,8 @@ namespace MonoSync
 
         public void Update()
         {
+            _updateRateCounter++;
+
             Clock.Update();
             OnUpdated();
         }

@@ -57,6 +57,7 @@ namespace MonoSync.SyncTargetObjects
             }
 
             Read(reader);
+
             _constructor = constructionPath =>
             {
                 if (attributeMarkedConstructorPresent)
@@ -290,8 +291,7 @@ namespace MonoSync.SyncTargetObjects
 
         private void TargetOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (!_targetPropertyByNameLookup.TryGetValue(e.PropertyName, out SyncTargetProperty syncTargetProperty)
-            )
+            if (!_targetPropertyByNameLookup.TryGetValue(e.PropertyName, out SyncTargetProperty syncTargetProperty))
             {
                 return;
             }

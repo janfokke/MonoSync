@@ -22,6 +22,8 @@ namespace MonoSync
         private SynchronizationBehaviour _synchronizationBehaviour;
         private object _synchronizedValue;
 
+        internal event EventHandler Dirty;
+
         internal object Property
         {
             set
@@ -79,7 +81,7 @@ namespace MonoSync
                         HasSetter();
                         break;
                     case SynchronizationBehaviour.HighestTick:
-                        _state = new LatestTickState(this, _syncTargetRoot);
+                        _state = new HighestTickState(this, _syncTargetRoot);
                         HasSetter();
                         break;
                     case SynchronizationBehaviour.TakeSynchronized:
@@ -96,7 +98,7 @@ namespace MonoSync
             {
                 if (_state is InterpolationState interpolationState)
                 {
-                    return interpolationState.IsInterpolating;
+                    return interpolationState.Interpolating;
                 }
 
                 return false;
@@ -149,8 +151,9 @@ namespace MonoSync
             {
                 return;
             }
-
-            TickWhenDirty = _syncTargetRoot.OwnTick;
+            
+            TickWhenDirty = _syncTargetRoot.Clock.OwnTick;
+            Dirty?.Invoke(this, EventArgs.Empty);
         }
     }
 }

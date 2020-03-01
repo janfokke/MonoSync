@@ -6,34 +6,25 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncTargetObjects
 {
-    public class ObservableDictionarySyncTarget<TKey, TValue> : SyncTarget
+    public class ObservableDictionaryTarget<TKey, TValue> : SyncTarget
     {
+        public new ObservableDictionary<TKey, TValue> BaseObject => (ObservableDictionary<TKey, TValue>)base.BaseObject;
+
         private readonly Clock _clock;
-        private readonly IFieldSerializer _keySerializer;
-
-        private readonly List<TargetCommand> _leadingTargetCommands = new List<TargetCommand>();
-
-        /// <summary>
-        ///     Source commands are performed after all references have been resolved.
-        /// </summary>
-        private readonly List<ISourceCommand> _sourceCommands = new List<ISourceCommand>();
-
         private readonly SyncTargetRoot _syncTargetRoot;
-
-        private readonly Stack<TargetCommand> _targetCommands = new Stack<TargetCommand>();
+        private readonly IFieldSerializer _keySerializer;
         private readonly IFieldSerializer _valueSerializer;
 
+        private readonly Stack<TargetCommand> _leadingTargetCommands = new Stack<TargetCommand>();
+        private readonly List<ISourceCommand> _sourceCommands = new List<ISourceCommand>();
+        private readonly Stack<TargetCommand> _targetCommands = new Stack<TargetCommand>();
+        
         /// <summary>
         ///     To avoid sync interfering with <see cref="INotifyCollectionChanged" />
         /// </summary>
         private bool _changing;
 
-        private int _synchronizationTick;
-
-        public new ObservableDictionary<TKey, TValue> BaseObject =>
-            (ObservableDictionary<TKey, TValue>) base.BaseObject;
-
-        public ObservableDictionarySyncTarget(int referenceId, Type baseType, ExtendedBinaryReader reader,
+        public ObservableDictionaryTarget(int referenceId, Type baseType, ExtendedBinaryReader reader,
             SyncTargetRoot syncTargetRoot, IFieldSerializerResolver fieldDeserializerResolver) : base(referenceId)
         {
             _syncTargetRoot = syncTargetRoot;
@@ -59,20 +50,18 @@ namespace MonoSync.SyncTargetObjects
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    _targetCommands.Push(new TargetAddCommand(_clock.OwnTick,
-                        (KeyValuePair<TKey, TValue>) e.NewItems[0]));
+                    _targetCommands.Push(new TargetAddCommand(_clock.OwnTick, (KeyValuePair<TKey, TValue>) e.NewItems[0]));
                     break;
                 case NotifyCollectionChangedAction.Replace:
                 {
                     var oldValue = (KeyValuePair<TKey, TValue>) e.OldItems[0];
                     var newValue = (KeyValuePair<TKey, TValue>) e.NewItems[0];
-                    _targetCommands.Push(new TargetReplaceCommands(_clock.OwnTick, oldValue.Key, oldValue.Value,
-                        newValue.Value));
+                    _targetCommands.Push(new TargetReplaceCommands(_clock.OwnTick, oldValue.Key, oldValue.Value, newValue.Value));
                     break;
                 }
                 case NotifyCollectionChangedAction.Reset:
                     throw new NotSupportedException(
-                        $"{nameof(ObservableDictionarySyncTarget<TKey, TValue>)} does not support Clearing");
+                        $"{nameof(ObservableDictionaryTarget<TKey, TValue>)} does not support Clearing");
                 case NotifyCollectionChangedAction.Remove:
                 {
                     var oldItem = (KeyValuePair<TKey, TValue>) e.OldItems[0];
@@ -90,16 +79,8 @@ namespace MonoSync.SyncTargetObjects
 
         public sealed override void Read(ExtendedBinaryReader reader)
         {
-            _synchronizationTick = _clock.OtherTick;
-            ReadSourceCommands(reader);
-
-            // Command logic is handled in EndRead, because all references need to be fixed
-        }
-
-        private void ReadSourceCommands(ExtendedBinaryReader reader)
-        {
-            var count = reader.Read7BitEncodedInt();
-            for (var i = 0; i < count; i++)
+            var commandCount = reader.Read7BitEncodedInt();
+            for (var i = 0; i < commandCount; i++)
             {
                 var action = (NotifyCollectionChangedAction) reader.ReadByte();
                 switch (action)
@@ -129,11 +110,10 @@ namespace MonoSync.SyncTargetObjects
 
             using (BaseObject.BeginMassUpdate())
             {
-                RollBackLeadingTargetCommands(_clock.OtherTick);
+                UndoTargetCommands();
                 PerformSynchronizationCommands();
-                PerformLeadingTargetCommands();
+                RedoLeadingTargetCommands();
             }
-
             _changing = false;
         }
 
@@ -143,41 +123,30 @@ namespace MonoSync.SyncTargetObjects
             {
                 sourceCommand.Perform(BaseObject);
             }
-
             _sourceCommands.Clear();
         }
 
         /// <summary>
         ///     Restores commands that had a higher tick than the synchronization
         /// </summary>
-        private void PerformLeadingTargetCommands()
+        private void RedoLeadingTargetCommands()
         {
-            foreach (TargetCommand leadingTargetCommand in _leadingTargetCommands)
+            while (_leadingTargetCommands.TryPop(out TargetCommand targetCommand))
             {
-                if (leadingTargetCommand.Perform(BaseObject))
-                {
-                    _targetCommands.Push(leadingTargetCommand);
-                }
+                targetCommand.Perform(BaseObject);
+                _targetCommands.Push(targetCommand);
             }
-
-            _leadingTargetCommands.Clear();
         }
 
-        /// <summary>
-        ///     Because synchronization changes are leading, the commands with a lower <see cref="TargetCommand.Tick" /> than the
-        ///     <see cref="synchronizationTick" /> are rolled back.
-        /// </summary>
-        /// <param name="synchronizationTick"></param>
-        private void RollBackLeadingTargetCommands(int synchronizationTick)
+        private void UndoTargetCommands()
         {
             while (_targetCommands.TryPop(out TargetCommand targetCommand))
             {
                 targetCommand.Rollback(BaseObject);
-
-                // Commands with a higher tick are restored later on
-                if (targetCommand.Tick > synchronizationTick)
+                // Commands with a higher tick will be restored
+                if (targetCommand.Tick > _clock.OtherTick)
                 {
-                    _leadingTargetCommands.Add(targetCommand);
+                    _leadingTargetCommands.Push(targetCommand);
                 }
             }
         }
@@ -197,7 +166,7 @@ namespace MonoSync.SyncTargetObjects
 
             /// <param name="target"></param>
             /// <returns>True if perform succeeded.</returns>
-            public abstract bool Perform(IDictionary<TKey, TValue> target);
+            public abstract void Perform(IDictionary<TKey, TValue> target);
         }
 
         private class TargetRemoveCommand : TargetCommand
@@ -214,16 +183,12 @@ namespace MonoSync.SyncTargetObjects
                 target.Add(_item);
             }
 
-            public override bool Perform(IDictionary<TKey, TValue> target)
+            public override void Perform(IDictionary<TKey, TValue> target)
             {
                 if (target.ContainsKey(_item.Key))
                 {
                     target.Remove(_item.Key);
-                    return true;
                 }
-
-                // Item is already removed
-                return false;
             }
         }
 
@@ -241,16 +206,9 @@ namespace MonoSync.SyncTargetObjects
                 target.Remove(_addedItem.Key);
             }
 
-            public override bool Perform(IDictionary<TKey, TValue> target)
+            public override void Perform(IDictionary<TKey, TValue> target)
             {
-                if (target.ContainsKey(_addedItem.Key))
-                    // Already added so no need to add again
-                {
-                    return false;
-                }
-
-                target.Add(_addedItem);
-                return true;
+                target.TryAdd(_addedItem.Key, _addedItem.Value);
             }
         }
 
@@ -272,17 +230,13 @@ namespace MonoSync.SyncTargetObjects
                 target[_key] = _oldValue;
             }
 
-            public override bool Perform(IDictionary<TKey, TValue> target)
+            public override void Perform(IDictionary<TKey, TValue> target)
             {
                 if (target.TryGetValue(_key, out TValue currentValue))
                 {
                     _oldValue = currentValue;
                     target[_key] = _newValue;
-                    return true;
                 }
-
-                // Value is doesn't exist anymore so it can't be replaced.
-                return false;
             }
         }
 
@@ -302,8 +256,7 @@ namespace MonoSync.SyncTargetObjects
             private TValue _value;
             private bool _valueResolved;
 
-            public SourceAddCommand(ExtendedBinaryReader reader, IFieldSerializer keySerializer,
-                IFieldSerializer valueSerializer)
+            public SourceAddCommand(ExtendedBinaryReader reader, IFieldSerializer keySerializer, IFieldSerializer valueSerializer)
             {
                 keySerializer.Read(reader, fixup =>
                 {

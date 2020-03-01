@@ -6,7 +6,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncSourceObjects
 {
-    public class ObservableDictionarySyncSource<TKey, TValue> : SyncSource
+    public class ObservableDictionarySource<TKey, TValue> : SyncSource
     {
         private readonly List<Command> _commands = new List<Command>();
 
@@ -22,7 +22,7 @@ namespace MonoSync.SyncSourceObjects
         public ObservableDictionary<TKey, TValue> BaseObject =>
             (ObservableDictionary<TKey, TValue>) Reference;
 
-        public ObservableDictionarySyncSource(SyncSourceRoot syncSourceRoot, int referenceId,
+        public ObservableDictionarySource(SyncSourceRoot syncSourceRoot, int referenceId,
             ObservableDictionary<TKey, TValue> reference,
             IFieldSerializerResolver fieldSerializerResolver) : base(syncSourceRoot, referenceId, reference)
         {

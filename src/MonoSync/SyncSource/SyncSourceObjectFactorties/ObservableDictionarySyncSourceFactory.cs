@@ -22,7 +22,7 @@ namespace MonoSync.SyncSourceObjectFactorties
         {
             Type[] genericArgs = baseType.GetType().GetGenericArguments();
             Type observableDictionarySyncSourceObjectType =
-                typeof(ObservableDictionarySyncSource<,>).MakeGenericType(genericArgs);
+                typeof(ObservableDictionarySource<,>).MakeGenericType(genericArgs);
             return (SyncSource) Activator.CreateInstance(observableDictionarySyncSourceObjectType, syncSourceRoot,
                 referenceId,
                 baseType, fieldSerializerResolver);

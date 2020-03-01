@@ -22,7 +22,7 @@ namespace MonoSync.SyncTargetFactories
         {
             Type[] genericArgs = baseType.GetGenericArguments();
             Type observableDictionarySyncSourceObjectType =
-                typeof(ObservableDictionarySyncTarget<,>).MakeGenericType(genericArgs);
+                typeof(ObservableDictionaryTarget<,>).MakeGenericType(genericArgs);
             return (SyncTarget) Activator.CreateInstance(observableDictionarySyncSourceObjectType, referenceId,
                 baseType, reader, root, fieldDeserializerResolver);
         }
