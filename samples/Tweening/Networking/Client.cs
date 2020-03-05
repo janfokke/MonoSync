@@ -39,7 +39,7 @@ namespace MonoSync.Sample.Tweening
                 settings.TypeEncoder = new TweenGameTypeEncoder();
                 settings.SourceFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
                 _gameWorldSyncRoot.Update();
-                if (_gameWorldSyncRoot.OwnTick % 60 == 0)
+                if (_gameWorldSyncRoot.Clock.OwnTick % 60 == 0)
                 {
                     // Sending tick every second to refine precision on the server
                     SendTick();
@@ -52,7 +52,7 @@ namespace MonoSync.Sample.Tweening
             using var memoryStream = new MemoryStream();
             using var binaryWriter = new BinaryWriter(memoryStream);
             binaryWriter.Write((byte) Commands.TICK_UPDATE);
-            binaryWriter.Write(_gameWorldSyncRoot.OwnTick);
+            binaryWriter.Write(_gameWorldSyncRoot.Clock.OwnTick);
             _stream.Write(memoryStream.ToArray());
         }
 
@@ -85,12 +85,6 @@ namespace MonoSync.Sample.Tweening
 
                             break;
                         }
-                        case Commands.SEND_RATE:
-                        {
-                            int sendRate = BitConverter.ToInt32(_buffer, 1);
-                            _gameWorldSyncRoot.SendRate = 60 / sendRate;
-                            break;
-                        }
                     }
                 }
                 catch
@@ -105,7 +99,7 @@ namespace MonoSync.Sample.Tweening
             var settings = SyncTargetSettings.Default;
             settings.TypeEncoder = new TweenGameTypeEncoder();
             settings.TargetFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
-            _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings) {SendRate = 15};
+            _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings);
             _connectionTaskCompletionSource.SetResult(_gameWorldSyncRoot.Root);
         }
 

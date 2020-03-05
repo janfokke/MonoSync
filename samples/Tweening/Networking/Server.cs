@@ -77,10 +77,6 @@ namespace MonoSync.Sample.Tweening
             {
                 value = Math.Clamp(value, 1, 60);
                 _sendRate = value;
-                foreach (ServerSideClient client in _clients.Values)
-                {
-                    client.NotifySendRate(value);
-                }
             }
         }
 
@@ -114,7 +110,6 @@ namespace MonoSync.Sample.Tweening
                 {
                     _clients.Add(newClient.PlayerId, newClient);
                     newClient.SendWorld(fullSerialize);
-                    newClient.NotifySendRate(SendRate);
                 }
                 _newClients.Clear();
             }

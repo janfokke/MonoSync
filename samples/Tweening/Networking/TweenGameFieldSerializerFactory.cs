@@ -11,7 +11,7 @@ namespace MonoSync.Sample.Tweening
 
         public IFieldSerializerResolver Create(IIdentifierResolver identifierResolver)
         {
-            throw new System.NotImplementedException();
+            return new TweenGameFieldSerializers(identifierResolver);
         }
     }
 }

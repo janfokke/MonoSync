@@ -74,14 +74,5 @@ namespace MonoSync.Sample.Tweening
             binaryWriter.Write(worldData);
             _networkStream.Write(memoryStream.ToArray());
         }
-
-        public void NotifySendRate(in int newSendRate)
-        {
-            using var memoryStream = new MemoryStream();
-            using var binaryWriter = new BinaryWriter(memoryStream);
-            binaryWriter.Write(Commands.SEND_RATE);
-            binaryWriter.Write(newSendRate);
-            _networkStream.Write(memoryStream.ToArray());
-        }
     }
 }
