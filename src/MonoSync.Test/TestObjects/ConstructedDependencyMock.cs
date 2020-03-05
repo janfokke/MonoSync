@@ -17,16 +17,16 @@ namespace MonoSync.Test.TestObjects
         }
     }
 
-    public class SomeServiceResolver : IDependencyResolver
+    public class SomeServiceProvider : IServiceProvider
     {
-        public SomeServiceResolver()
+        public SomeServiceProvider()
         {
             SomeService = new SomeService();
         }
 
         public SomeService SomeService { get; }
 
-        public object ResolveDependency(Type T)
+        public object GetService(Type T)
         {
             if (T == typeof(ISomeService))
                 return SomeService;

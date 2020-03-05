@@ -120,21 +120,6 @@ namespace MonoSync.SyncTargetObjects
             }
         }
 
-        /// <summary>
-        /// Gets the Property name of the constructor parameter.
-        /// </summary>
-        private static string GetConstructorParameterPropertyName(
-            ParameterInfo parameterInfo)
-        {
-            SyncConstructorParameterAttribute syncConstructorParameterAttribute = parameterInfo.GetCustomAttributes()
-                .OfType<SyncConstructorParameterAttribute>()
-                .FirstOrDefault();
-            var name = syncConstructorParameterAttribute?.PropertyName;
-
-            // If Property doesn't have a SyncConstructorParameter attribute, use PascalCase.
-            return name ?? CapitalizeFirstLetter(parameterInfo.Name);
-        }
-
         private void InvokeAttributeMarkedConstructor(ConstructorInfo constructor,
             SyncPropertyInfo[] syncProperties, List<object> constructionPath)
         {
@@ -164,7 +149,7 @@ namespace MonoSync.SyncTargetObjects
                         // Resolve dependency parameter explicit with attribute
                         if (customAttribute is SyncDependencyAttribute)
                         {
-                            return _syncTargetRoot.Settings.DependencyResolver.ResolveDependency(constructorParametersInfo.ParameterType);
+                            return _syncTargetRoot.Settings.ServiceProvider.GetService(constructorParametersInfo.ParameterType) ?? throw new ArgumentNullException($"{constructor.Name}:{constructorParametersInfo.Name}");
                         }
                     }
                     // Resolve property implicit
@@ -175,8 +160,8 @@ namespace MonoSync.SyncTargetObjects
                         syncTargetPropertyParameters.Add(implicitSyncTargetProperty);
                         return implicitSyncTargetProperty.SynchronizedValue;
                     }
-                    //  Resolve dependency implicid
-                    return _syncTargetRoot.Settings.DependencyResolver.ResolveDependency(constructorParametersInfo.ParameterType);
+                    //  Resolve dependency implicit
+                    return _syncTargetRoot.Settings.ServiceProvider.GetService(constructorParametersInfo.ParameterType) ?? throw new ArgumentNullException($"{constructor.Name}:{constructorParametersInfo.Name}");
                 }
 
                 constructorParameters[i] = ResolveParameterValue();

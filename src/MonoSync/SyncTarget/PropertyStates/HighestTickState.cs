@@ -6,8 +6,7 @@ namespace MonoSync.PropertyStates
     {
         private readonly SyncTargetProperty _syncTargetProperty;
         private readonly SyncTargetRoot _syncTargetRoot;
-        
-        private object _synchronizedValue;
+
         private bool _subscribedToEndRead;
 
         public HighestTickState(SyncTargetProperty syncTargetProperty, SyncTargetRoot syncTargetRoot)
@@ -31,7 +30,6 @@ namespace MonoSync.PropertyStates
 
         public void HandleRead(object value)
         {
-            _synchronizedValue = value;
             SubscribeToEndRead();
         }
 
@@ -39,7 +37,7 @@ namespace MonoSync.PropertyStates
         {
             if (_syncTargetRoot.Clock.OtherTick > _syncTargetProperty.TickWhenDirty)
             {
-                _syncTargetProperty.Property = _synchronizedValue;
+                _syncTargetProperty.Property = _syncTargetProperty.SynchronizedValue;
                 UnSubscribeToEndRead();
             }
         }

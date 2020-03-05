@@ -29,7 +29,7 @@ namespace MonoSync.Test.Synchronization
 
             _targetSettings = SyncTargetSettings.Default;
             _targetSettings.TypeEncoder = typeEncoder;
-            _targetSettings.DependencyResolver = new SomeServiceResolver();
+            _targetSettings.ServiceProvider = new SomeServiceProvider();
         }
 
         private readonly SyncTargetSettings _targetSettings;

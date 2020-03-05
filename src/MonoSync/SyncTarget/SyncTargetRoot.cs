@@ -98,8 +98,7 @@ namespace MonoSync
                     ISyncTargetFactory syncTargetFactory =
                         Settings.SyncTargetFactoryResolver.FindMatchingSyncTargetObjectFactory(type);
 
-                    syncTargetObject =
-                        syncTargetFactory.Create(referenceId, type, reader, _fieldDeserializerResolver, this);
+                    syncTargetObject = syncTargetFactory.Create(referenceId, type, reader, _fieldDeserializerResolver, this);
                     TargetReferencePool.AddSyncObject(referenceId, syncTargetObject);
                 }
             }
