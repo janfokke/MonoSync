@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using MonoSync.Collections;
@@ -122,10 +123,8 @@ namespace MonoSync.SyncSourceObjects
                 {
                     command.Write(binaryWriter, _keySerializer, _valueSerializer);
                 }
-
                 _commands.Clear();
             }
-
             _commandsInvalidated = false;
         }
 
@@ -177,7 +176,6 @@ namespace MonoSync.SyncSourceObjects
                             keySerializer.Write(item.Key, writer);
                             valueSerializer.Write(item.Value, writer);
                         }
-
                         break;
                     }
                 }

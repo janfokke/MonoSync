@@ -18,7 +18,9 @@ namespace MonoSync.SyncTargetObjects
         private readonly Stack<TargetCommand> _leadingTargetCommands = new Stack<TargetCommand>();
         private readonly List<ISourceCommand> _sourceCommands = new List<ISourceCommand>();
         private readonly Stack<TargetCommand> _targetCommands = new Stack<TargetCommand>();
-        
+
+        private bool _subscribedToEndRead;
+
         /// <summary>
         ///     To avoid sync interfering with <see cref="INotifyCollectionChanged" />
         /// </summary>
@@ -36,7 +38,6 @@ namespace MonoSync.SyncTargetObjects
             _keySerializer = fieldDeserializerResolver.ResolveSerializer(typeof(TKey));
             _valueSerializer = fieldDeserializerResolver.ResolveSerializer(typeof(TValue));
 
-            _syncTargetRoot.EndRead += EndRead;
             Read(reader);
         }
 
@@ -69,16 +70,36 @@ namespace MonoSync.SyncTargetObjects
                     break;
                 }
             }
+            SubscribeToEndRead();
         }
 
         public override void Dispose()
         {
             BaseObject.CollectionChanged -= OnCollectionChanged;
-            _syncTargetRoot.EndRead -= EndRead;
+            UnSubscribeToEndRead();
+        }
+
+        private void SubscribeToEndRead()
+        {
+            if (_subscribedToEndRead == false)
+            {
+                _subscribedToEndRead = true;
+                _syncTargetRoot.EndRead += EndRead;
+            }
+        }
+
+        private void UnSubscribeToEndRead()
+        {
+            if (_subscribedToEndRead)
+            {
+                _subscribedToEndRead = false;
+                _syncTargetRoot.EndRead -= EndRead;
+            }
         }
 
         public sealed override void Read(ExtendedBinaryReader reader)
         {
+            SubscribeToEndRead();
             var commandCount = reader.Read7BitEncodedInt();
             for (var i = 0; i < commandCount; i++)
             {
@@ -112,8 +133,17 @@ namespace MonoSync.SyncTargetObjects
             {
                 UndoTargetCommands();
                 PerformSynchronizationCommands();
-                RedoLeadingTargetCommands();
+
+                if(_leadingTargetCommands.Count > 0)
+                {
+                    RedoLeadingTargetCommands();
+                }
+                else
+                {
+                    UnSubscribeToEndRead();
+                }
             }
+
             _changing = false;
         }
 
@@ -352,7 +382,6 @@ namespace MonoSync.SyncTargetObjects
                     var keyValuePair = new BoxedKeyValuePair();
 
                     keyDeserializer.Read(reader, fixup => { keyValuePair.Key = (TKey) fixup; });
-
                     valueDeserializer.Read(reader, fixup => { keyValuePair.Value = (TValue) fixup; });
 
                     _keyValuePairs.Add(keyValuePair);

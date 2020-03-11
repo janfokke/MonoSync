@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using MonoSync.SyncTargetObjects;
 using MonoSync.Utils;
 
@@ -47,6 +48,8 @@ namespace MonoSync
 
         public void Read(byte[] data)
         {
+            Console.WriteLine(Encoding.UTF8.GetString(data));
+
             UpdateRate = _updateRateCounter;
             _updateRateCounter = 0;
 
