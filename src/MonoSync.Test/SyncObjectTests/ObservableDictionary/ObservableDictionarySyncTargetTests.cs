@@ -62,5 +62,26 @@ namespace MonoSync.Test.Synchronization
 
             AssertExtension.AssertCloneEqual(sourceGameWorld, targetGameWorld);
         }
+
+        [Fact]
+        public void AddingItems_AfterClear_ShouldSynchronizeItems()
+        {
+            var sourceGameWorld = new TestGameWorld { RandomIntProperty = 5 };
+            
+            var syncSourceRoot = new SyncSourceRoot(sourceGameWorld, _sourceSettings);
+
+            sourceGameWorld.Players.Clear();
+
+            var syncTargetRoot = new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+
+            sourceGameWorld.Players.Add("player1", new TestPlayer { Health = 100, Level = 30 });
+            sourceGameWorld.Players.Add("player2", new TestPlayer { Health = 44, Level = 1337 });
+
+            syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(10));
+
+            TestGameWorld targetGameWorld = syncTargetRoot.Root;
+
+            AssertExtension.AssertCloneEqual(sourceGameWorld, targetGameWorld);
+        }
     }
 }

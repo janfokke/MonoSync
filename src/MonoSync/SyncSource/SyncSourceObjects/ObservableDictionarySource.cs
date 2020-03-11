@@ -125,7 +125,6 @@ namespace MonoSync.SyncSourceObjects
                 }
                 _commands.Clear();
             }
-            _commandsInvalidated = false;
         }
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
@@ -134,6 +133,7 @@ namespace MonoSync.SyncSourceObjects
             binaryWriter.Write7BitEncodedInt(commandCount);
             Command resetCommand = Command.FromReset(BaseObject.ToList());
             resetCommand.Write(binaryWriter, _keySerializer, _valueSerializer);
+            _commandsInvalidated = false;
         }
 
         /// <summary>
