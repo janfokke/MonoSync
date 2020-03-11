@@ -48,8 +48,6 @@ namespace MonoSync
 
         public void Read(byte[] data)
         {
-            Console.WriteLine(Encoding.UTF8.GetString(data));
-
             UpdateRate = _updateRateCounter;
             _updateRateCounter = 0;
 
