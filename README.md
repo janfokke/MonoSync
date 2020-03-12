@@ -2,6 +2,8 @@
 # MonoSync
 An efficient and easy to implement synchronization layer for games
 
+## Warning: I'm developing this library for the netcode of my own game and it is still under development and thus not stable!
+
 [![Nuget](https://img.shields.io/nuget/v/MonoSync?color=8a2be2)](https://www.nuget.org/packages/MonoSync/)
 [![Azure DevOps builds](https://img.shields.io/azure-devops/build/janfokkeurk/318f0567-2f7e-47d9-b32b-69fb0257ee68/1)](https://dev.azure.com/janfokkeurk/MonoSync/_build?definitionId=1&_a=summary&view=runs)
 [![Azure DevOps tests](https://img.shields.io/azure-devops/tests/janfokkeurk/MonoSync/1)](https://dev.azure.com/janfokkeurk/MonoSync/_build?definitionId=1&_a=summary&view=runs)
