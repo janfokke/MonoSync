@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
     public interface ISyncTargetFactoryResolver
     {

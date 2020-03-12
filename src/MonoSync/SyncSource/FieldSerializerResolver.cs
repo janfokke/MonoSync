@@ -3,13 +3,37 @@ using System.Collections.Generic;
 using MonoSync.Exceptions;
 using MonoSync.FieldSerializers;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     public class FieldSerializerResolver : IFieldSerializerResolver
     {
-        private readonly IList<IFieldSerializer> _serializers = new List<IFieldSerializer>();
+        protected readonly Dictionary<Type, IFieldSerializer> CachedSerializers =
+            new Dictionary<Type, IFieldSerializer>();
+        protected readonly IList<IFieldSerializer> Serializers = new List<IFieldSerializer>();
+        protected readonly SourceReferenceFieldSerializer SourceReferenceFieldSerializer;
+        protected readonly TargetReferenceFieldSerializer TargetReferenceFieldSerializer;
 
-        public FieldSerializerResolver(IReferenceResolver referenceResolver)
+        public FieldSerializerResolver(IReferenceResolver referenceResolver) : this()
+        {
+            if (referenceResolver == null)
+            {
+                throw new ArgumentNullException(nameof(referenceResolver));
+            }
+
+            TargetReferenceFieldSerializer = new TargetReferenceFieldSerializer(referenceResolver);
+        }
+
+        public FieldSerializerResolver(IIdentifierResolver identifierResolver) : this()
+        {
+            if (identifierResolver == null)
+            {
+                throw new ArgumentNullException(nameof(identifierResolver));
+            }
+
+            SourceReferenceFieldSerializer = new SourceReferenceFieldSerializer(identifierResolver);
+        }
+
+        private FieldSerializerResolver()
         {
             AddSerializer(new BooleanFieldSerializer());
             AddSerializer(new CharFieldSerializer());
@@ -31,32 +55,59 @@ namespace MonoSync.SyncSource
             AddSerializer(new UInt64FieldSerializer());
 
             AddSerializer(new GuidSerializer());
-
-            AddSerializer(new ReferenceFieldSerializer(referenceResolver));
         }
 
-        public IFieldSerializer FindMatchingSerializer(Type type)
+        public IFieldSerializer ResolveSerializer(Type type)
         {
+            if (type == null)
+            {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            // Reference serializers
+            if (type.IsValueType == false)
+            {
+                if (TargetReferenceFieldSerializer != null)
+                {
+                    return TargetReferenceFieldSerializer;
+                }
+
+                return SourceReferenceFieldSerializer;
+            }
+
+            // Enums are serialized with their underlying type.
             if (type.IsEnum)
             {
                 type = type.GetEnumUnderlyingType();
             }
 
-            // serializers are looped in reverse because the last added serializers should be prioritized.
-            for (int i = _serializers.Count - 1; i >= 0; i--)
+            if (CachedSerializers.TryGetValue(type, out IFieldSerializer serializer) == false)
             {
-                if (_serializers[i].CanSerialize(type))
+                // serializers are looped in reverse because the last added serializers should be prioritized.
+                for (var i = Serializers.Count - 1; i >= 0; i--)
                 {
-                    return _serializers[i];
+                    IFieldSerializer matchingSerializer = Serializers[i];
+                    if (matchingSerializer.CanSerialize(type))
+                    {
+                        CachedSerializers.Add(type, matchingSerializer);
+                        return matchingSerializer;
+                    }
                 }
+
+                throw new FieldSerializerNotFoundException(type);
             }
 
-            throw new FieldSerializerNotFoundException(type);
+            return serializer;
         }
 
         public void AddSerializer(IFieldSerializer serializer)
         {
-            _serializers.Add(serializer);
+            if (serializer == null)
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
+
+            Serializers.Add(serializer);
         }
     }
 }

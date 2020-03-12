@@ -1,7 +1,6 @@
 ﻿using System;
-using MonoSync.SyncSource;
 
-namespace MonoSync.SyncTarget.PropertyStates
+namespace MonoSync.PropertyStates
 {
     internal class InterpolationState : ISyncTargetPropertyState
     {
@@ -9,68 +8,112 @@ namespace MonoSync.SyncTarget.PropertyStates
         private readonly SyncTargetProperty _syncTargetProperty;
         private readonly SyncTargetRoot _syncTargetRoot;
         private int _interpolatingStartTick;
-        private object _previousSynchronizedValue;
-        private object _synchronizedValue;
+        private bool _subscribedToEndRead;
+
+        private object _interpolationSource;
+        private object _interpolationTarget;
+
+        public bool Interpolating { get; private set; }
 
         public InterpolationState(SyncTargetProperty syncTargetProperty, SyncTargetRoot syncTargetRoot,
             IFieldSerializer fieldSerializer)
         {
-            _synchronizedValue = syncTargetProperty.Property;
             _syncTargetProperty = syncTargetProperty;
             _syncTargetRoot = syncTargetRoot;
             _fieldSerializer = fieldSerializer;
+            _syncTargetProperty.Dirty += SyncTargetPropertyOnDirty;
         }
-
-        public bool IsInterpolating { get; set; }
 
         public void HandleRead(object value)
         {
-            _previousSynchronizedValue = _synchronizedValue;
-            _synchronizedValue = value;
-            _interpolatingStartTick = _syncTargetRoot.Clock.OwnTick;
-            if (
-                _previousSynchronizedValue != null &&
-                _synchronizedValue != null &&
-                _previousSynchronizedValue != _synchronizedValue
-            )
-            {
-                if (IsInterpolating == false)
-                {
-                    IsInterpolating = true;
-                    _syncTargetRoot.Updated += Update;
-                }
-            }
+            _interpolationTarget = value;
+            SubscribeToEndRead();
         }
 
         public void Dispose()
         {
-            if (IsInterpolating)
+            _syncTargetProperty.Dirty -= SyncTargetPropertyOnDirty;
+            UnSubscribeToEndRead();
+            EndInterpolate();
+        }
+
+        private void SyncTargetPropertyOnDirty(object sender, EventArgs e)
+        {
+            if (Interpolating == false)
             {
-                _syncTargetRoot.Updated -= Update;
-                IsInterpolating = false;
+                SubscribeToEndRead();
             }
         }
 
-        private void Update(object sender, EventArgs e)
+        private void SyncTargetRootOnUpdated(object sender, EventArgs e)
         {
-            float interpolationFactor = Math.Min(1f,
-                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float)_syncTargetRoot.SendRate);
+            var interpolationFactor = Math.Min(1f,
+                (_syncTargetRoot.Clock.OwnTick - _interpolatingStartTick) / (float) _syncTargetRoot.UpdateRate);
             _syncTargetProperty.Property = _fieldSerializer.Interpolate(
-                _previousSynchronizedValue,
-                _synchronizedValue,
+                _interpolationSource,
+                _interpolationTarget,
                 interpolationFactor);
 
             //Done interpolating
             if (interpolationFactor >= 1f)
             {
-                FinishInterpolation();
+                EndInterpolate();
             }
         }
 
-        private void FinishInterpolation()
+        private void BeginInterpolate()
         {
-            IsInterpolating = false;
-            _syncTargetRoot.Updated -= Update;
+            if (Interpolating == false)
+            {
+                Interpolating = true;
+                _syncTargetRoot.Updated += SyncTargetRootOnUpdated;
+            }
+        }
+
+        private void EndInterpolate()
+        {
+            if (Interpolating)
+            {
+                Interpolating = false;
+                _syncTargetRoot.Updated -= SyncTargetRootOnUpdated;
+            }
+        }
+
+        private void SyncTargetRootOnEndRead(object sender, EventArgs e)
+        {
+            UnSubscribeToEndRead();
+
+            // Previous interpolation is still running
+            _interpolatingStartTick = _syncTargetRoot.Clock.OwnTick;
+            _interpolationSource = _syncTargetProperty.Property;
+
+            if (_interpolationSource == null || _interpolationTarget == null)
+            {
+                // Quick set
+                _syncTargetProperty.Property = _interpolationTarget;
+            }
+            else
+            {
+                BeginInterpolate();
+            }
+        }
+
+        private void SubscribeToEndRead()
+        {
+            if (_subscribedToEndRead == false)
+            {
+                _subscribedToEndRead = true;
+                _syncTargetRoot.EndRead += SyncTargetRootOnEndRead;
+            }
+        }
+
+        private void UnSubscribeToEndRead()
+        {
+            if (_subscribedToEndRead)
+            {
+                _subscribedToEndRead = false;
+                _syncTargetRoot.EndRead -= SyncTargetRootOnEndRead;
+            }
         }
     }
 }

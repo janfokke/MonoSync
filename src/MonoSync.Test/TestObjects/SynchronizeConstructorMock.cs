@@ -35,4 +35,62 @@ namespace MonoSync.Test.TestObjects
 
         public bool SyncConstructorCalled { get; set; }
     }
+
+    [AddINotifyPropertyChangedInterface]
+    public class OnSynchronizedAttributeMarkedMethodMock
+    {
+        [Sync]
+        public int IntProperty { get; set; }
+
+        public int IntPropertyWhenSynchronizedMethodWasCalled { get; private set; }
+
+        [OnSynchronized]
+        public void OnSynchronized()
+        {
+            IntPropertyWhenSynchronizedMethodWasCalled = IntProperty;
+        }
+    }
+
+    [AddINotifyPropertyChangedInterface]
+    public class GetterOnlyMock
+    {
+        [Sync]
+        public int IntProperty { get; }
+    }
+
+    [AddINotifyPropertyChangedInterface]
+    public class GetterOnlyConstructorMock
+    {
+        [SyncConstructor]
+        public GetterOnlyConstructorMock(int intProperty)
+        {
+            IntProperty = intProperty;
+        }
+
+        [Sync(SynchronizationBehaviour.Construction)]
+        public int IntProperty { get; }
+    }
+
+    public class OnSynchronizedAttributeMarkedMethodMockChild : OnSynchronizedAttributeMarkedMethodMock
+    {
+
+    }
+
+    [AddINotifyPropertyChangedInterface]
+    public class OnSynchronizedAttributeMarkedMethodWithParametersMock
+    {
+        public int IntProperty { get; set; }
+        
+        public int IntPropertyWhenSynchronizedMethodWasCalled { get; private set; }
+
+#pragma warning disable IDE0060
+        [OnSynchronized]
+        // ReSharper disable once UnusedMember.Global
+        public void OnSynchronized(int illegalParameter)
+            
+        {
+            
+        }
+#pragma warning restore IDE0060 
+    }
 }

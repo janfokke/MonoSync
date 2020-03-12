@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     public class WriteSession : IDisposable
     {

@@ -3,47 +3,74 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MonoSync.Exceptions;
+using MonoSync.SyncSourceObjects;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     public class SyncSourceRoot
     {
-        private readonly HashSet<SyncSource> _addedSyncSourceObjects = new HashSet<SyncSource>();
         private readonly HashSet<SyncSource> _dirtySyncSourceObjects = new HashSet<SyncSource>();
         private readonly IFieldSerializerResolver _fieldDeserializerResolver;
 
-        // Used to avoid endless loop
-        private readonly Dictionary<object, int> _pendingForCreationReferenceCount = new Dictionary<object, int>();
-        private readonly ReferenceCollector<SyncSource> _referenceCollector;
-        private readonly ReferencePool<SyncSource> _referencePool = new ReferencePool<SyncSource>();
-        private readonly HashSet<SyncSource> _removedSyncSourceObjects = new HashSet<SyncSource>();
-        private readonly object _rootReference;
+        /// <summary>
+        ///     If a target to an object is added and the object references itself during the construction
+        ///     it causes an infinite loop because the object will never be added to the <see cref="SourceReferencePool" />.
+        /// </summary>
+        private readonly HashSet<object> _pendingForCreation = new HashSet<object>();
+        private readonly HashSet<SyncSource> _pendingTrackedSyncSourceObjects = new HashSet<SyncSource>();
+        private readonly HashSet<SyncSource> _pendingUntrackedSyncSourceObjects = new HashSet<SyncSource>();
+
+        private readonly SourceReferencePool _referencePool = new SourceReferencePool();
+        private readonly PropertyCollection.Factory _syncPropertyFactory;
         private int _referenceIdIncrementer = 1; //Reference index 0 is reserved for null
         private bool _writeSessionOpen;
+
+        /// <summary>
+        ///     Gets the objects that are being tracked.
+        /// </summary>
+        public IEnumerable<object> TrackedObjects =>
+            _referencePool.SyncObjects.Select(sourceObject => sourceObject.Reference);
+
+        /// <summary>
+        ///     Gets the objects that have been tracked since the previous write session
+        /// </summary>
+        public IEnumerable<object> PendingTrackedObjects =>
+            _pendingTrackedSyncSourceObjects.Select(sourceObject => sourceObject.Reference);
+
+
+        /// <summary>Gets the pending untracked object count.</summary>
+        public int PendingUntrackedObjectCount => _pendingUntrackedSyncSourceObjects.Count;
+
+        /// <summary>
+        ///     Objects that have changed since the previous write session
+        /// </summary>
+        public IEnumerable<object> DirtyObjects =>
+            _dirtySyncSourceObjects.Select(sourceObject => sourceObject.Reference);
+
+        public SyncSourceSettings Settings { get; }
 
         public SyncSourceRoot(object source, SyncSourceSettings settings)
         {
             Settings = settings;
-            _fieldDeserializerResolver = settings.FieldDeserializerResolverFactory.Create(_referencePool);
-            _referenceCollector = new ReferenceCollector<SyncSource>(_referencePool);
-            AddReference(_rootReference = source);
+            _fieldDeserializerResolver = settings.SourceFieldDeserializerResolverFactory.Create(_referencePool);
+            _syncPropertyFactory = new PropertyCollection.Factory(_fieldDeserializerResolver);
+            TrackObject(source);
         }
 
-        public IEnumerable<object> AddedReferences =>
-            _addedSyncSourceObjects.Select(sourceObject => sourceObject.BaseObject);
+        /// <summary>
+        ///     Gets the type of the properties from.
+        /// </summary>
+        /// <param name="baseType">Type of the base.</param>
+        internal PropertyCollection GetPropertiesFromType(Type baseType)
+        {
+            return _syncPropertyFactory.FromType(baseType);
+        }
 
-        public IEnumerable<object> RemovedReferences =>
-            _removedSyncSourceObjects.Select(sourceObject => sourceObject.BaseObject);
-
-        public IEnumerable<object> DirtyReferences =>
-            _dirtySyncSourceObjects.Select(sourceObject => sourceObject.BaseObject);
-
-        public IEnumerable<object> TrackedReferences =>
-            _referencePool.SyncObjects.Select(sourceObject => sourceObject.BaseObject);
-
-        public SyncSourceSettings Settings { get; }
-
+        /// <summary>
+        ///     Begins a write session. Call <see cref="WriteSession.Dispose" /> to end the write session
+        /// </summary>
+        /// <exception cref="WriteSessionNotClosedException"></exception>
         public WriteSession BeginWrite()
         {
             if (_writeSessionOpen)
@@ -57,6 +84,24 @@ namespace MonoSync.SyncSource
         }
 
         /// <summary>
+        ///     Ends the write session.
+        /// </summary>
+        /// <exception cref="WriteSessionNotOpenException"></exception>
+        internal void EndWrite()
+        {
+            if (_writeSessionOpen == false)
+            {
+                throw new WriteSessionNotOpenException();
+            }
+
+            _writeSessionOpen = false;
+
+            _dirtySyncSourceObjects.Clear();
+            _pendingTrackedSyncSourceObjects.Clear();
+            _pendingUntrackedSyncSourceObjects.Clear();
+        }
+
+        /// <summary>
         ///     Used for existing connections to serializes changed and added references
         /// </summary>
         /// <returns></returns>
@@ -65,52 +110,34 @@ namespace MonoSync.SyncSource
             var memoryStream = new MemoryStream();
             var writer = new ExtendedBinaryWriter(memoryStream);
 
-            WriteRemovedReferences(writer);
+            WriteUntrackedReferences(writer);
 
             WriteAddedAndChangedReferences(writer);
 
             return new SynchronizationPacket(memoryStream.ToArray());
         }
 
-        /// <summary>
-        /// Removes all SyncSourceObjects from reference pool
-        /// </summary>
-        private void RemoveSyncSourceObjects()
+        private void WriteUntrackedReferences(ExtendedBinaryWriter writer)
         {
-            foreach (SyncSource removedSyncSourceObject in _removedSyncSourceObjects)
+            lock (_pendingUntrackedSyncSourceObjects)
             {
-                RemoveSyncSourceObject(removedSyncSourceObject);
-            }
-            _removedSyncSourceObjects.Clear();
-        }
-
-        /// <summary>
-        /// Removes the SyncSourceObject from referencePool.
-        /// </summary>
-        /// <param name="removedSyncSourceObject">The removed synchronize source object.</param>
-        private void RemoveSyncSourceObject(SyncSource removedSyncSourceObject)
-        {
-            _referencePool.RemoveSyncObject(removedSyncSourceObject);
-        }
-
-        private void WriteRemovedReferences(ExtendedBinaryWriter writer)
-        {
-            writer.Write7BitEncodedInt(_removedSyncSourceObjects.Count);
-            foreach (SyncSource removedSyncSourceObject in _removedSyncSourceObjects)
-            {
-                writer.Write7BitEncodedInt(removedSyncSourceObject.ReferenceId);
+                writer.Write7BitEncodedInt(_pendingUntrackedSyncSourceObjects.Count);
+                foreach (SyncSource syncSource in _pendingUntrackedSyncSourceObjects)
+                {
+                    writer.Write7BitEncodedInt(syncSource.ReferenceId);
+                }
             }
         }
 
         private void WriteAddedAndChangedReferences(ExtendedBinaryWriter writer)
         {
             List<SyncSource> changedSyncSourceObjects = _dirtySyncSourceObjects.ToList();
-            var changedAndNewReferenceUnion = new HashSet<SyncSource>(_addedSyncSourceObjects);
+            var changedAndNewReferenceUnion = new HashSet<SyncSource>(_pendingTrackedSyncSourceObjects);
             // Merge the new references and the added ones
             // Because it is possible for references to be both added and changed as wel
             changedAndNewReferenceUnion.UnionWith(changedSyncSourceObjects);
 
-            int referenceCount = changedAndNewReferenceUnion.Count;
+            var referenceCount = changedAndNewReferenceUnion.Count;
 
             writer.Write7BitEncodedInt(referenceCount);
 
@@ -118,9 +145,9 @@ namespace MonoSync.SyncSource
             {
                 writer.Write7BitEncodedInt(syncSourceObject.ReferenceId);
 
-                if (_addedSyncSourceObjects.Contains(syncSourceObject))
+                if (_pendingTrackedSyncSourceObjects.Contains(syncSourceObject))
                 {
-                    Settings.TypeEncoder.WriteType(syncSourceObject.BaseObject.GetType(), writer);
+                    Settings.TypeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
                     syncSourceObject.WriteFull(writer);
                 }
                 else
@@ -135,7 +162,7 @@ namespace MonoSync.SyncSource
             using var memoryStream = new MemoryStream();
             using var writer = new ExtendedBinaryWriter(memoryStream);
 
-            // Write remove reference count 0
+            // Write remove target count 0
             writer.Write7BitEncodedInt(0);
 
             List<SyncSource> syncSourceObjects = _referencePool.SyncObjects.ToList();
@@ -143,135 +170,71 @@ namespace MonoSync.SyncSource
             foreach (SyncSource syncSourceObject in syncSourceObjects)
             {
                 writer.Write7BitEncodedInt(syncSourceObject.ReferenceId);
-                Settings.TypeEncoder.WriteType(syncSourceObject.BaseObject.GetType(), writer);
+                Settings.TypeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
                 syncSourceObject.WriteFull(writer);
             }
 
             return new SynchronizationPacket(memoryStream.ToArray()).SetTick(0);
         }
 
-        internal void EndWrite()
+        /// <summary>
+        ///     Registers the <see cref="syncSource" /> for removal.
+        ///     the <see cref="syncSource" /> can be revived by calling <see cref="TrackObject" />
+        ///     on the object that the <see cref="syncSource" /> references.
+        /// </summary>
+        /// <param name="syncSource">The synchronize source.</param>
+        /// <exception cref="ArgumentNullException">syncSource</exception>
+        internal void RegisterSyncSourceToBeUntracked(SyncSource syncSource)
         {
-            if (_writeSessionOpen == false)
+            lock (_pendingUntrackedSyncSourceObjects)
             {
-                throw new WriteSessionNotOpenException();
-            }
-
-            _writeSessionOpen = false;
-
-            RemoveSyncSourceObjects();
-
-            _dirtySyncSourceObjects.Clear();
-            _addedSyncSourceObjects.Clear();
-        }
-
-        public void RemoveReference(object reference)
-        {
-            if (reference == null)
-            {
-                throw new ArgumentNullException(nameof(reference));
-            }
-
-            SyncSource syncObject = _referencePool.GetSyncObject(reference);
-            if (syncObject == null)
-            {
-                throw new InvalidOperationException($"{nameof(reference)} is not tracked");
-            }
-
-            if (--syncObject.ReferenceCount <= 0)
-            {
-                bool isAlreadySynchronized = _addedSyncSourceObjects.Remove(syncObject) == false;
-                if (isAlreadySynchronized)
+                if (syncSource == null)
                 {
-                    // Clients do not need to be notified of deleted objects
-                    // that have not yet been synchronized.
-                    _removedSyncSourceObjects.Add(syncObject);
+                    throw new ArgumentNullException(nameof(syncSource));
                 }
-                // If reference is not tracked by targets remove immediately
-                else
-                {
-                    RemoveSyncSourceObject(syncObject);
-                }
+                _pendingUntrackedSyncSourceObjects.Add(syncSource);
             }
         }
 
-        public void AddReference(object reference)
+        /// <summary>
+        ///     Tracks the <see cref="target" /> for synchronization
+        /// </summary>
+        /// <param name="target">The target.</param>
+        /// <remarks>The <see cref="target">target's</see> synchronize-able child references are also tracked recursively</remarks>
+        /// <exception cref="ArgumentNullException">target</exception>
+        public void TrackObject(object target)
         {
-            if (reference == null)
+            if (target == null)
             {
-                throw new ArgumentNullException(nameof(reference));
+                throw new ArgumentNullException(nameof(target));
             }
 
-            if (_pendingForCreationReferenceCount.ContainsKey(reference))
-            {
-                _pendingForCreationReferenceCount[reference]++;
-                return;
-            }
+            SyncSource syncSource = _referencePool.GetSyncSource(target);
 
-            SyncSource syncSource = _referencePool.GetSyncObject(reference);
             if (syncSource == null)
             {
-                ISyncSourceFactory sourceFactory = Settings.SyncSourceFactoryResolver
-                    .FindMatchingSyncSourceFactory(reference);
-                int referenceId = _referenceIdIncrementer++;
-
-                _pendingForCreationReferenceCount[reference] = 1;
-                syncSource =
-                    sourceFactory.Create(this, referenceId, reference,
-                        _fieldDeserializerResolver);
-                syncSource.ReferenceCount = _pendingForCreationReferenceCount[reference];
-                _pendingForCreationReferenceCount.Remove(reference);
-
-                _referencePool.AddSyncObject(referenceId, syncSource);
-                _addedSyncSourceObjects.Add(syncSource);
-            }
-            else
-            {
-                _removedSyncSourceObjects.Remove(syncSource);
-                syncSource.ReferenceCount++;
-            }
-        }
-
-        public void GarbageCollect()
-        {
-            HashSet<object> referenceThatAreAccessibleFromRoot = TraverseReferences();
-
-            List<SyncSource> removeSyncSources =
-                _referencePool.GetNonOccuringReferences(referenceThatAreAccessibleFromRoot);
-
-            foreach (SyncSource removeSyncSource in removeSyncSources)
-            {
-                RemoveReference(removeSyncSource.BaseObject);
-            }
-        }
-
-        private HashSet<object> TraverseReferences()
-        {
-            void TraverseReferencesRecursive(object reference, HashSet<object> output)
-            {
-                HashSet<object> references = _referenceCollector.TraverseReferences(reference);
-
-                // Add the new references to the referencePool
-                foreach (object occuringReference in references)
+                if (_pendingForCreation.Contains(target))
                 {
-                    // Check if referencePool contains reference if it is not yet added to output
-                    if (output.Add(occuringReference))
-                    {
-                        if (_referencePool.ContainsReference(occuringReference) == false)
-                        {
-                            // This error occurs when a SyncSource doesn't track a reference it should have tracked
-                            throw new UntrackedReferenceException(reference, occuringReference);
-                        }
-                    }
+                    return;
                 }
+
+                ISyncSourceFactory sourceFactory =
+                    Settings.SyncSourceFactoryResolver.FindMatchingSyncSourceFactory(target);
+                var referenceId = _referenceIdIncrementer++;
+                _pendingForCreation.Add(target);
+                syncSource = sourceFactory.Create(this, referenceId, target, _fieldDeserializerResolver);
+                _pendingForCreation.Remove(target);
+                _referencePool.AddSyncSource(syncSource);
+                _pendingTrackedSyncSourceObjects.Add(syncSource);
             }
-            var occuringReferences = new HashSet<object> {_rootReference};
-            TraverseReferencesRecursive(_rootReference, occuringReferences);
-            return occuringReferences;
         }
 
-
-        public void MarkDirty(SyncSource syncSource)
+        /// <summary>
+        ///     Indicates that the <see cref="syncSource" /> has changes and should be serialized on next
+        ///     <see cref="WriteChanges" />.
+        /// </summary>
+        /// <param name="syncSource">The synchronize source.</param>
+        public void MarkSyncSourceDirty(SyncSource syncSource)
         {
             _dirtySyncSourceObjects.Add(syncSource);
         }

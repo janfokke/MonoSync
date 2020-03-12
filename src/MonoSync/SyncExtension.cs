@@ -5,8 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using MonoSync.Exceptions;
-using MonoSync.SyncTarget;
-using MonoSync.SyncTarget.SyncTargetObjects;
+using MonoSync.SyncTargetObjects;
 
 namespace MonoSync
 {
@@ -32,7 +31,7 @@ namespace MonoSync
         public static IEnumerable<SyncTargetProperty> GetSyncTargetProperties<TSyncType>(this TSyncType source,
             Expression<Func<TSyncType, object>> selector)
         {
-            string propertyName = GetMemberName(selector.Body);
+            var propertyName = GetMemberName(selector.Body);
             List<NotifyPropertyChangedSyncTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();
             if (syncTargetObjects.Count == 0)
             {
@@ -62,7 +61,10 @@ namespace MonoSync
                 fieldInfo = type.GetField(nameof(INotifyPropertyChanged.PropertyChanged),
                     BindingFlags.Instance | BindingFlags.NonPublic);
 
-                if (fieldInfo != null) break;
+                if (fieldInfo != null)
+                {
+                    break;
+                }
 
                 type = type.BaseType;
             }

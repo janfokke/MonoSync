@@ -1,10 +1,9 @@
 ﻿using System;
 using MonoSync.Collections;
-using MonoSync.SyncSource;
-using MonoSync.SyncTarget.SyncTargetObjects;
+using MonoSync.SyncTargetObjects;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget.SyncTargetFactories
+namespace MonoSync.SyncTargetFactories
 {
     internal class ObservableDictionarySyncTargetFactory : ISyncTargetFactory
     {
@@ -23,7 +22,7 @@ namespace MonoSync.SyncTarget.SyncTargetFactories
         {
             Type[] genericArgs = baseType.GetGenericArguments();
             Type observableDictionarySyncSourceObjectType =
-                typeof(ObservableDictionarySyncTarget<,>).MakeGenericType(genericArgs);
+                typeof(ObservableDictionaryTarget<,>).MakeGenericType(genericArgs);
             return (SyncTarget) Activator.CreateInstance(observableDictionarySyncSourceObjectType, referenceId,
                 baseType, reader, root, fieldDeserializerResolver);
         }

@@ -1,5 +1,3 @@
-using MonoSync.SyncSource;
-
 namespace MonoSync.Test.TestUtils
 {
     public static class SyncSourceRootExtensions

@@ -2,144 +2,113 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
-using MonoSync.Attributes;
+using FastMember;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncSource.SyncSourceObjects
+namespace MonoSync.SyncSourceObjects
 {
     public class NotifyPropertyChangedSyncSource : SyncSource
     {
-        private readonly SourcePropertyChangeTracker<SyncSourceProperty> _changeTracker =
-            new SourcePropertyChangeTracker<SyncSourceProperty>();
-
-        private readonly Dictionary<string, SyncSourceProperty> _propertyLookup =
-            new Dictionary<string, SyncSourceProperty>();
-
-        private readonly SyncSourceProperty[] _syncSourceProperties;
-
-        protected readonly List<SyncSourceProperty> ReferenceProperties = new List<SyncSourceProperty>();
+        private readonly SortedDictionary<int, SyncSourceProperty> _changedProperties;
+        private readonly PropertyCollection _propertyCollection;
+        private readonly TypeAccessor _typeAccessor;
 
         public NotifyPropertyChangedSyncSource(SyncSourceRoot syncSourceRoot, int referenceId,
-            INotifyPropertyChanged baseObject,
-            IFieldSerializerResolver fieldSerializerResolver) :
-            base(syncSourceRoot, referenceId, baseObject)
+            INotifyPropertyChanged reference) :
+            base(syncSourceRoot, referenceId, reference)
         {
-            baseObject.PropertyChanged += SourceObjectOnPropertyChanged;
+            reference.PropertyChanged += SourceObjectOnPropertyChanged;
+            Type baseType = reference.GetType();
+            _typeAccessor = TypeAccessor.Create(baseType, false);
+            _propertyCollection = syncSourceRoot.GetPropertiesFromType(baseType);
+            _changedProperties = new SortedDictionary<int, SyncSourceProperty>();
 
-            _changeTracker.Dirty += ChangeTrackerOnDirty;
-            PropertyInfo[] properties = BaseObject.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            (PropertyInfo info, SyncAttribute attibute)[] syncProperties =
-                PropertyInfoHelper.GetSyncProperties(properties).ToArray();
-            _syncSourceProperties = new SyncSourceProperty[syncProperties.Length];
-            for (var syncPropertyIndex = 0; syncPropertyIndex < syncProperties.Length; syncPropertyIndex++)
+            for (var i = 0; i < _propertyCollection.Length; i++)
             {
-                PropertyInfo syncPropertyInfo = syncProperties[syncPropertyIndex].info;
-
-                Type propertyType = syncPropertyInfo.PropertyType;
-
-                Func<object> getter = PropertyInfoHelper.CreateGetterDelegate(syncPropertyInfo, BaseObject);
-
-                var property = new SyncSourceProperty(syncPropertyIndex, propertyType, getter,
-                    fieldSerializerResolver.FindMatchingSerializer(propertyType));
-
-                _propertyLookup[syncPropertyInfo.Name] = property;
-                _syncSourceProperties[syncPropertyIndex] = property;
-
-                property.UpdateValue();
-
-                // Reference properties getters are added to a list for garbage collection.
-                if (!propertyType.IsValueType)
+                SyncSourceProperty syncSourceProperty = _propertyCollection[i];
+                if (!syncSourceProperty.IsValueType)
                 {
-                    object propertyValue = property.Value;
-                    if (propertyValue != null)
+                    object initialValue = _typeAccessor[Reference, syncSourceProperty.Name];
+                    if (initialValue != null)
                     {
-                        syncSourceRoot.AddReference(propertyValue);
+                        syncSourceRoot.TrackObject(initialValue);
                     }
-
-                    ReferenceProperties.Add(property);
                 }
             }
         }
 
-        private void ChangeTrackerOnDirty(object sender, EventArgs e)
+        public override void MarkClean()
         {
-            base.MarkDirty();
+            base.MarkClean();
+            _changedProperties.Clear();
         }
 
         private void SourceObjectOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (_propertyLookup.TryGetValue(e.PropertyName, out SyncSourceProperty syncSourceProperty))
+            var propertyName = e.PropertyName;
+
+            // Property changed event might be from a non-sync property
+            if (_propertyCollection.TryGetByName(e.PropertyName, out SyncSourceProperty syncSourceProperty))
             {
-                syncSourceProperty.UpdateValue();
+                object newValue = _typeAccessor[Reference, propertyName];
 
-                object previousValue = syncSourceProperty.PreviousValue;
-                object newValue = syncSourceProperty.Value;
-
-                if (syncSourceProperty.PropertyType.IsValueType == false)
+                if (syncSourceProperty.IsValueType == false)
                 {
-                    if (previousValue != null)
-                    {
-                        SyncSourceRoot.RemoveReference(previousValue);
-                    }
-
                     if (newValue != null)
                     {
-                        SyncSourceRoot.AddReference(newValue);
+                        SyncSourceRoot.TrackObject(newValue);
                     }
                 }
 
-                _changeTracker.MarkDirty(syncSourceProperty);
+                _changedProperties.TryAdd(syncSourceProperty.Index, syncSourceProperty);
+                if (Dirty == false)
+                {
+                    MarkDirty();
+                }
             }
-        }
-
-        public override IEnumerable<object> GetReferences()
-        {
-            return ReferenceProperties.Select(x => x.Value);
         }
 
         public override void Dispose()
         {
-            ((INotifyPropertyChanged) BaseObject).PropertyChanged -= SourceObjectOnPropertyChanged;
+            ((INotifyPropertyChanged) Reference).PropertyChanged -= SourceObjectOnPropertyChanged;
         }
 
         public override void WriteChanges(ExtendedBinaryWriter binaryWriter)
         {
-            var changedPropertiesBitArray = new BitArray(_syncSourceProperties.Length);
-
-            List<SyncSourceProperty> syncSourceProperties = _changeTracker.ToList();
+            var changedPropertiesMask = new BitArray(_propertyCollection.Length);
 
             // Mark changed properties bitArray
-            foreach (SyncSourceProperty syncSourceProperty in syncSourceProperties)
+            foreach (SyncSourceProperty syncSourceProperty in _changedProperties.Values)
             {
-                changedPropertiesBitArray[syncSourceProperty.Index] = true;
+                changedPropertiesMask[syncSourceProperty.Index] = true;
             }
 
-            binaryWriter.Write(changedPropertiesBitArray);
+            binaryWriter.Write(changedPropertiesMask);
 
-            foreach (SyncSourceProperty sourceProperty in syncSourceProperties)
+            foreach (SyncSourceProperty sourceProperty in _changedProperties.Values)
             {
-                sourceProperty.Serialize(binaryWriter);
+                object value = _typeAccessor[Reference, sourceProperty.Name];
+                sourceProperty.FieldSerializer.Write(value, binaryWriter);
             }
 
-            _changeTracker.Clear();
+            MarkClean();
         }
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
         {
-            var changedProperties = new BitArray(_syncSourceProperties.Length, true);
+            var changedPropertiesMask = new BitArray(_propertyCollection.Length, true);
 
             // All properties are marked as changed because this is a full write 
-            binaryWriter.Write(changedProperties);
+            binaryWriter.Write(changedPropertiesMask);
 
-            for (var index = 0; index < _syncSourceProperties.Length; index++)
+            for (var index = 0; index < _propertyCollection.Length; index++)
             {
-                SyncSourceProperty syncSourceProperty = _syncSourceProperties[index];
-                syncSourceProperty.Serialize(binaryWriter);
+                SyncSourceProperty sourceProperty = _propertyCollection[index];
+                object value = _typeAccessor[Reference, sourceProperty.Name];
+                sourceProperty.FieldSerializer.Write(value, binaryWriter);
             }
 
-            _changeTracker.Clear();
+            MarkClean();
         }
     }
 }

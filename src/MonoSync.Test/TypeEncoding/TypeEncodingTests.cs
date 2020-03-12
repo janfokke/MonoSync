@@ -9,7 +9,7 @@ using static MonoSync.TypeEncoder.ReservedIdentifiers;
 
 namespace MonoSync.Test.TypeEncoding
 {
-    public class TypeEncodingTest
+    public class TypeEncodingTests
     {
         [Theory]
         // Simple types
@@ -46,7 +46,7 @@ namespace MonoSync.Test.TypeEncoding
         [InlineData(typeof(long[]))]
         [InlineData(typeof(ulong[][]))]
         [InlineData(typeof(short[][][]))]
-        public void TypeEncodingAndDecodingSimilarTest(Type expectedType)
+        public void EncodingAndDecodingType_ResultsInSameType(Type expectedType)
         {
             var typeEncoder = new TypeEncoder();
 
@@ -62,7 +62,7 @@ namespace MonoSync.Test.TypeEncoding
         }
 
         [Fact]
-        public void DoubleIdentifierRegisterThrowsIdentifierAlreadyRegisteredExceptionTest()
+        public void RegisteringType_WithAnIdentifierThatIsAlreadyUsed_ThrowsIdentifierAlreadyRegisteredException()
         {
             var typeEncoder = new TypeEncoder();
             Assert.Throws<IdentifierAlreadyRegisteredException>(() =>
@@ -72,7 +72,7 @@ namespace MonoSync.Test.TypeEncoding
         }
 
         [Fact]
-        public void DoubleTypeRegisterThrowsTypeAlreadyRegisteredExceptionTest()
+        public void RegisteringType_ThatIsAlreadyRegistered_ThrowsTypeAlreadyRegisteredException()
         {
             var typeEncoder = new TypeEncoder();
             Assert.Throws<TypeAlreadyRegisteredException>(() =>

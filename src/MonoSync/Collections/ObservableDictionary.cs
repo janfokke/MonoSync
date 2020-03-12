@@ -12,13 +12,13 @@ namespace MonoSync.Collections
     /// </summary>
     /// <typeparam name="TKey">Key</typeparam>
     /// <typeparam name="TValue">Value type</typeparam>
-    [DebuggerDisplay("Count={Count}")]
+    [DebuggerDisplay("Length={Count}")]
     public class ObservableDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
         INotifyCollectionChanged, INotifyPropertyChanged
     {
         // Internal dictionary that holds values
-        private readonly IDictionary<TKey, TValue> underlyingDictionary;
-        private bool shouldRaiseNotifications = true;
+        private readonly IDictionary<TKey, TValue> _underlyingDictionary;
+        private bool _shouldRaiseNotifications = true;
 
         /// <summary>
         ///     Constructor
@@ -34,7 +34,7 @@ namespace MonoSync.Collections
         /// <param name="store">Existing Dictionary storage</param>
         public ObservableDictionary(IDictionary<TKey, TValue> store)
         {
-            underlyingDictionary = store ?? throw new ArgumentNullException(nameof(store));
+            _underlyingDictionary = store ?? throw new ArgumentNullException(nameof(store));
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace MonoSync.Collections
         public void Add(TKey key, TValue value)
         {
             var item = new KeyValuePair<TKey, TValue>(key, value);
-            underlyingDictionary.Add(item);
+            _underlyingDictionary.Add(item);
             OnNotifyAdd(item);
         }
 
@@ -82,7 +82,7 @@ namespace MonoSync.Collections
         /// </exception>
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
         {
-            underlyingDictionary.Add(item);
+            _underlyingDictionary.Add(item);
             OnNotifyAdd(item);
         }
 
@@ -94,7 +94,8 @@ namespace MonoSync.Collections
         /// </exception>
         public void Clear()
         {
-            underlyingDictionary.Clear();
+            OnBeginReset();
+            _underlyingDictionary.Clear();
             OnNotifyReset();
         }
 
@@ -114,7 +115,7 @@ namespace MonoSync.Collections
         /// </exception>
         public bool ContainsKey(TKey key)
         {
-            return underlyingDictionary.ContainsKey(key);
+            return _underlyingDictionary.ContainsKey(key);
         }
 
         /// <summary>
@@ -133,7 +134,7 @@ namespace MonoSync.Collections
         /// <exception cref="T:System.ArgumentOutOfRangeException"><paramref name="arrayIndex" /> is less than 0.</exception>
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            underlyingDictionary.CopyTo(array, arrayIndex);
+            _underlyingDictionary.CopyTo(array, arrayIndex);
         }
 
         /// <summary>
@@ -145,7 +146,7 @@ namespace MonoSync.Collections
         /// <filterpriority>1</filterpriority>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return underlyingDictionary.GetEnumerator();
+            return _underlyingDictionary.GetEnumerator();
         }
 
         /// <summary>
@@ -166,8 +167,8 @@ namespace MonoSync.Collections
         /// </exception>
         public bool Remove(TKey key)
         {
-            TValue local = underlyingDictionary[key];
-            bool flag = underlyingDictionary.Remove(key);
+            TValue local = _underlyingDictionary[key];
+            var flag = _underlyingDictionary.Remove(key);
             OnNotifyRemove(new KeyValuePair<TKey, TValue>(key, local));
 
             return flag;
@@ -190,7 +191,7 @@ namespace MonoSync.Collections
         /// </exception>
         bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
         {
-            bool flag = underlyingDictionary.Remove(item);
+            var flag = _underlyingDictionary.Remove(item);
             if (flag)
             {
                 OnNotifyRemove(item);
@@ -211,7 +212,7 @@ namespace MonoSync.Collections
         /// </param>
         bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
         {
-            return underlyingDictionary.Contains(item);
+            return _underlyingDictionary.Contains(item);
         }
 
         /// <summary>
@@ -223,7 +224,7 @@ namespace MonoSync.Collections
         /// <filterpriority>2</filterpriority>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return underlyingDictionary.GetEnumerator();
+            return _underlyingDictionary.GetEnumerator();
         }
 
         /// <summary>
@@ -245,7 +246,7 @@ namespace MonoSync.Collections
         /// </exception>
         public bool TryGetValue(TKey key, out TValue value)
         {
-            return underlyingDictionary.TryGetValue(key, out value);
+            return _underlyingDictionary.TryGetValue(key, out value);
         }
 
         /// <summary>
@@ -254,7 +255,7 @@ namespace MonoSync.Collections
         /// <returns>
         ///     The number of elements contained in the <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </returns>
-        public int Count => underlyingDictionary.Count;
+        public int Count => _underlyingDictionary.Count;
 
         /// <summary>
         ///     Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.
@@ -284,19 +285,19 @@ namespace MonoSync.Collections
         /// </exception>
         public TValue this[TKey key]
         {
-            get => underlyingDictionary[key];
+            get => _underlyingDictionary[key];
             set
             {
-                if (underlyingDictionary.ContainsKey(key))
+                if (_underlyingDictionary.ContainsKey(key))
                 {
-                    TValue originalValue = underlyingDictionary[key];
-                    underlyingDictionary[key] = value;
+                    TValue originalValue = _underlyingDictionary[key];
+                    _underlyingDictionary[key] = value;
                     OnNotifyReplace(new KeyValuePair<TKey, TValue>(key, value),
                         new KeyValuePair<TKey, TValue>(key, originalValue));
                 }
                 else
                 {
-                    underlyingDictionary[key] = value;
+                    _underlyingDictionary[key] = value;
                     OnNotifyAdd(new KeyValuePair<TKey, TValue>(key, value));
                 }
             }
@@ -310,7 +311,7 @@ namespace MonoSync.Collections
         ///     An <see cref="T:System.Collections.Generic.ICollection`1" /> containing the keys of the object that implements
         ///     <see cref="T:System.Collections.Generic.IDictionary`2" />.
         /// </returns>
-        public ICollection<TKey> Keys => underlyingDictionary.Keys;
+        public ICollection<TKey> Keys => _underlyingDictionary.Keys;
 
         /// <summary>
         ///     Gets an <see cref="T:System.Collections.Generic.ICollection`1" /> containing the values in the
@@ -320,7 +321,7 @@ namespace MonoSync.Collections
         ///     An <see cref="T:System.Collections.Generic.ICollection`1" /> containing the values in the object that implements
         ///     <see cref="T:System.Collections.Generic.IDictionary`2" />.
         /// </returns>
-        public ICollection<TValue> Values => underlyingDictionary.Values;
+        public ICollection<TValue> Values => _underlyingDictionary.Values;
 
         /// <summary>
         ///     Event raised for collection change notification
@@ -333,12 +334,23 @@ namespace MonoSync.Collections
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
+        ///     Event raised when the dictionary is about to be reset.
+        /// </summary>
+        public event EventHandler BeginReset;
+
+        /// <summary>
         ///     This method turns off notifications until the returned object
         ///     is Disposed. At that point, the entire dictionary is invalidated.
         /// </summary>
         /// <returns>IDisposable</returns>
         public IDisposable BeginMassUpdate()
         {
+            if (_shouldRaiseNotifications == false)
+            {
+                throw new InvalidOperationException($"Previous {nameof(MassUpdater)} is not disposed yet");
+            }
+
+            OnBeginReset();
             return new MassUpdater(this);
         }
 
@@ -348,6 +360,11 @@ namespace MonoSync.Collections
         /// <param name="item">Item</param>
         protected void OnNotifyAdd(KeyValuePair<TKey, TValue> item)
         {
+            if (!_shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
@@ -362,6 +379,11 @@ namespace MonoSync.Collections
         /// <param name="item">Item</param>
         protected void OnNotifyRemove(KeyValuePair<TKey, TValue> item)
         {
+            if (!_shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
@@ -376,6 +398,11 @@ namespace MonoSync.Collections
         /// <param name="oldItem">Old item</param>
         protected void OnNotifyReplace(KeyValuePair<TKey, TValue> newItem, KeyValuePair<TKey, TValue> oldItem)
         {
+            if (!_shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(
                 new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItem, oldItem));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Values)));
@@ -387,6 +414,11 @@ namespace MonoSync.Collections
         /// </summary>
         protected void OnNotifyReset()
         {
+            if (!_shouldRaiseNotifications)
+            {
+                return;
+            }
+
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
@@ -400,10 +432,7 @@ namespace MonoSync.Collections
         /// <param name="e">Arguments of the event being raised.</param>
         protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            if (shouldRaiseNotifications)
-            {
-                CollectionChanged?.Invoke(this, e);
-            }
+            CollectionChanged?.Invoke(this, e);
         }
 
         /// <summary>
@@ -412,10 +441,20 @@ namespace MonoSync.Collections
         /// <param name="e">Property event args.</param>
         protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
         {
-            if (shouldRaiseNotifications)
+            if (_shouldRaiseNotifications)
             {
                 PropertyChanged?.Invoke(this, e);
             }
+        }
+
+        protected virtual void OnBeginReset()
+        {
+            if (!_shouldRaiseNotifications)
+            {
+                return;
+            }
+
+            BeginReset?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -428,12 +467,12 @@ namespace MonoSync.Collections
             public MassUpdater(ObservableDictionary<TKey, TValue> parent)
             {
                 this.parent = parent;
-                parent.shouldRaiseNotifications = false;
+                parent._shouldRaiseNotifications = false;
             }
 
             public void Dispose()
             {
-                parent.shouldRaiseNotifications = true;
+                parent._shouldRaiseNotifications = true;
                 parent.OnNotifyReset();
             }
         }

@@ -1,10 +1,19 @@
 ﻿using System;
+using MonoSync.Exceptions;
 
-namespace MonoSync.SyncSource
+namespace MonoSync
 {
     public interface IFieldSerializerResolver
     {
-        IFieldSerializer FindMatchingSerializer(Type type);
+        /// <summary>Resolves the serializer for a field.</summary>
+        /// <param name="type">The field type.</param>
+        /// <exception cref="FieldSerializerNotFoundException"></exception>
+        IFieldSerializer ResolveSerializer(Type type);
+
+        /// <summary>
+        ///     Adds the serializer to resolvable serializers.
+        /// </summary>
+        /// <param name="serializer">The serializer.</param>
         void AddSerializer(IFieldSerializer serializer);
     }
 }

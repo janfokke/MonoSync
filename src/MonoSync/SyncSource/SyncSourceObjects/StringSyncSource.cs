@@ -1,18 +1,12 @@
-﻿using System.Collections.Generic;
-using MonoSync.Utils;
+﻿using MonoSync.Utils;
 
-namespace MonoSync.SyncSource.SyncSourceObjects
+namespace MonoSync.SyncSourceObjects
 {
     public class StringSyncSource : SyncSource
     {
-        public StringSyncSource(SyncSourceRoot syncSourceRoot, int referenceId, string baseObject) :
-            base(syncSourceRoot, referenceId, baseObject)
+        public StringSyncSource(SyncSourceRoot syncSourceRoot, int referenceId, string reference) :
+            base(syncSourceRoot, referenceId, reference)
         {
-        }
-
-        public override IEnumerable<object> GetReferences()
-        {
-            yield break;
         }
 
         public override void Dispose()
@@ -27,7 +21,7 @@ namespace MonoSync.SyncSource.SyncSourceObjects
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
         {
-            binaryWriter.Write((string) BaseObject);
+            binaryWriter.Write((string) Reference);
         }
     }
 }

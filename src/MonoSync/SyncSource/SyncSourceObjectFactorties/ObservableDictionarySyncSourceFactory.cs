@@ -1,8 +1,8 @@
 ﻿using System;
 using MonoSync.Collections;
-using MonoSync.SyncSource.SyncSourceObjects;
+using MonoSync.SyncSourceObjects;
 
-namespace MonoSync.SyncSource.SyncSourceObjectFactorties
+namespace MonoSync.SyncSourceObjectFactorties
 {
     internal class ObservableDictionarySyncSourceFactory : ISyncSourceFactory
     {
@@ -22,7 +22,7 @@ namespace MonoSync.SyncSource.SyncSourceObjectFactorties
         {
             Type[] genericArgs = baseType.GetType().GetGenericArguments();
             Type observableDictionarySyncSourceObjectType =
-                typeof(ObservableDictionarySyncSource<,>).MakeGenericType(genericArgs);
+                typeof(ObservableDictionarySource<,>).MakeGenericType(genericArgs);
             return (SyncSource) Activator.CreateInstance(observableDictionarySyncSourceObjectType, syncSourceRoot,
                 referenceId,
                 baseType, fieldSerializerResolver);

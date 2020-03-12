@@ -4,6 +4,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>MonoSync</AssemblyName>
     <RootNamespace>MonoSync</RootNamespace>
+    <Configurations>Debug;Release;Dedicated</Configurations>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -23,6 +24,10 @@
       <PackagePath></PackagePath>
     </None>
     <None Include="LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FastMember" Version="1.5.0" />
   </ItemGroup>
 
   <ItemGroup>

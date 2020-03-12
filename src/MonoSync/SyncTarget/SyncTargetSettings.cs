@@ -1,18 +1,20 @@
-﻿using MonoSync.SyncSource;
+﻿using System;
+using MonoSync.SyncTargetObjects;
 
-namespace MonoSync.SyncTarget
+namespace MonoSync
 {
     public class SyncTargetSettings
     {
         public static SyncTargetSettings Default => new SyncTargetSettings
         {
             SyncTargetFactoryResolver = new SyncTargetFactoryResolver(),
-            FieldDeserializerResolverFactory = new FieldSerializerResolverFactory(),
+            TargetFieldDeserializerResolverFactory = new TargetFieldSerializerResolverFactory(),
             TypeEncoder = new TypeEncoder()
         };
 
-        public IFieldSerializerResolverFactory FieldDeserializerResolverFactory { get; set; }
+        public ITargetFieldSerializerResolverFactory TargetFieldDeserializerResolverFactory { get; set; }
         public ITypeEncoder TypeEncoder { get; set; }
         public ISyncTargetFactoryResolver SyncTargetFactoryResolver { get; set; }
+        public IServiceProvider ServiceProvider { get; set; }
     }
 }

@@ -1,9 +1,8 @@
 ﻿using System;
-using MonoSync.SyncSource;
-using MonoSync.SyncTarget.SyncTargetObjects;
+using MonoSync.SyncTargetObjects;
 using MonoSync.Utils;
 
-namespace MonoSync.SyncTarget.SyncTargetFactories
+namespace MonoSync.SyncTargetFactories
 {
     public class StringSyncTargetFactory : ISyncTargetFactory
     {

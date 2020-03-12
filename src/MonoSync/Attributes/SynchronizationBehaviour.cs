@@ -20,6 +20,12 @@
         /// <summary>
         ///     Creates a smooth transition that lasts until the next synchronization.
         /// </summary>
-        Interpolated
+        Interpolated,
+
+        /// <summary>
+        ///     Only sets value on construction.
+        ///     If <see cref="SyncAttribute" /> is used on a get only property, this state will also be implicitly used.
+        /// </summary>
+        Construction
     }
 }

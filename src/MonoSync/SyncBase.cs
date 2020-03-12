@@ -1,17 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace MonoSync
 {
-    public abstract class SyncBase
+    public abstract class SyncBase : IDisposable
     {
+        public int ReferenceId { get; }
+
         protected SyncBase(int referenceId)
         {
             ReferenceId = referenceId;
         }
 
-        public int ReferenceId { get; }
-        public object BaseObject { get; protected set; }
         public abstract void Dispose();
-        public abstract IEnumerable<object> GetReferences();
     }
 }

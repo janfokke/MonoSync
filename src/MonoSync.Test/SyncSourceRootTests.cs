@@ -1,7 +1,5 @@
+using System;
 using System.Linq;
-using MonoSync.Collections;
-using MonoSync.SyncSource;
-using MonoSync.SyncTarget;
 using MonoSync.Test.TestObjects;
 using MonoSync.Test.TestUtils;
 using Xunit;
@@ -29,7 +27,7 @@ namespace MonoSync.Test.Synchronization
         private readonly SyncTargetSettings _targetSettings;
 
         [Fact]
-        public void ReferenceCycleShouldBeCollectedByGarbageCollectionTest()
+        public void SettingReferenceToNull_ThatIsCyclic_WillNotBeUntracked()
         {
             var selfReferencingChild = new ReferencingCircleHelper();
             selfReferencingChild.Other = selfReferencingChild;
@@ -38,105 +36,42 @@ namespace MonoSync.Test.Synchronization
 
             var syncSourceRoot = new SyncSourceRoot(referenceToChild, _sourceSettings);
 
-            Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
+            Assert.Equal(2, syncSourceRoot.TrackedObjects.Count());
 
             referenceToChild.Other = null;
 
-            syncSourceRoot.GarbageCollect();
+            Assert.Equal(2, syncSourceRoot.TrackedObjects.Count());
+        }
 
+        [Fact]
+        public void GarbageCollection_UntracksObjectThatHaveNoReferences()
+        {
+            // Local function to avoid reference from stack when garbage collector runs
+            static ReferencingCircleHelper ReferencingCircleHelper()
+            {
+                var selfReferencingObject = new ReferencingCircleHelper();
+                selfReferencingObject.Other = selfReferencingObject;
+
+                var otherReferencingObject = new ReferencingCircleHelper {Other = selfReferencingObject};
+                return otherReferencingObject;
+            }
+
+            ReferencingCircleHelper referencingCircleHelper = ReferencingCircleHelper();
+
+            var syncSourceRoot = new SyncSourceRoot(referencingCircleHelper, _sourceSettings);
+
+            // Write changes to remove reference from pending tracked objects
             syncSourceRoot.WriteChangesAndDispose();
 
-            Assert.Single(syncSourceRoot.TrackedReferences);
-        }
+            referencingCircleHelper.Other = null;
 
-        [Fact]
-        public void ReferenceCycleShouldNotBeCollectedByReferenceCountTest()
-        {
-            var selfReferencingChild = new ReferencingCircleHelper();
-            selfReferencingChild.Other = selfReferencingChild;
-
-            var referenceToChild = new ReferencingCircleHelper {Other = selfReferencingChild};
-
-            var syncSourceRoot = new SyncSourceRoot(referenceToChild, _sourceSettings);
-
-            Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
-
-            referenceToChild.Other = null;
-
-            Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
-        }
-
-        [Fact]
-        public void RemovingAChangedReferenceShouldAlsoRemoveItFromDirtyListTest()
-        {
-            var world = new TestGameWorld();
-            var player = new TestPlayer();
-            world.Players.Add("player", player);
-            var syncSourceRoot = new SyncSourceRoot(world, _sourceSettings);
-            
-            var syncTargetRoot = new SyncTargetRoot(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
-
-            player.Health = 3;
-
-            world.Players.Remove("player");
-
-            // Changes are removed after write
-            syncSourceRoot.WriteChangesAndDispose().SetTick(0);
-
-            Assert.DoesNotContain(player, syncSourceRoot.DirtyReferences);
-        }
-
-        [Fact]
-        public void RemovedReferenceShouldBeCollectedByReferenceCounterTest()
-        {
-            var observableDictionary = new ObservableDictionary<int, string>();
-            var syncSourceRoot = new SyncSourceRoot(observableDictionary, _sourceSettings);
-            observableDictionary.Add(1, "1");
-
-            syncSourceRoot.BeginWrite().Dispose();
-
-            Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
-
-            observableDictionary.Remove(1);
-
-            // Object are removed after write
+            // Write changes to remove reference from dirty objects
             syncSourceRoot.WriteChangesAndDispose();
 
-            Assert.Single(syncSourceRoot.TrackedReferences);
-        }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
 
-        [Fact]
-        public void AddingReferenceThatWasPreviouslyRemovedShouldBeRemovedFromTheRemovedReferences()
-        {
-            var observableDictionary = new ObservableDictionary<int, string>();
-            var syncSourceRoot = new SyncSourceRoot(observableDictionary, _sourceSettings);
-           
-            observableDictionary.Add(1, "1");
-            Assert.Equal(2, syncSourceRoot.TrackedReferences.Count());
-            Assert.Empty(syncSourceRoot.RemovedReferences);
-            
-            // Simulate write to mark synchronized
-            syncSourceRoot.BeginWrite().Dispose();
-            
-            observableDictionary.Remove(1);
-            Assert.Single(syncSourceRoot.RemovedReferences);
-            
-            observableDictionary.Add(1, "1");
-            Assert.Empty(syncSourceRoot.RemovedReferences);
-        }
-
-        [Fact]
-        public void WriteChangesShouldCreateNewReferenceTest()
-        {
-            var sourceGameWorld = new TestGameWorld {RandomIntProperty = 5};
-            var syncSourceRoot = new SyncSourceRoot(sourceGameWorld, _sourceSettings);
-
-            var syncTargetRoot = new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
-            TestGameWorld previousTargetTestGameWorld = syncTargetRoot.Root;
-
-            syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(0));
-
-            Assert.Equal(previousTargetTestGameWorld, syncTargetRoot.Root);
+            Assert.Equal(1, syncSourceRoot.PendingUntrackedObjectCount);
         }
     }
 }

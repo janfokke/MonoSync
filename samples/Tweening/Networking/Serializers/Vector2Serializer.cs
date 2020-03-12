@@ -7,15 +7,13 @@ namespace MonoSync.Sample.Tweening
 {
     public class Vector2Serializer : FieldSerializer<Vector2>
     {
-        public override bool CanInterpolate => true;
-
-        public override void Serialize(Vector2 value, ExtendedBinaryWriter writer)
+        public override void Write(Vector2 value, ExtendedBinaryWriter writer)
         {
             writer.Write(value.X);
             writer.Write(value.Y);
         }
 
-        public override void Deserialize(ExtendedBinaryReader reader, Action<Vector2> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<Vector2> valueFixup)
         {
             float x = reader.ReadSingle();
             float y = reader.ReadSingle();

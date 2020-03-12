@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using MonoSync.Collections;
 using MonoSync.Exceptions;
 using MonoSync.Utils;
@@ -11,6 +12,8 @@ namespace MonoSync
     {
         private readonly Dictionary<Type, int> _idLookup = new Dictionary<Type, int>();
         private readonly Dictionary<int, Type> _typeLookup = new Dictionary<int, Type>();
+
+        public Dictionary<Type, byte[]> TypeEncodingCache = new Dictionary<Type, byte[]>();
 
         public TypeEncoder()
         {
@@ -39,7 +42,7 @@ namespace MonoSync
 
         public Type ReadType(ExtendedBinaryReader reader)
         {
-            int count = reader.Read7BitEncodedInt();
+            var count = reader.Read7BitEncodedInt();
             var identifiers = new int[count];
             for (var i = 0; i < count; i++)
             {
@@ -56,22 +59,34 @@ namespace MonoSync
         /// <returns></returns>
         public void WriteType(Type type, ExtendedBinaryWriter writer)
         {
-            var output = new Queue<int>();
-            EncodeTypeRecursive(output, type);
-            writer.Write7BitEncodedInt(output.Count);
-            foreach (int identifier in output)
+            if (TypeEncodingCache.TryGetValue(type, out byte[] encoding) == false)
             {
-                writer.Write7BitEncodedInt(identifier);
+                using var encodingMemoryStream = new MemoryStream();
+                using var encodingWriter = new ExtendedBinaryWriter(encodingMemoryStream);
+                var output = new Queue<int>();
+                EncodeTypeRecursive(output, type);
+
+                encodingWriter.Write7BitEncodedInt(output.Count);
+
+                foreach (var identifier in output)
+                {
+                    encodingWriter.Write7BitEncodedInt(identifier);
+                }
+
+                encoding = encodingMemoryStream.ToArray();
+                TypeEncodingCache.Add(type, encoding);
             }
+
+            writer.Write(encoding);
         }
 
         private Type DecodeTypeRecursive(Queue<int> typeIdentifiers)
         {
-            int typeIdentifier = typeIdentifiers.Dequeue();
+            var typeIdentifier = typeIdentifiers.Dequeue();
 
             if (typeIdentifier == ReservedIdentifiers.ArrayIdentifier)
             {
-                int arrayRank = typeIdentifiers.Dequeue();
+                var arrayRank = typeIdentifiers.Dequeue();
                 Type arrayType = arrayRank == 1
                     ? DecodeTypeRecursive(typeIdentifiers).MakeArrayType()
                     : DecodeTypeRecursive(typeIdentifiers).MakeArrayType(arrayRank);
@@ -83,7 +98,7 @@ namespace MonoSync
             {
                 if (type.IsGenericTypeDefinition)
                 {
-                    int typeCount = type.GetGenericArguments().Length;
+                    var typeCount = type.GetGenericArguments().Length;
                     var typeArgs = new Type[typeCount];
                     for (var i = 0; i < typeCount; i++)
                     {
@@ -114,7 +129,7 @@ namespace MonoSync
                 output.Enqueue(ReservedIdentifiers.ArrayIdentifier);
 
                 // Enqueue Array rank/dimensions
-                int arrayRank = type.GetArrayRank();
+                var arrayRank = type.GetArrayRank();
                 output.Enqueue(arrayRank);
 
                 // Enqueue elementType
@@ -123,7 +138,7 @@ namespace MonoSync
 
             else if (type.IsGenericType)
             {
-                if (_idLookup.TryGetValue(type.GetGenericTypeDefinition(), out int identifier))
+                if (_idLookup.TryGetValue(type.GetGenericTypeDefinition(), out var identifier))
                 {
                     output.Enqueue(identifier);
                 }
@@ -136,7 +151,7 @@ namespace MonoSync
             }
             else
             {
-                if (_idLookup.TryGetValue(type, out int identifier))
+                if (_idLookup.TryGetValue(type, out var identifier))
                 {
                     output.Enqueue(identifier);
                 }

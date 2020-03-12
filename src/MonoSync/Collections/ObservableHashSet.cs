@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace MonoSync.Collections
@@ -13,6 +12,11 @@ namespace MonoSync.Collections
         : ISet<T>, IReadOnlyCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged, INotifyPropertyChanging
     {
         private HashSet<T> _set;
+
+        /// <summary>
+        ///     Gets the <see cref="IEqualityComparer{T}" /> object that is used to determine equality for the values in the set.
+        /// </summary>
+        public virtual IEqualityComparer<T> Comparer => _set.Comparer;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="ObservableHashSet{T}" /> class
@@ -65,11 +69,6 @@ namespace MonoSync.Collections
         {
             _set = new HashSet<T>(collection, comparer);
         }
-
-        /// <summary>
-        ///     Gets the <see cref="IEqualityComparer{T}" /> object that is used to determine equality for the values in the set.
-        /// </summary>
-        public virtual IEqualityComparer<T> Comparer => _set.Comparer;
 
         /// <summary>
         ///     Occurs when the contents of the hash set changes.
@@ -439,7 +438,7 @@ namespace MonoSync.Collections
         {
             var copy = new HashSet<T>(_set, _set.Comparer);
 
-            int removedCount = copy.RemoveWhere(match);
+            var removedCount = copy.RemoveWhere(match);
 
             if (removedCount == 0)
             {
@@ -520,10 +519,10 @@ namespace MonoSync.Collections
     internal static class ObservableHashSetSingletons
     {
         public static readonly PropertyChangedEventArgs _countPropertyChanged
-            = new PropertyChangedEventArgs("Count");
+            = new PropertyChangedEventArgs("Length");
 
         public static readonly PropertyChangingEventArgs _countPropertyChanging
-            = new PropertyChangingEventArgs("Count");
+            = new PropertyChangingEventArgs("Length");
 
         public static readonly object[] _noItems = Array.Empty<object>();
     }

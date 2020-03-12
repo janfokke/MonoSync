@@ -7,7 +7,7 @@ namespace MonoSync.Sample.Tweening
 {
     public class ColorSerializer : FieldSerializer<Color>
     {
-        public override void Serialize(Color value, ExtendedBinaryWriter writer)
+        public override void Write(Color value, ExtendedBinaryWriter writer)
         {
             writer.Write(value.R);
             writer.Write(value.G);
@@ -15,7 +15,7 @@ namespace MonoSync.Sample.Tweening
             writer.Write(value.A);
         }
 
-        public override void Deserialize(ExtendedBinaryReader reader, Action<Color> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<Color> valueFixup)
         {
             byte r = reader.ReadByte();
             byte g = reader.ReadByte();
