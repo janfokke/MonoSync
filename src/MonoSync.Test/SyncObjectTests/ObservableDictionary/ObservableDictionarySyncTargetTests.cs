@@ -52,8 +52,8 @@ namespace MonoSync.Test.Synchronization
         public void SynchronizingFull_TargetObjectEqualsSource()
         {
             var sourceGameWorld = new TestGameWorld {RandomIntProperty = 5};
-            sourceGameWorld.Players.Add("player1", new TestPlayer { Health = 100, Level = 30 });
-            sourceGameWorld.Players.Add("player2", new TestPlayer { Health = 44, Level = 1337 });
+            sourceGameWorld.Players.Add("player1", new TestPlayer {Name = "player1", Health = 100, Level = 30 });
+            sourceGameWorld.Players.Add("player2", new TestPlayer {Name = "player2", Health = 44, Level = 1337 });
 
             var syncSourceRoot = new SyncSourceRoot(sourceGameWorld, _sourceSettings);
 
@@ -74,8 +74,8 @@ namespace MonoSync.Test.Synchronization
 
             var syncTargetRoot = new SyncTargetRoot<TestGameWorld>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
 
-            sourceGameWorld.Players.Add("player1", new TestPlayer { Health = 100, Level = 30 });
-            sourceGameWorld.Players.Add("player2", new TestPlayer { Health = 44, Level = 1337 });
+            sourceGameWorld.Players.Add("player1", new TestPlayer { Name = "player1", Health = 100, Level = 30 });
+            sourceGameWorld.Players.Add("player2", new TestPlayer { Name = "player2", Health = 44, Level = 1337 });
 
             syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(10));
 

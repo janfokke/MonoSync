@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using MonoSync.Exceptions;
+using MonoSync.Utils;
 
 namespace MonoSync
 {
@@ -9,7 +10,7 @@ namespace MonoSync
         private readonly Dictionary<int, List<Action<object>>> _referenceFixups =
             new Dictionary<int, List<Action<object>>>();
         private readonly Dictionary<int, SyncTarget> _syncObjectLookup = new Dictionary<int, SyncTarget>();
-        private readonly Dictionary<object, int> _syncObjectReferenceIdLookup = new Dictionary<object, int>();
+        private readonly Dictionary<object, int> _syncObjectReferenceIdLookup = new Dictionary<object, int>(ReferenceEqualityComparer.Default);
 
         public IEnumerable<SyncBase> SyncObjects => _syncObjectLookup.Values;
 
@@ -51,7 +52,8 @@ namespace MonoSync
         public void AddSyncObject(int referenceId, SyncTarget syncObject)
         {
             object baseObject = syncObject.BaseObject;
-            if (_syncObjectReferenceIdLookup.ContainsKey(baseObject) == false)
+            if (_syncObjectReferenceIdLookup.ContainsKey(baseObject))
+                throw new DoubleSynchronizedReferenceException();
             {
                 _syncObjectReferenceIdLookup.Add(baseObject, referenceId);
                 _syncObjectLookup.Add(referenceId, syncObject);
