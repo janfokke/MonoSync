@@ -12,10 +12,16 @@ An efficient and easy to implement synchronization layer for games
 
 # Features
 
-* Delta compression
-* Reference tracking
-* Interpolation
-* Time tracking
+<dl>
+  <dt>Delta compression</dt>
+  <dd>Only changed values are synchronized.</dd>
+
+  <dt>Object tracking</dt>
+  <dd>New objects are automaticly tracked and synchronized.</dd>
+  
+  <dt>Interpolation</dt>
+  <dd>Properties can be configured with a smooth transition between the current value and the newly received value</dd>
+</dl>
 
 # Getting started
 https://github.com/janfokke/MonoSync/wiki/Getting-started
