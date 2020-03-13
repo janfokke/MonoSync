@@ -3,7 +3,8 @@
 # Add steps that run tests, create a NuGet package, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 name: 1.0.$(DayOfYear).$(rev:r)
-trigger: none
+trigger:
+- master
 
 pool:
   vmImage: 'ubuntu-latest'
