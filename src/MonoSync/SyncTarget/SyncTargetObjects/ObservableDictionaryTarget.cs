@@ -76,7 +76,7 @@ namespace MonoSync.SyncTargetObjects
         public override void Dispose()
         {
             BaseObject.CollectionChanged -= OnCollectionChanged;
-            UnSubscribeToEndRead();
+            UnSubscribeFromEndRead();
         }
 
         private void SubscribeToEndRead()
@@ -88,7 +88,7 @@ namespace MonoSync.SyncTargetObjects
             }
         }
 
-        private void UnSubscribeToEndRead()
+        private void UnSubscribeFromEndRead()
         {
             if (_subscribedToEndRead)
             {
@@ -134,13 +134,15 @@ namespace MonoSync.SyncTargetObjects
                 UndoTargetCommands();
                 PerformSynchronizationCommands();
 
+                // If there are still leading target comments,
+                // each new synchronization should check if they are later than current target tick
                 if(_leadingTargetCommands.Count > 0)
                 {
                     RedoLeadingTargetCommands();
                 }
                 else
                 {
-                    UnSubscribeToEndRead();
+                    UnSubscribeFromEndRead();
                 }
             }
 
@@ -288,15 +290,15 @@ namespace MonoSync.SyncTargetObjects
 
             public SourceAddCommand(ExtendedBinaryReader reader, IFieldSerializer keySerializer, IFieldSerializer valueSerializer)
             {
-                keySerializer.Read(reader, fixup =>
+                keySerializer.Read(reader, synchronizationCallback =>
                 {
-                    _key = (TKey) fixup;
+                    _key = (TKey) synchronizationCallback;
                     _keyResolved = true;
                 });
 
-                valueSerializer.Read(reader, fixup =>
+                valueSerializer.Read(reader, synchronizationCallback =>
                 {
-                    _value = (TValue) fixup;
+                    _value = (TValue) synchronizationCallback;
                     _valueResolved = true;
                 });
             }
@@ -320,15 +322,15 @@ namespace MonoSync.SyncTargetObjects
             public SourceReplaceCommand(ExtendedBinaryReader reader, IFieldSerializer keyDeserializer,
                 IFieldSerializer valueDeserializer)
             {
-                keyDeserializer.Read(reader, fixup =>
+                keyDeserializer.Read(reader, synchronizationCallback =>
                 {
-                    _key = (TKey) fixup;
+                    _key = (TKey) synchronizationCallback;
                     _keyResolved = true;
                 });
 
-                valueDeserializer.Read(reader, fixup =>
+                valueDeserializer.Read(reader, synchronizationCallback =>
                 {
-                    _value = (TValue) fixup;
+                    _value = (TValue) synchronizationCallback;
                     _valueResolved = true;
                 });
             }
@@ -349,9 +351,9 @@ namespace MonoSync.SyncTargetObjects
 
             public SourceRemoveCommand(ExtendedBinaryReader reader, IFieldSerializer keyDeserializer)
             {
-                keyDeserializer.Read(reader, fixup =>
+                keyDeserializer.Read(reader, synchronizationCallback =>
                 {
-                    _key = (TKey) fixup;
+                    _key = (TKey) synchronizationCallback;
                     _keyResolved = true;
                 });
             }
@@ -381,8 +383,8 @@ namespace MonoSync.SyncTargetObjects
                 {
                     var keyValuePair = new BoxedKeyValuePair();
 
-                    keyDeserializer.Read(reader, fixup => { keyValuePair.Key = (TKey) fixup; });
-                    valueDeserializer.Read(reader, fixup => { keyValuePair.Value = (TValue) fixup; });
+                    keyDeserializer.Read(reader, synchronizationCallback => { keyValuePair.Key = (TKey) synchronizationCallback; });
+                    valueDeserializer.Read(reader, synchronizationCallback => { keyValuePair.Value = (TValue) synchronizationCallback; });
 
                     _keyValuePairs.Add(keyValuePair);
                 }

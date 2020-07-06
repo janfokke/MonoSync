@@ -9,22 +9,8 @@ namespace MonoSync.Test.Synchronization
     {
         public NotifyPropertyChangedSyncSourceTests()
         {
-            var typeEncoder = new TypeEncoder();
-            int index = TypeEncoder.ReservedIdentifiers.StartingIndexNonReservedTypes;
-            typeEncoder.RegisterType<SynchronizeConstructorMock>(index++);
-            typeEncoder.RegisterType<TestPlayer>(index++);
-            typeEncoder.RegisterType<SynchronizeManySyncAttributesTest>(index++);
-            typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodMock>(index++);
-            typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodMockChild>(index++);
-            typeEncoder.RegisterType<OnSynchronizedAttributeMarkedMethodWithParametersMock>(index++);
-            typeEncoder.RegisterType<GetterOnlyMock>(index++);
-            typeEncoder.RegisterType<GetterOnlyConstructorMock>(index++);
-
             _sourceSettings = SyncSourceSettings.Default;
-            _sourceSettings.TypeEncoder = typeEncoder;
-
             _targetSettings = SyncTargetSettings.Default;
-            _targetSettings.TypeEncoder = typeEncoder;
         }
 
         private readonly SyncTargetSettings _targetSettings;

@@ -245,7 +245,7 @@ namespace MonoSync.SyncTargetObjects
 
         private static ConstructorInfo GetAttributeMarkedConstructor(Type baseType)
         {
-            return baseType.GetConstructors()
+            return baseType.GetConstructors(BindingFlags.NonPublic | BindingFlags.CreateInstance | BindingFlags.Instance)
                 .FirstOrDefault(constructorInfo =>
                     constructorInfo.GetCustomAttributes()
                         .Any(a => a is SyncConstructorAttribute));

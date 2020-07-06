@@ -28,7 +28,7 @@ namespace MonoSync.FieldSerializers
             throw new NotImplementedException();
         }
 
-        public void Read(ExtendedBinaryReader reader, Action<object> valueFixup)
+        public void Read(ExtendedBinaryReader reader, Action<object> synchronizationCallback)
         {
             throw new NotImplementedException();
         }

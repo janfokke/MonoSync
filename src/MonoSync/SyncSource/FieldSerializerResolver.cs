@@ -7,8 +7,7 @@ namespace MonoSync
 {
     public class FieldSerializerResolver : IFieldSerializerResolver
     {
-        protected readonly Dictionary<Type, IFieldSerializer> CachedSerializers =
-            new Dictionary<Type, IFieldSerializer>();
+        protected readonly Dictionary<Type, IFieldSerializer> CachedSerializers = new Dictionary<Type, IFieldSerializer>();
         protected readonly IList<IFieldSerializer> Serializers = new List<IFieldSerializer>();
         protected readonly SourceReferenceFieldSerializer SourceReferenceFieldSerializer;
         protected readonly TargetReferenceFieldSerializer TargetReferenceFieldSerializer;

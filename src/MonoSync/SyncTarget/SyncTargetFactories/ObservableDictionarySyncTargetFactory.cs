@@ -13,7 +13,6 @@ namespace MonoSync.SyncTargetFactories
             {
                 return baseType.GetGenericTypeDefinition() == typeof(ObservableDictionary<,>);
             }
-
             return false;
         }
 
@@ -21,8 +20,7 @@ namespace MonoSync.SyncTargetFactories
             IFieldSerializerResolver fieldDeserializerResolver, SyncTargetRoot root)
         {
             Type[] genericArgs = baseType.GetGenericArguments();
-            Type observableDictionarySyncSourceObjectType =
-                typeof(ObservableDictionaryTarget<,>).MakeGenericType(genericArgs);
+            Type observableDictionarySyncSourceObjectType = typeof(ObservableDictionaryTarget<,>).MakeGenericType(genericArgs);
             return (SyncTarget) Activator.CreateInstance(observableDictionarySyncSourceObjectType, referenceId,
                 baseType, reader, root, fieldDeserializerResolver);
         }

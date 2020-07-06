@@ -7,22 +7,22 @@ namespace MonoSync
 {
     public class SyncSourceFactoryResolver : ISyncSourceFactoryResolver
     {
-        private readonly List<ISyncSourceFactory> _syncSourceObjectFactories =
-            new List<ISyncSourceFactory>();
+        private readonly List<ISyncSourceFactory> _syncSourceObjectFactories = new List<ISyncSourceFactory>();
 
-        public Dictionary<Type, ISyncSourceFactory> FactoriesByType = new Dictionary<Type, ISyncSourceFactory>();
+        private readonly Dictionary<Type, ISyncSourceFactory> _factoriesByType = new Dictionary<Type, ISyncSourceFactory>();
 
         public SyncSourceFactoryResolver()
         {
             AddSyncSourceObjectFactory(new NotifyPropertyChangedSyncSourceFactory());
             AddSyncSourceObjectFactory(new StringSyncSourceFactory());
             AddSyncSourceObjectFactory(new ObservableDictionarySyncSourceFactory());
+            AddSyncSourceObjectFactory(new ObservableHashSetSyncSourceFactory());
         }
 
         public ISyncSourceFactory FindMatchingSyncSourceFactory(object baseObject)
         {
             Type type = baseObject.GetType();
-            if (FactoriesByType.TryGetValue(type, out ISyncSourceFactory factory) == false)
+            if (_factoriesByType.TryGetValue(type, out ISyncSourceFactory factory) == false)
             {
                 // Factories are looped in reverse because the last added Factory should be prioritized.
                 for (var i = _syncSourceObjectFactories.Count - 1; i >= 0; i--)
@@ -31,7 +31,7 @@ namespace MonoSync
                     if (syncSourceObjectFactory.CanCreate(baseObject))
                     {
                         factory = syncSourceObjectFactory;
-                        FactoriesByType.Add(type, syncSourceObjectFactory);
+                        _factoriesByType.Add(type, syncSourceObjectFactory);
                         return factory;
                     }
                 }

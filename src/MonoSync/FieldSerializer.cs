@@ -20,9 +20,9 @@ namespace MonoSync
             Write((T) value, writer);
         }
 
-        public virtual void Read(ExtendedBinaryReader reader, Action<object> valueFixup)
+        public virtual void Read(ExtendedBinaryReader reader, Action<object> synchronizationCallback)
         {
-            Read(reader, (Action<T>) (value => valueFixup(value)));
+            Read(reader, (Action<T>) (value => synchronizationCallback(value)));
         }
 
         public virtual T Interpolate(T source, T target, float factor)
@@ -34,6 +34,6 @@ namespace MonoSync
         public abstract void Write(T value, ExtendedBinaryWriter writer);
 
         /// <inheritdoc cref="Read(MonoSync.Utils.ExtendedBinaryReader,System.Action{object})" />
-        public abstract void Read(ExtendedBinaryReader reader, Action<T> valueFixup);
+        public abstract void Read(ExtendedBinaryReader reader, Action<T> synchronizationCallback);
     }
 }

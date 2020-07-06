@@ -10,8 +10,13 @@ namespace MonoSync.Test.TestObjects
     {
         public ISomeService SomeService { get; }
 
+        public ConstructedDependencyMock()
+        {
+            
+        }
+
         [SyncConstructor]
-        public ConstructedDependencyMock(ISomeService someService)
+        protected ConstructedDependencyMock(ISomeService someService)
         {
             SomeService = someService;
         }

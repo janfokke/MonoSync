@@ -10,9 +10,9 @@ namespace MonoSync.FieldSerializers
             writer.Write(value);
         }
 
-        public override void Read(ExtendedBinaryReader reader, Action<bool> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<bool> synchronizationCallback)
         {
-            valueFixup(reader.ReadBoolean());
+            synchronizationCallback(reader.ReadBoolean());
         }
     }
 }

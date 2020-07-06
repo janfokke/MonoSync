@@ -17,6 +17,7 @@ namespace MonoSync
             // Order is important, because ObservableDictionarySyncTargetObjectFactory also inherits INotifyPropertyChanged
             AddSyncTargetObjectFactory(new NotifyPropertyChangedSyncTargetFactory());
             AddSyncTargetObjectFactory(new ObservableDictionarySyncTargetFactory());
+            AddSyncTargetObjectFactory(new ObservableHashSetSyncTargetFactory());
             AddSyncTargetObjectFactory(new StringSyncTargetFactory());
         }
 

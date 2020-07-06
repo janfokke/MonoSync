@@ -5,8 +5,7 @@
         public static SyncSourceSettings Default => new SyncSourceSettings
         {
             SyncSourceFactoryResolver = new SyncSourceFactoryResolver(),
-            SourceFieldDeserializerResolverFactory = new SourceFieldSerializerResolverFactory(),
-            TypeEncoder = new TypeEncoder()
+            SourceFieldDeserializerResolverFactory = new SourceFieldSerializerResolverFactory()
         };
 
         public ISourceFieldSerializerResolverFactory SourceFieldDeserializerResolverFactory { get; set; }

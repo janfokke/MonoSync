@@ -7,7 +7,6 @@ using System.Linq;
 
 namespace MonoSync.Collections
 {
-    [Obsolete("Not supported yet")]
     public class ObservableHashSet<T>
         : ISet<T>, IReadOnlyCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged, INotifyPropertyChanging
     {
@@ -101,8 +100,6 @@ namespace MonoSync.Collections
             }
 
             OnCountPropertyChanging();
-
-            List<T> removed = this.ToList();
 
             _set.Clear();
 
@@ -502,8 +499,7 @@ namespace MonoSync.Collections
 
         private void OnCollectionChanged(IList newItems, IList oldItems)
         {
-            OnCollectionChanged(
-                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems, oldItems));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems, oldItems));
         }
 
         /// <summary>

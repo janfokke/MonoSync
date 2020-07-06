@@ -15,8 +15,8 @@ namespace MonoSync
         ///     Reads the data from the <see cref="reader" /> and deserializes the value.
         /// </summary>
         /// <param name="reader">The reader.</param>
-        /// <param name="valueFixup">Because reference types may not be read yet, the read value is fixed when it becomes available</param>
-        void Read(ExtendedBinaryReader reader, Action<object> valueFixup);
+        /// <param name="synchronizationCallback">Because reference types may not be read yet, the read value is fixed when it becomes available</param>
+        void Read(ExtendedBinaryReader reader, Action<object> synchronizationCallback);
 
         /// <summary>
         ///     Serializes and writes the <see cref="value" /> to the <see cref="writer" />.

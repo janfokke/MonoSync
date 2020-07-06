@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{8EA9
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoSync.Sample.Tweening", "..\samples\Tweening\MonoSync.Sample.Tweening.csproj", "{16C36ACE-EFEB-4B6E-86A4-9E365EA408C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoSync.Benchmark", "MonoSync.Benchmark\MonoSync.Benchmark.csproj", "{DAACA24D-1F2E-42E1-9169-A17B98694290}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonoSync.Benchmark", "MonoSync.Benchmark\MonoSync.Benchmark.csproj", "{DAACA24D-1F2E-42E1-9169-A17B98694290}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

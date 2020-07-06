@@ -10,9 +10,9 @@ namespace MonoSync.FieldSerializers
             writer.Write(value);
         }
 
-        public override void Read(ExtendedBinaryReader reader, Action<ulong> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<ulong> synchronizationCallback)
         {
-            valueFixup(reader.ReadUInt64());
+            synchronizationCallback(reader.ReadUInt64());
         }
 
         public override ulong Interpolate(ulong source, ulong target, float factor)

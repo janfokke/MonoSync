@@ -32,6 +32,7 @@ namespace MonoSync.Test.TypeEncoding
         // Generics
         [InlineData(typeof(ObservableCollection<int>))]
         [InlineData(typeof(ObservableDictionary<int, string>))]
+        [InlineData(typeof(ObservableHashSet<string>))]
 
         // Nested Generics
         [InlineData(

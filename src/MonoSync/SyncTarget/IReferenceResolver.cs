@@ -4,6 +4,6 @@ namespace MonoSync
 {
     public interface IReferenceResolver
     {
-        void ResolveReference(in int referenceId, Action<object> valueFixup);
+        void ResolveReference(in int referenceId, Action<object> synchronizationCallback);
     }
 }

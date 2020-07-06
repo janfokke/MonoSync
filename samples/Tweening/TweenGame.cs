@@ -11,7 +11,6 @@ namespace MonoSync.Sample.Tweening
     public class TweenGame : GameScreen
     {
         private readonly Map _map;
-        private readonly Tweener _tweener = new Tweener();
         private SpriteBatch _spriteBatch;
 
         public TweenGame(Game game, Map map) : base(game)
@@ -26,7 +25,7 @@ namespace MonoSync.Sample.Tweening
             MouseStateExtended mouseState = MouseExtended.GetState();
             float elapsedSeconds = gameTime.GetElapsedSeconds();
 
-            foreach (Player player in _map.Players.Values)
+            foreach (Player player in _map.Players)
             {
                 player.Position = Vector2.Lerp(player.Position, player.TargetPosition, 0.05f);
             }
@@ -35,8 +34,6 @@ namespace MonoSync.Sample.Tweening
             {
                 Click?.Invoke(this, mouseState.Position.ToVector2());
             }
-
-            _tweener.Update(elapsedSeconds);
         }
 
         public override void LoadContent()
@@ -57,7 +54,7 @@ namespace MonoSync.Sample.Tweening
 
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
-            foreach (Player player in _map.Players.Values)
+            foreach (Player player in _map.Players)
             {
                 _spriteBatch.FillRectangle(player.Position.X, player.Position.Y, 50, 50, player.Color);
             }

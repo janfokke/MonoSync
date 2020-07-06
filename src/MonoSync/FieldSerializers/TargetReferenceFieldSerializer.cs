@@ -27,10 +27,10 @@ namespace MonoSync.FieldSerializers
             throw new NotImplementedException();
         }
 
-        public void Read(ExtendedBinaryReader reader, Action<object> valueFixup)
+        public void Read(ExtendedBinaryReader reader, Action<object> synchronizationCallback)
         {
             var referenceId = reader.Read7BitEncodedInt();
-            _referenceResolver.ResolveReference(referenceId, valueFixup);
+            _referenceResolver.ResolveReference(referenceId, synchronizationCallback);
         }
     }
 }
