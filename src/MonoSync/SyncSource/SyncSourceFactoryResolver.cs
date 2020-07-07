@@ -5,7 +5,7 @@ using MonoSync.SyncSourceObjectFactorties;
 
 namespace MonoSync
 {
-    public class SyncSourceFactoryResolver : ISyncSourceFactoryResolver
+    public class SyncSourceFactoryResolver
     {
         private readonly List<ISyncSourceFactory> _syncSourceObjectFactories = new List<ISyncSourceFactory>();
 

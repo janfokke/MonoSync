@@ -1,13 +1,13 @@
 ﻿namespace MonoSync.Sample.Tweening
 {
-    public class TweenGameFieldSerializers : FieldSerializerResolver
+    public class TweenGameSerializers : SerializerCollection
     {
-        public TweenGameFieldSerializers(IReferenceResolver referenceResolver) : base(referenceResolver)
+        public TweenGameSerializers(IReferenceResolver referenceResolver) : base(referenceResolver)
         {
             Initialize();
         }
 
-        public TweenGameFieldSerializers(IIdentifierResolver identifierResolver) : base(identifierResolver)
+        public TweenGameSerializers(IIdentifierResolver identifierResolver) : base(identifierResolver)
         {
             Initialize();
         }

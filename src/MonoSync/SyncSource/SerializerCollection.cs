@@ -5,14 +5,15 @@ using MonoSync.FieldSerializers;
 
 namespace MonoSync
 {
-    public class FieldSerializerResolver : IFieldSerializerResolver
+    public class SerializerCollection : ISerializerCollection
     {
         protected readonly Dictionary<Type, IFieldSerializer> CachedSerializers = new Dictionary<Type, IFieldSerializer>();
         protected readonly IList<IFieldSerializer> Serializers = new List<IFieldSerializer>();
+
         protected readonly SourceReferenceFieldSerializer SourceReferenceFieldSerializer;
         protected readonly TargetReferenceFieldSerializer TargetReferenceFieldSerializer;
 
-        public FieldSerializerResolver(IReferenceResolver referenceResolver) : this()
+        public SerializerCollection(IReferenceResolver referenceResolver) : this()
         {
             if (referenceResolver == null)
             {
@@ -22,7 +23,7 @@ namespace MonoSync
             TargetReferenceFieldSerializer = new TargetReferenceFieldSerializer(referenceResolver);
         }
 
-        public FieldSerializerResolver(IIdentifierResolver identifierResolver) : this()
+        public SerializerCollection(IIdentifierResolver identifierResolver) : this()
         {
             if (identifierResolver == null)
             {
@@ -32,7 +33,7 @@ namespace MonoSync
             SourceReferenceFieldSerializer = new SourceReferenceFieldSerializer(identifierResolver);
         }
 
-        private FieldSerializerResolver()
+        private SerializerCollection()
         {
             AddSerializer(new BooleanFieldSerializer());
             AddSerializer(new CharFieldSerializer());
@@ -56,7 +57,7 @@ namespace MonoSync
             AddSerializer(new GuidSerializer());
         }
 
-        public IFieldSerializer ResolveSerializer(Type type)
+        public IFieldSerializer FindSerializerByType(Type type)
         {
             if (type == null)
             {

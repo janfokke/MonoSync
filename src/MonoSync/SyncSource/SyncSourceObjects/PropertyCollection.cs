@@ -30,14 +30,14 @@ namespace MonoSync.SyncSourceObjects
 
         public class Factory
         {
-            private readonly IFieldSerializerResolver _fieldSerializerResolver;
+            private readonly ISerializerCollection _serializerCollection;
 
             private readonly Dictionary<Type, PropertyCollection> _typeCache =
                 new Dictionary<Type, PropertyCollection>();
 
-            public Factory(IFieldSerializerResolver fieldSerializerResolver)
+            public Factory(ISerializerCollection serializerCollection)
             {
-                _fieldSerializerResolver = fieldSerializerResolver;
+                _serializerCollection = serializerCollection;
             }
 
             public PropertyCollection FromType(Type type)
@@ -51,7 +51,7 @@ namespace MonoSync.SyncSourceObjects
                         PropertyInfo syncSyncPropertyInfo = syncProperties[syncPropertyIndex];
                         Type propertyType = syncSyncPropertyInfo.PropertyType;
                         var property = new SyncSourceProperty(syncPropertyIndex, syncSyncPropertyInfo.Name,
-                            _fieldSerializerResolver.ResolveSerializer(propertyType),
+                            _serializerCollection.FindSerializerByType(propertyType),
                             propertyType.IsValueType);
                         syncSourceProperties[syncPropertyIndex] = property;
                     }

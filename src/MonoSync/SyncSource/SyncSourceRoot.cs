@@ -11,7 +11,7 @@ namespace MonoSync
     public class SyncSourceRoot
     {
         private readonly HashSet<SyncSource> _dirtySyncSourceObjects = new HashSet<SyncSource>();
-        private readonly IFieldSerializerResolver _fieldDeserializerResolver;
+        private readonly SerializerCollection _serializers;
 
         /// <summary>
         ///     If a target to an object is added and the object references itself during the construction
@@ -25,6 +25,8 @@ namespace MonoSync
         private readonly PropertyCollection.Factory _syncPropertyFactory;
         private int _referenceIdIncrementer = 1; //Reference index 0 is reserved for null
         private bool _writeSessionOpen;
+        private readonly TypeEncoder _typeEncoder;
+        private SyncSourceFactoryResolver _sourceFactoryResolver;
 
         /// <summary>
         ///     Gets the objects that are being tracked.
@@ -48,13 +50,13 @@ namespace MonoSync
         public IEnumerable<object> DirtyObjects =>
             _dirtySyncSourceObjects.Select(sourceObject => sourceObject.Reference);
 
-        public SyncSourceSettings Settings { get; }
-
-        public SyncSourceRoot(object source, SyncSourceSettings settings)
+        public SyncSourceRoot(object source)
         {
-            Settings = settings;
-            _fieldDeserializerResolver = settings.SourceFieldDeserializerResolverFactory.Create(_referencePool);
-            _syncPropertyFactory = new PropertyCollection.Factory(_fieldDeserializerResolver);
+            _typeEncoder = new TypeEncoder(new TypeTable());
+            _sourceFactoryResolver = new SyncSourceFactoryResolver();
+
+            _serializers = new SerializerCollection(_referencePool);
+            _syncPropertyFactory = new PropertyCollection.Factory(_serializers);
             TrackObject(source);
         }
 
@@ -147,7 +149,7 @@ namespace MonoSync
 
                 if (_pendingTrackedSyncSourceObjects.Contains(syncSourceObject))
                 {
-                    Settings.TypeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
+                    _typeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
                     syncSourceObject.WriteFull(writer);
                 }
                 else
@@ -170,7 +172,7 @@ namespace MonoSync
             foreach (SyncSource syncSourceObject in syncSourceObjects)
             {
                 writer.Write7BitEncodedInt(syncSourceObject.ReferenceId);
-                Settings.TypeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
+                _typeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
                 syncSourceObject.WriteFull(writer);
             }
 
@@ -218,11 +220,10 @@ namespace MonoSync
                     return;
                 }
 
-                ISyncSourceFactory sourceFactory =
-                    Settings.SyncSourceFactoryResolver.FindMatchingSyncSourceFactory(target);
+                ISyncSourceFactory sourceFactory = _sourceFactoryResolver.FindMatchingSyncSourceFactory(target);
                 var referenceId = _referenceIdIncrementer++;
                 _pendingForCreation.Add(target);
-                syncSource = sourceFactory.Create(this, referenceId, target, _fieldDeserializerResolver);
+                syncSource = sourceFactory.Create(this, referenceId, target, _serializers);
                 _pendingForCreation.Remove(target);
                 _referencePool.AddSyncSource(syncSource);
                 _pendingTrackedSyncSourceObjects.Add(syncSource);
