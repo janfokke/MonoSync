@@ -7,7 +7,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncSourceObjects
 {
-    public class ObservableHashSetSource<TKey> : SyncSource
+    public class ObservableHashSetSource<TKey> : SynchronizerSource
     {
         private readonly List<Command> _commands = new List<Command>();
 

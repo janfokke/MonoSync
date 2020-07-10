@@ -9,10 +9,9 @@ namespace MonoSync.SyncSourceObjectFactorties
             return baseType is string;
         }
 
-        public SyncSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType,
-            IFieldSerializerResolver fieldSerializerResolver)
+        public SynchronizerSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType)
         {
-            return new StringSyncSource(syncSourceRoot, referenceId, baseType as string);
+            return new StringSynchronizerSource(syncSourceRoot, referenceId, baseType as string);
         }
     }
 }

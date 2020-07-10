@@ -10,7 +10,7 @@ namespace MonoSync
 {
     public class SyncSourceRoot
     {
-        private readonly HashSet<SyncSource> _dirtySyncSourceObjects = new HashSet<SyncSource>();
+        private readonly HashSet<SynchronizerSource> _dirtySyncSourceObjects = new HashSet<SynchronizerSource>();
         private readonly SerializerCollection _serializers;
 
         /// <summary>
@@ -18,15 +18,15 @@ namespace MonoSync
         ///     it causes an infinite loop because the object will never be added to the <see cref="SourceReferencePool" />.
         /// </summary>
         private readonly HashSet<object> _pendingForCreation = new HashSet<object>();
-        private readonly HashSet<SyncSource> _pendingTrackedSyncSourceObjects = new HashSet<SyncSource>();
-        private readonly HashSet<SyncSource> _pendingUntrackedSyncSourceObjects = new HashSet<SyncSource>();
+        private readonly HashSet<SynchronizerSource> _pendingTrackedSyncSourceObjects = new HashSet<SynchronizerSource>();
+        private readonly HashSet<SynchronizerSource> _pendingUntrackedSyncSourceObjects = new HashSet<SynchronizerSource>();
 
         private readonly SourceReferencePool _referencePool = new SourceReferencePool();
         private readonly PropertyCollection.Factory _syncPropertyFactory;
         private int _referenceIdIncrementer = 1; //Reference index 0 is reserved for null
         private bool _writeSessionOpen;
         private readonly TypeEncoder _typeEncoder;
-        private SyncSourceFactoryResolver _sourceFactoryResolver;
+        private SynchronizerCollection _sourceFactoryResolver;
 
         /// <summary>
         ///     Gets the objects that are being tracked.
@@ -53,7 +53,7 @@ namespace MonoSync
         public SyncSourceRoot(object source)
         {
             _typeEncoder = new TypeEncoder(new TypeTable());
-            _sourceFactoryResolver = new SyncSourceFactoryResolver();
+            _sourceFactoryResolver = new SynchronizerCollection();
 
             _serializers = new SerializerCollection(_referencePool);
             _syncPropertyFactory = new PropertyCollection.Factory(_serializers);
@@ -124,7 +124,7 @@ namespace MonoSync
             lock (_pendingUntrackedSyncSourceObjects)
             {
                 writer.Write7BitEncodedInt(_pendingUntrackedSyncSourceObjects.Count);
-                foreach (SyncSource syncSource in _pendingUntrackedSyncSourceObjects)
+                foreach (SynchronizerSource syncSource in _pendingUntrackedSyncSourceObjects)
                 {
                     writer.Write7BitEncodedInt(syncSource.ReferenceId);
                 }
@@ -133,8 +133,8 @@ namespace MonoSync
 
         private void WriteAddedAndChangedReferences(ExtendedBinaryWriter writer)
         {
-            List<SyncSource> changedSyncSourceObjects = _dirtySyncSourceObjects.ToList();
-            var changedAndNewReferenceUnion = new HashSet<SyncSource>(_pendingTrackedSyncSourceObjects);
+            List<SynchronizerSource> changedSyncSourceObjects = _dirtySyncSourceObjects.ToList();
+            var changedAndNewReferenceUnion = new HashSet<SynchronizerSource>(_pendingTrackedSyncSourceObjects);
             // Merge the new references and the added ones
             // Because it is possible for references to be both added and changed as wel
             changedAndNewReferenceUnion.UnionWith(changedSyncSourceObjects);
@@ -143,7 +143,7 @@ namespace MonoSync
 
             writer.Write7BitEncodedInt(referenceCount);
 
-            foreach (SyncSource syncSourceObject in changedAndNewReferenceUnion)
+            foreach (SynchronizerSource syncSourceObject in changedAndNewReferenceUnion)
             {
                 writer.Write7BitEncodedInt(syncSourceObject.ReferenceId);
 
@@ -167,9 +167,9 @@ namespace MonoSync
             // Write remove target count 0
             writer.Write7BitEncodedInt(0);
 
-            List<SyncSource> syncSourceObjects = _referencePool.SyncObjects.ToList();
+            List<SynchronizerSource> syncSourceObjects = _referencePool.SyncObjects.ToList();
             writer.Write7BitEncodedInt(syncSourceObjects.Count);
-            foreach (SyncSource syncSourceObject in syncSourceObjects)
+            foreach (SynchronizerSource syncSourceObject in syncSourceObjects)
             {
                 writer.Write7BitEncodedInt(syncSourceObject.ReferenceId);
                 _typeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
@@ -184,17 +184,17 @@ namespace MonoSync
         ///     the <see cref="syncSource" /> can be revived by calling <see cref="TrackObject" />
         ///     on the object that the <see cref="syncSource" /> references.
         /// </summary>
-        /// <param name="syncSource">The synchronize source.</param>
-        /// <exception cref="ArgumentNullException">syncSource</exception>
-        internal void RegisterSyncSourceToBeUntracked(SyncSource syncSource)
+        /// <param name="synchronizerSourcenchronize source.</param>
+        /// <exception cref="ArgumentNullException">synchronizerSource</exception>
+        internal void RegisterSyncSourceToBeUntracked(SynchronizerSource synchronizerSource)
         {
             lock (_pendingUntrackedSyncSourceObjects)
             {
-                if (syncSource == null)
+                if (synchronizerSource == null)
                 {
-                    throw new ArgumentNullException(nameof(syncSource));
+                    throw new ArgumentNullException(nameof(synchronizerSource));
                 }
-                _pendingUntrackedSyncSourceObjects.Add(syncSource);
+                _pendingUntrackedSyncSourceObjects.Add(synchronizerSource);
             }
         }
 
@@ -211,9 +211,9 @@ namespace MonoSync
                 throw new ArgumentNullException(nameof(target));
             }
 
-            SyncSource syncSource = _referencePool.GetSyncSource(target);
+            SynchronizerSource synchronizerSource = _referencePool.GetSyncSource(target);
 
-            if (syncSource == null)
+            if (synchronizerSource == null)
             {
                 if (_pendingForCreation.Contains(target))
                 {
@@ -223,10 +223,10 @@ namespace MonoSync
                 ISyncSourceFactory sourceFactory = _sourceFactoryResolver.FindMatchingSyncSourceFactory(target);
                 var referenceId = _referenceIdIncrementer++;
                 _pendingForCreation.Add(target);
-                syncSource = sourceFactory.Create(this, referenceId, target, _serializers);
+                synchronizerSource = sourceFactory.Create(this, referenceId, target);
                 _pendingForCreation.Remove(target);
-                _referencePool.AddSyncSource(syncSource);
-                _pendingTrackedSyncSourceObjects.Add(syncSource);
+                _referencePool.AddSyncSource(synchronizerSource);
+                _pendingTrackedSyncSourceObjects.Add(synchronizerSource);
             }
         }
 
@@ -234,10 +234,10 @@ namespace MonoSync
         ///     Indicates that the <see cref="syncSource" /> has changes and should be serialized on next
         ///     <see cref="WriteChanges" />.
         /// </summary>
-        /// <param name="syncSource">The synchronize source.</param>
-        public void MarkSyncSourceDirty(SyncSource syncSource)
+        /// <param name="synchronizerSourcenchronize source.</param>
+        public void MarkSyncSourceDirty(SynchronizerSource synchronizerSource)
         {
-            _dirtySyncSourceObjects.Add(syncSource);
+            _dirtySyncSourceObjects.Add(synchronizerSource);
         }
     }
 }

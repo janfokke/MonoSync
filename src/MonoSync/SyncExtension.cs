@@ -32,28 +32,28 @@ namespace MonoSync
             Expression<Func<TSyncType, object>> selector)
         {
             var propertyName = GetMemberName(selector.Body);
-            List<NotifyPropertyChangedSyncTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();
+            List<NotifyPropertyChangedSynchronizerTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();
             if (syncTargetObjects.Count == 0)
             {
                 throw new SyncTargetPropertyNotFoundException(propertyName);
             }
 
-            foreach (NotifyPropertyChangedSyncTarget targetObject in syncTargetObjects)
+            foreach (NotifyPropertyChangedSynchronizerTarget targetObject in syncTargetObjects)
             {
                 yield return targetObject.GetSyncTargetProperty(propertyName);
             }
         }
 
         /// <summary>
-        ///     The <see cref="NotifyPropertyChangedSyncTarget" /> is resolved by scanning the
+        ///     The <see cref="NotifyPropertyChangedSynchronizerTarget" /> is resolved by scanning the
         ///     <see cref="INotifyPropertyChanged.PropertyChanged" /> event delegate targets
         /// </summary>
-        private static IEnumerable<NotifyPropertyChangedSyncTarget> GetSyncTargetObjects<T>(this T sync)
+        private static IEnumerable<NotifyPropertyChangedSynchronizerTarget> GetSyncTargetObjects<T>(this T sync)
         {
             return GetSyncTargetObjects(sync.GetType(), sync);
         }
 
-        public static IEnumerable<NotifyPropertyChangedSyncTarget> GetSyncTargetObjects(Type type, object sync)
+        public static IEnumerable<NotifyPropertyChangedSynchronizerTarget> GetSyncTargetObjects(Type type, object sync)
         {
             FieldInfo fieldInfo = null;
             while (type != null)
@@ -79,13 +79,13 @@ namespace MonoSync
                 (MulticastDelegate) fieldInfo
                     .GetValue(sync);
 
-            var syncSyncTargetObjects = new List<NotifyPropertyChangedSyncTarget>();
+            var syncSyncTargetObjects = new List<NotifyPropertyChangedSynchronizerTarget>();
 
             if (eventDelegate != null)
             {
                 foreach (Delegate handler in eventDelegate.GetInvocationList())
                 {
-                    if (handler.Target is NotifyPropertyChangedSyncTarget syncSyncTargetObject)
+                    if (handler.Target is NotifyPropertyChangedSynchronizerTarget syncSyncTargetObject)
                     {
                         syncSyncTargetObjects.Add(syncSyncTargetObject);
                     }

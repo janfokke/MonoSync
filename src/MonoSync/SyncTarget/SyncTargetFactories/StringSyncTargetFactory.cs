@@ -11,10 +11,10 @@ namespace MonoSync.SyncTargetFactories
             return typeof(string) == baseType;
         }
 
-        public SyncTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
+        public SynchronizerTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
             IFieldSerializerResolver fieldSerializerResolver, SyncTargetRoot root)
         {
-            return new StringSyncTarget(referenceId, reader);
+            return new StringSynchronizerTarget(referenceId, reader);
         }
     }
 }

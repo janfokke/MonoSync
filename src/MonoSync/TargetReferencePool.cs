@@ -9,10 +9,10 @@ namespace MonoSync
     {
         private readonly Dictionary<int, List<Action<object>>> _synchronizationCallbacks =
             new Dictionary<int, List<Action<object>>>();
-        private readonly Dictionary<int, SyncTarget> _syncObjectLookup = new Dictionary<int, SyncTarget>();
+        private readonly Dictionary<int, SynchronizerTarget> _syncObjectLookup = new Dictionary<int, SynchronizerTarget>();
         private readonly Dictionary<object, int> _syncObjectReferenceIdLookup = new Dictionary<object, int>(ReferenceEqualityComparer.Default);
 
-        public IEnumerable<SyncBase> SyncObjects => _syncObjectLookup.Values;
+        public IEnumerable<SynchronizerBase> SyncObjects => _syncObjectLookup.Values;
 
         /// <summary>
         ///     Resolves the reference if it is available or becomes available
@@ -29,7 +29,7 @@ namespace MonoSync
             }
 
             // resolve immediately if reference is already resolved.
-            if (TryGetSyncTargetByIdentifier(referenceId, out SyncTarget syncObject))
+            if (TryGetSyncTargetByIdentifier(referenceId, out SynchronizerTarget syncObject))
             {
                 synchronizationCallback(syncObject.BaseObject);
                 return;
@@ -49,14 +49,14 @@ namespace MonoSync
             }
         }
 
-        public void AddSyncObject(int referenceId, SyncTarget syncObject)
+        public void AddSyncObject(int referenceId, SynchronizerTarget synchronizerObject)
         {
-            object baseObject = syncObject.BaseObject;
+            object baseObject = synchronizerObject.BaseObject;
             if (_syncObjectReferenceIdLookup.ContainsKey(baseObject))
                 throw new DoubleSynchronizedReferenceException();
             {
                 _syncObjectReferenceIdLookup.Add(baseObject, referenceId);
-                _syncObjectLookup.Add(referenceId, syncObject);
+                _syncObjectLookup.Add(referenceId, synchronizerObject);
                 ResolveReferenceDependencies(referenceId, baseObject);
             }
         }
@@ -77,11 +77,11 @@ namespace MonoSync
         ///     Lookup the <see cref="TSync" /> of the <see cref="target" />
         /// </summary>
         /// <returns>The <see cref="TSync" /> if available. Else it returns null</returns>
-        public SyncTarget GetSyncObject(object reference)
+        public SynchronizerTarget GetSyncObject(object reference)
         {
             if (_syncObjectReferenceIdLookup.TryGetValue(reference, out var referenceId))
             {
-                if (_syncObjectLookup.TryGetValue(referenceId, out SyncTarget syncObject))
+                if (_syncObjectLookup.TryGetValue(referenceId, out SynchronizerTarget syncObject))
                 {
                     return syncObject;
                 }
@@ -90,20 +90,20 @@ namespace MonoSync
             return null;
         }
 
-        public bool TryGetSyncTargetByIdentifier(int referenceIdentifier, out SyncTarget syncObject)
+        public bool TryGetSyncTargetByIdentifier(int referenceIdentifier, out SynchronizerTarget synchronizerObject)
         {
             if (referenceIdentifier == 0)
             {
-                syncObject = null;
+                synchronizerObject = null;
                 return true;
             }
 
-            return _syncObjectLookup.TryGetValue(referenceIdentifier, out syncObject);
+            return _syncObjectLookup.TryGetValue(referenceIdentifier, out synchronizerObject);
         }
 
         public void RemoveReference(int referenceId)
         {
-            if (TryGetSyncTargetByIdentifier(referenceId, out SyncTarget syncObject))
+            if (TryGetSyncTargetByIdentifier(referenceId, out SynchronizerTarget syncObject))
             {
                 RemoveSyncObject(syncObject);
             }
@@ -113,11 +113,11 @@ namespace MonoSync
             }
         }
 
-        public void RemoveSyncObject(SyncTarget syncObject)
+        public void RemoveSyncObject(SynchronizerTarget synchronizerObject)
         {
-            syncObject.Dispose();
-            _syncObjectLookup.Remove(syncObject.ReferenceId);
-            _syncObjectReferenceIdLookup.Remove(syncObject.BaseObject);
+            synchronizerObject.Dispose();
+            _syncObjectLookup.Remove(synchronizerObject.ReferenceId);
+            _syncObjectReferenceIdLookup.Remove(synchronizerObject.BaseObject);
         }
 
         public void RemoveReferences(int[] removedReferenceIds)

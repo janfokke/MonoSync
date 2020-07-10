@@ -7,10 +7,10 @@ namespace MonoSync
 {
     internal class SourceReferencePool : IIdentifierResolver
     {
-        private readonly ConditionalWeakTable<object, SyncSource> _syncObjects =
-            new ConditionalWeakTable<object, SyncSource>();
+        private readonly ConditionalWeakTable<object, SynchronizerSource> _syncObjects =
+            new ConditionalWeakTable<object, SynchronizerSource>();
 
-        public IEnumerable<SyncSource> SyncObjects => _syncObjects.Select(x => x.Value);
+        public IEnumerable<SynchronizerSource> SyncObjects => _syncObjects.Select(x => x.Value);
 
         public int ResolveIdentifier(object reference)
         {
@@ -19,7 +19,7 @@ namespace MonoSync
                 return 0;
             }
 
-            if (_syncObjects.TryGetValue(reference, out SyncSource value))
+            if (_syncObjects.TryGetValue(reference, out SynchronizerSource value))
             {
                 return value.ReferenceId;
             }
@@ -27,19 +27,19 @@ namespace MonoSync
             throw new ReferenceIsNotTrackedException(reference);
         }
 
-        public void AddSyncSource(SyncSource syncObject)
+        public void AddSyncSource(SynchronizerSource synchronizerObject)
         {
-            object baseObject = syncObject.Reference;
-            _syncObjects.Add(baseObject, syncObject);
+            object baseObject = synchronizerObject.Reference;
+            _syncObjects.Add(baseObject, synchronizerObject);
         }
 
         /// <summary>
         ///     Lookup the <see cref="TSync" /> of the <see cref="target" />
         /// </summary>
         /// <returns>The <see cref="TSync" /> if available. Else it returns null</returns>
-        public SyncSource GetSyncSource(object reference)
+        public SynchronizerSource GetSyncSource(object reference)
         {
-            if (_syncObjects.TryGetValue(reference, out SyncSource syncSource))
+            if (_syncObjects.TryGetValue(reference, out SynchronizerSource syncSource))
             {
                 return syncSource;
             }
@@ -50,9 +50,9 @@ namespace MonoSync
         /// <summary>Removes the reference.</summary>
         /// <param name="reference">The reference.</param>
         /// <returns>The referenceId of the reference that got removed. 0 if no reference was removed</returns>
-        public void RemoveSyncSource(SyncSource syncSource)
+        public void RemoveSyncSource(SynchronizerSource synchronizerSource)
         {
-            _syncObjects.Remove(syncSource);
+            _syncObjects.Remove(synchronizerSource);
         }
     }
 }

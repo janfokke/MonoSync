@@ -16,12 +16,12 @@ namespace MonoSync.SyncTargetFactories
             return false;
         }
 
-        public SyncTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
+        public SynchronizerTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
             IFieldSerializerResolver fieldDeserializerResolver, SyncTargetRoot root)
         {
             Type[] genericArgs = baseType.GetGenericArguments();
             Type observableDictionarySyncSourceObjectType = typeof(ObservableDictionaryTarget<,>).MakeGenericType(genericArgs);
-            return (SyncTarget) Activator.CreateInstance(observableDictionarySyncSourceObjectType, referenceId,
+            return (SynchronizerTarget) Activator.CreateInstance(observableDictionarySyncSourceObjectType, referenceId,
                 baseType, reader, root, fieldDeserializerResolver);
         }
     }

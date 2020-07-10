@@ -5,13 +5,12 @@ using MonoSync.SyncSourceObjectFactorties;
 
 namespace MonoSync
 {
-    public class SyncSourceFactoryResolver
+    public class SynchronizerCollection
     {
         private readonly List<ISyncSourceFactory> _syncSourceObjectFactories = new List<ISyncSourceFactory>();
-
         private readonly Dictionary<Type, ISyncSourceFactory> _factoriesByType = new Dictionary<Type, ISyncSourceFactory>();
 
-        public SyncSourceFactoryResolver()
+        public SynchronizerCollection()
         {
             AddSyncSourceObjectFactory(new NotifyPropertyChangedSyncSourceFactory());
             AddSyncSourceObjectFactory(new StringSyncSourceFactory());
@@ -38,7 +37,6 @@ namespace MonoSync
 
                 throw new SyncObjectFactoryNotFoundException(baseObject);
             }
-
             return factory;
         }
 

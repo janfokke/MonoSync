@@ -4,7 +4,6 @@
     {
         bool CanCreate(object baseType);
 
-        SyncSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType,
-            IFieldSerializerResolver fieldSerializerResolver);
+        SynchronizerSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType);
     }
 }

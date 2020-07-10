@@ -2,9 +2,9 @@
 
 namespace MonoSync.SyncTargetObjects
 {
-    public class StringSyncTarget : SyncTarget
+    public class StringSynchronizerTarget : SynchronizerTarget
     {
-        public StringSyncTarget(int referenceId, ExtendedBinaryReader reader) : base(referenceId)
+        public StringSynchronizerTarget(int referenceId, ExtendedBinaryReader reader) : base(referenceId)
         {
             BaseObject = reader.ReadString();
         }

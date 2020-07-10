@@ -7,7 +7,7 @@ namespace MonoSync
     {
         bool CanCreate(Type baseType);
 
-        SyncTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
+        SynchronizerTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
             IFieldSerializerResolver fieldSerializerResolver, SyncTargetRoot root);
     }
 }

@@ -12,7 +12,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncTargetObjects
 {
-    public class NotifyPropertyChangedSyncTarget : SyncTarget
+    public class NotifyPropertyChangedSynchronizerTarget : SynchronizerTarget
     {
         private readonly SyncTargetRoot _syncTargetRoot;
         private readonly SyncTargetProperty[] _targetPropertyByIndexLookup;
@@ -30,7 +30,7 @@ namespace MonoSync.SyncTargetObjects
             set => base.BaseObject = value;
         }
 
-        public NotifyPropertyChangedSyncTarget(int referenceId, Type baseType, ExtendedBinaryReader reader,
+        public NotifyPropertyChangedSynchronizerTarget(int referenceId, Type baseType, ExtendedBinaryReader reader,
             SyncTargetRoot syncTargetRoot,
             IFieldSerializerResolver fieldDeserializerResolver) : base(referenceId)
         {
@@ -200,8 +200,8 @@ namespace MonoSync.SyncTargetObjects
                 Type type = synchronizedValue.GetType();
                 if (type.IsValueType == false)
                 {
-                    SyncTarget target = _syncTargetRoot.TargetReferencePool.GetSyncObject(synchronizedValue);
-                    if (target is NotifyPropertyChangedSyncTarget notifyPropertyChangedSyncTarget)
+                    SynchronizerTarget target = _syncTargetRoot.TargetReferencePool.GetSyncObject(synchronizedValue);
+                    if (target is NotifyPropertyChangedSynchronizerTarget notifyPropertyChangedSyncTarget)
                     {
                         notifyPropertyChangedSyncTarget.Construct(constructionPath);
                     }

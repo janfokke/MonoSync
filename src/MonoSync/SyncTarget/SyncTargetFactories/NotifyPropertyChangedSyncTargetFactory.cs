@@ -12,10 +12,10 @@ namespace MonoSync.SyncTargetFactories
             return typeof(INotifyPropertyChanged).IsAssignableFrom(baseType);
         }
 
-        public SyncTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
+        public SynchronizerTarget Create(int referenceId, Type baseType, ExtendedBinaryReader reader,
             IFieldSerializerResolver fieldSerializerResolver, SyncTargetRoot clock)
         {
-            return new NotifyPropertyChangedSyncTarget(referenceId, baseType, reader, clock, fieldSerializerResolver);
+            return new NotifyPropertyChangedSynchronizerTarget(referenceId, baseType, reader, clock, fieldSerializerResolver);
         }
     }
 }

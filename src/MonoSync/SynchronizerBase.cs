@@ -2,11 +2,11 @@
 
 namespace MonoSync
 {
-    public abstract class SyncBase : IDisposable
+    public abstract class SynchronizerBase : IDisposable
     {
         public int ReferenceId { get; }
 
-        protected SyncBase(int referenceId)
+        protected SynchronizerBase(int referenceId)
         {
             ReferenceId = referenceId;
         }

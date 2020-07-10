@@ -17,13 +17,12 @@ namespace MonoSync.SyncSourceObjectFactorties
             return false;
         }
 
-        public SyncSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType,
-            IFieldSerializerResolver fieldSerializerResolver)
+        public SynchronizerSource Create(SyncSourceRoot syncSourceRoot, int referenceId, object baseType)
         {
             Type[] genericArgs = baseType.GetType().GetGenericArguments();
             Type observableDictionarySyncSourceObjectType =
                 typeof(ObservableDictionarySource<,>).MakeGenericType(genericArgs);
-            return (SyncSource) Activator.CreateInstance(observableDictionarySyncSourceObjectType, syncSourceRoot,
+            return (SynchronizerSource) Activator.CreateInstance(observableDictionarySyncSourceObjectType, syncSourceRoot,
                 referenceId,
                 baseType, fieldSerializerResolver);
         }

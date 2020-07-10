@@ -2,9 +2,9 @@
 
 namespace MonoSync.SyncSourceObjects
 {
-    public class StringSyncSource : SyncSource
+    public class StringSynchronizerSource : SynchronizerSource
     {
-        public StringSyncSource(SyncSourceRoot syncSourceRoot, int referenceId, string reference) :
+        public StringSynchronizerSource(SyncSourceRoot syncSourceRoot, int referenceId, string reference) :
             base(syncSourceRoot, referenceId, reference)
         {
         }

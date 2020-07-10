@@ -7,7 +7,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncSourceObjects
 {
-    public class ObservableDictionarySource<TKey, TValue> : SyncSource
+    public class ObservableDictionarySource<TKey, TValue> : SynchronizerSource
     {
         private readonly List<Command> _commands = new List<Command>();
 

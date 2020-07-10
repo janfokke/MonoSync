@@ -42,7 +42,7 @@ namespace MonoSync
             Read(initialFullSynchronization);
 
             // SyncObject 1 is always root object.
-            TargetReferencePool.TryGetSyncTargetByIdentifier(1, out SyncTarget syncTargetObject);
+            TargetReferencePool.TryGetSyncTargetByIdentifier(1, out SynchronizerTarget syncTargetObject);
             Root = syncTargetObject.BaseObject;
         }
 
@@ -88,7 +88,7 @@ namespace MonoSync
             {
                 var referenceId = reader.Read7BitEncodedInt();
 
-                if (TargetReferencePool.TryGetSyncTargetByIdentifier(referenceId, out SyncTarget syncTargetObject))
+                if (TargetReferencePool.TryGetSyncTargetByIdentifier(referenceId, out SynchronizerTarget syncTargetObject))
                 {
                     syncTargetObject.Read(reader);
                 }

@@ -7,13 +7,13 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncSourceObjects
 {
-    public class NotifyPropertyChangedSyncSource : SyncSource
+    public class NotifyPropertyChangedSynchronizerSource : SynchronizerSource
     {
         private readonly SortedDictionary<int, SyncSourceProperty> _changedProperties;
         private readonly PropertyCollection _propertyCollection;
         private readonly TypeAccessor _typeAccessor;
 
-        public NotifyPropertyChangedSyncSource(SyncSourceRoot syncSourceRoot, int referenceId,
+        public NotifyPropertyChangedSynchronizerSource(SyncSourceRoot syncSourceRoot, int referenceId,
             INotifyPropertyChanged reference) :
             base(syncSourceRoot, referenceId, reference)
         {

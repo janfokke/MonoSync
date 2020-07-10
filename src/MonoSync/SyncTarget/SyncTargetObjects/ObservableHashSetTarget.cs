@@ -6,7 +6,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncTargetObjects
 {
-    public class ObservableHashSetTarget<TItem> : SyncTarget
+    public class ObservableHashSetTarget<TItem> : SynchronizerTarget
     {
         public new ObservableHashSet<TItem> BaseObject => (ObservableHashSet<TItem>)base.BaseObject;
 

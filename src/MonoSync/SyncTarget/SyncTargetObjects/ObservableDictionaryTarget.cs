@@ -6,7 +6,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.SyncTargetObjects
 {
-    public class ObservableDictionaryTarget<TKey, TValue> : SyncTarget
+    public class ObservableDictionaryTarget<TKey, TValue> : SynchronizerTarget
     {
         public new ObservableDictionary<TKey, TValue> BaseObject => (ObservableDictionary<TKey, TValue>)base.BaseObject;
 

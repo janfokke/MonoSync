@@ -2,11 +2,11 @@
 
 namespace MonoSync
 {
-    public abstract class SyncTarget : SyncBase
+    public abstract class SynchronizerTarget : SynchronizerBase
     {
         public object BaseObject { get; protected set; }
 
-        protected SyncTarget(int referenceId) : base(referenceId)
+        protected SynchronizerTarget(int referenceId) : base(referenceId)
         {
         }
 

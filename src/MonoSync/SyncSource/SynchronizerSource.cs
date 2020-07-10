@@ -3,7 +3,7 @@ using MonoSync.Utils;
 
 namespace MonoSync
 {
-    public abstract class SyncSource : SyncBase
+    public abstract class SynchronizerSource : SynchronizerBase
     {
         private bool _disposed;
 
@@ -19,7 +19,7 @@ namespace MonoSync
         /// </summary>
         public bool Dirty { get; private set; }
 
-        protected SyncSource(SyncSourceRoot syncSourceRoot, int referenceId, object reference) : base(referenceId)
+        protected SynchronizerSource(SyncSourceRoot syncSourceRoot, int referenceId, object reference) : base(referenceId)
         {
             SyncSourceRoot = syncSourceRoot;
             Reference = reference;
@@ -72,7 +72,7 @@ namespace MonoSync
             _disposed = true;
         }
 
-        ~SyncSource()
+        ~SynchronizerSource()
         {
             DisposeImpl();
         }
