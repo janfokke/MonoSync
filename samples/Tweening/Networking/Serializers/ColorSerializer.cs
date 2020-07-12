@@ -1,11 +1,10 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
-using MonoSync.FieldSerializers;
 using MonoSync.Utils;
 
 namespace MonoSync.Sample.Tweening
 {
-    public class ColorSerializer : FieldSerializer<Color>
+    public class ColorSerializer : Serializer<Color>
     {
         public override void Write(Color value, ExtendedBinaryWriter writer)
         {

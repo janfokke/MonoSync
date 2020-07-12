@@ -7,25 +7,16 @@ namespace MonoSync.Test.Synchronization
 {
     public class NotifyPropertyChangedSyncSourceTests
     {
-        public NotifyPropertyChangedSyncSourceTests()
-        {
-            _sourceSettings = SyncSourceSettings.Default;
-            _targetSettings = SyncTargetSettings.Default;
-        }
-
-        private readonly SyncTargetSettings _targetSettings;
-        private readonly SyncSourceSettings _sourceSettings;
-
         [Fact]
         public void Initializing_NonConstructorPropertyWithoutSetter_ThrowsSetterNotFoundException()
         {
             var attributeMarkedMethodMockSource = new GetterOnlyMock();
 
-            var syncSourceRoot = new SyncSourceRoot(attributeMarkedMethodMockSource, _sourceSettings);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
 
             Assert.Throws<SetterNotFoundException>(() =>
             {
-                var syncTargetRoot = new SyncTargetRoot<GetterOnlyMock>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+                var TargetSynchronizerRoot = new TargetSynchronizerRoot(SourceSynchronizerRoot.WriteFullAndDispose());
             });
         }
     }

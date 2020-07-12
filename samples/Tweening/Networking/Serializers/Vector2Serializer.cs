@@ -1,11 +1,10 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
-using MonoSync.FieldSerializers;
 using MonoSync.Utils;
 
 namespace MonoSync.Sample.Tweening
 {
-    public class Vector2Serializer : FieldSerializer<Vector2>
+    public class Vector2Serializer : Serializer<Vector2>
     {
         public override void Write(Vector2 value, ExtendedBinaryWriter writer)
         {

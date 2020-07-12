@@ -12,11 +12,11 @@ namespace MonoSync.Test.Synchronization
         {
             var sourceHashSet = new ObservableHashSet<string>();
 
-            var syncSourceRoot = new SyncSourceRoot(sourceHashSet, SyncSourceSettings.Default);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceHashSet);
             sourceHashSet.Add("1");
             sourceHashSet.Add("2");
 
-            Assert.Equal(3, syncSourceRoot.TrackedObjects.Count());
+            Assert.Equal(3, SourceSynchronizerRoot.TrackedObjects.Count());
         }
 
         [Fact]
@@ -27,9 +27,9 @@ namespace MonoSync.Test.Synchronization
                 "1", "2"
             };
 
-            var syncSourceRoot = new SyncSourceRoot(sourceHashSet, SyncSourceSettings.Default);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceHashSet);
             
-            Assert.Equal(3, syncSourceRoot.TrackedObjects.Count());
+            Assert.Equal(3, SourceSynchronizerRoot.TrackedObjects.Count());
         }
     }
 }

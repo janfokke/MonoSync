@@ -13,10 +13,10 @@ namespace MonoSync.Test.Synchronization
         public void Clear_ShouldThrowNotImplemented()
         {
             var sourceDictionary = new ObservableDictionary<int, string>();
-            var syncSourceRoot = new SyncSourceRoot(sourceDictionary, SyncSourceSettings.Default);
-            byte[] data = syncSourceRoot.WriteFullAndDispose();
-            var syncTargetRoot = new SyncTargetRoot<ObservableDictionary<int, string>>(data, SyncTargetSettings.Default);
-            Assert.Throws<NotSupportedException>(() => { syncTargetRoot.Root.Clear(); });
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceDictionary);
+            byte[] data = SourceSynchronizerRoot.WriteFullAndDispose();
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<ObservableDictionary<int, string>>(data);
+            Assert.Throws<NotSupportedException>(() => { TargetSynchronizerRoot.Reference.Clear(); });
         }
 
         [Fact]
@@ -24,11 +24,11 @@ namespace MonoSync.Test.Synchronization
         {
             var sourceDictionary = new ObservableDictionary<int, string>();
 
-            var syncSourceRoot = new SyncSourceRoot(sourceDictionary, SyncSourceSettings.Default);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceDictionary);
             sourceDictionary.Add(1, "1");
             sourceDictionary.Add(2, "2");
 
-            Assert.Equal(3, syncSourceRoot.TrackedObjects.Count());
+            Assert.Equal(3, SourceSynchronizerRoot.TrackedObjects.Count());
         }
 
         [Fact]
@@ -40,9 +40,9 @@ namespace MonoSync.Test.Synchronization
                 { 2, "2" }
             };
 
-            var syncSourceRoot = new SyncSourceRoot(sourceDictionary, SyncSourceSettings.Default);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceDictionary);
 
-            Assert.Equal(3, syncSourceRoot.TrackedObjects.Count());
+            Assert.Equal(3, SourceSynchronizerRoot.TrackedObjects.Count());
         }
     }
 }

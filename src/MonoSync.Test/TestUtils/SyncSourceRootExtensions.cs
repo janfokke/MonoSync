@@ -1,16 +1,16 @@
 namespace MonoSync.Test.TestUtils
 {
-    public static class SyncSourceRootExtensions
+    public static class SourceSynchronizerRootExtensions
     {
-        public static byte[] WriteFullAndDispose(this SyncSourceRoot syncSourceRoot)
+        public static byte[] WriteFullAndDispose(this SourceSynchronizerRoot SourceSynchronizerRoot)
         {
-            using WriteSession session = syncSourceRoot.BeginWrite();
+            using WriteSession session = SourceSynchronizerRoot.BeginWrite();
             return session.WriteFull();
         }
 
-        public static SynchronizationPacket WriteChangesAndDispose(this SyncSourceRoot syncSourceRoot)
+        public static SynchronizationPacket WriteChangesAndDispose(this SourceSynchronizerRoot SourceSynchronizerRoot)
         {
-            using WriteSession session = syncSourceRoot.BeginWrite();
+            using WriteSession session = SourceSynchronizerRoot.BeginWrite();
             return session.WriteChanges();
         }
     }

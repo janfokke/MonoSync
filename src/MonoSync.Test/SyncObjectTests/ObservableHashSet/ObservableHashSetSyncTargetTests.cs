@@ -8,41 +8,24 @@ namespace MonoSync.Test.Synchronization
 {
     public class ObservableHashSetSyncTargetTests
     {
-        public ObservableHashSetSyncTargetTests()
-        {
-            var typeEncoder = new TypeEncoder();
-            typeEncoder.RegisterType<HashSetTestObject>(TypeEncoder.ReservedIdentifiers.StartingIndexNonReservedTypes);
-            typeEncoder.RegisterType<TestPlayer>(TypeEncoder.ReservedIdentifiers.StartingIndexNonReservedTypes + 1);
-
-            _sourceSettings = SyncSourceSettings.Default;
-            _sourceSettings.TypeEncoder = typeEncoder;
-
-            _targetSettings = SyncTargetSettings.Default;
-            _targetSettings.TypeEncoder = typeEncoder;
-        }
-
-        private readonly SyncTargetSettings _targetSettings;
-        private readonly SyncSourceSettings _sourceSettings;
-
         [Fact]
         public void Synchronizing_RollsBackTargetChangesPriorToSourceTick()
         {
             var source = new ObservableHashSet<string>();
-            var syncSourceRoot = new SyncSourceRoot(source, _sourceSettings);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(source);
 
-            byte[] writeFullAndDispose = syncSourceRoot.WriteFullAndDispose();
-            var syncTargetRoot = new SyncTargetRoot<ObservableHashSet<string>>(
-                writeFullAndDispose,
-                _targetSettings);
+            byte[] writeFullAndDispose = SourceSynchronizerRoot.WriteFullAndDispose();
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<ObservableHashSet<string>>(
+                writeFullAndDispose);
 
-            ObservableHashSet<string> target = syncTargetRoot.Root;
+            ObservableHashSet<string> target = TargetSynchronizerRoot.Reference;
             target.Add("2");
 
-            syncTargetRoot.Clock.OwnTick = 5;
+            TargetSynchronizerRoot.Clock.OwnTick = 5;
 
             //Set tick older than client tick
-            byte[] changes = syncSourceRoot.WriteChangesAndDispose().SetTick(6);
-            syncTargetRoot.Read(changes);
+            byte[] changes = SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(6);
+            TargetSynchronizerRoot.Read(changes);
 
             // Recently added item should be rolled back
             Assert.Empty(target);
@@ -55,10 +38,10 @@ namespace MonoSync.Test.Synchronization
             sourceGameWorld.Players.Add(new TestPlayer {Name = "player1", Health = 100, Level = 30 });
             sourceGameWorld.Players.Add(new TestPlayer {Name = "player2", Health = 44, Level = 1337 });
 
-            var syncSourceRoot = new SyncSourceRoot(sourceGameWorld, _sourceSettings);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceGameWorld);
 
-            var syncTargetRoot = new SyncTargetRoot<HashSetTestObject>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
-            HashSetTestObject targetGameWorld = syncTargetRoot.Root;
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<HashSetTestObject>(SourceSynchronizerRoot.WriteFullAndDispose());
+            HashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
 
             AssertExtension.AssertCloneEqual(sourceGameWorld, targetGameWorld);
         }
@@ -68,18 +51,18 @@ namespace MonoSync.Test.Synchronization
         {
             var hashSetTestObject = new HashSetTestObject { RandomIntProperty = 5 };
             
-            var syncSourceRoot = new SyncSourceRoot(hashSetTestObject, _sourceSettings);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(hashSetTestObject);
 
             hashSetTestObject.Players.Clear();
 
-            var syncTargetRoot = new SyncTargetRoot<HashSetTestObject>(syncSourceRoot.WriteFullAndDispose(), _targetSettings);
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<HashSetTestObject>(SourceSynchronizerRoot.WriteFullAndDispose());
 
             hashSetTestObject.Players.Add(new TestPlayer { Name = "player1", Health = 100, Level = 30 });
             hashSetTestObject.Players.Add(new TestPlayer { Name = "player2", Health = 44, Level = 1337 });
 
-            syncTargetRoot.Read(syncSourceRoot.WriteChangesAndDispose().SetTick(10));
+            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(10));
 
-            HashSetTestObject targetGameWorld = syncTargetRoot.Root;
+            HashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
 
             AssertExtension.AssertCloneEqual(hashSetTestObject, targetGameWorld);
         }

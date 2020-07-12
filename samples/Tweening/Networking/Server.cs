@@ -10,7 +10,7 @@ namespace MonoSync.Sample.Tweening
     public class Server : SimpleGameComponent
     {
         private readonly List<ServerSideClient> _clients = new List<ServerSideClient>();
-        private readonly SyncSourceRoot _gameWorldSyncSourceRoot;
+        private readonly SourceSynchronizerRoot _gameWorldSyncSourceRoot;
         private readonly List<ServerSideClient> _newClients = new List<ServerSideClient>();
         private readonly TcpListener _tcpListener;
         
@@ -25,10 +25,7 @@ namespace MonoSync.Sample.Tweening
             Self = new Player(Utils.RandomColor());
             Map.Players.Add(Self);
 
-            var settings = SyncSourceSettings.Default;
-            settings.TypeEncoder = new TweenGameTypeEncoder();
-            settings.SourceFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
-            _gameWorldSyncSourceRoot = new SyncSourceRoot(Map, settings);
+            _gameWorldSyncSourceRoot = new SourceSynchronizerRoot(Map);
             _tcpListener = new TcpListener(IPAddress.Loopback, 1234);
             _tcpListener.Start();
         }

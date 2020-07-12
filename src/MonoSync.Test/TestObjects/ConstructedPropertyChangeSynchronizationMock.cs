@@ -1,6 +1,5 @@
 using System;
 using MonoSync.Attributes;
-using MonoSync.SyncTargetObjects;
 using PropertyChanged;
 
 namespace MonoSync.Test.TestObjects

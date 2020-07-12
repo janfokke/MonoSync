@@ -31,4 +31,8 @@
     <ProjectReference Include="..\MonoSync\MonoSync.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TypeEncoding\" />
+  </ItemGroup>
+
 </Project>

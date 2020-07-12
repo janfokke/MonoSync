@@ -10,123 +10,129 @@ using MonoSync.Utils;
 
 namespace MonoSync
 {
-    public class TypeTable
+    internal class TypeEncoder
     {
-        public static class ReservedIdentifiers
+        private readonly Dictionary<Type, byte[]> _typeEncodingCache = new Dictionary<Type, byte[]>();
+        private const int ReservedIndexOffset = 2;
+
+        /// <summary>
+        /// All custom types
+        /// </summary>
+        private readonly List<Type> _allCustomTypes = new List<Type>();
+
+        /// <summary>
+        /// Custom types that are not synchronized yet
+        /// </summary>
+        private readonly List<Type> _addedCustomTypes = new List<Type>();
+
+        private static class ReservedIdentifiers
         {
             // 0 is reserved for null
             public const int ArrayIdentifier = 1;
         }
 
-        private static Dictionary<string,Type> _serializableTypeLookupCache;
-        private static Dictionary<string, Type> GetSerializableTypeLookup()
-        {
-            if (_serializableTypeLookupCache != null)
-                return _serializableTypeLookupCache;
-
-            var types = new List<Type>();
-            types.Add(typeof(bool));
-            types.Add(typeof(byte));
-            types.Add(typeof(sbyte));
-            types.Add(typeof(char));
-            types.Add(typeof(decimal));
-            types.Add(typeof(double));
-            types.Add(typeof(float));
-            types.Add(typeof(int));
-            types.Add(typeof(uint));
-            types.Add(typeof(long));
-            types.Add(typeof(ulong));
-            types.Add(typeof(short));
-            types.Add(typeof(ushort));
-            types.Add(typeof(string));
-            types.Add(typeof(Guid));
-            
-            //Register SyncTypes
-            types.Add(typeof(ObservableCollection<>));
-            types.Add(typeof(ObservableDictionary<,>));
-            types.Add(typeof(ObservableHashSet<>));
-
-            IEnumerable<Type> typesWithSerializableAttribute =
-                from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                from type in assembly.GetTypes()
-                let attributes = type.GetCustomAttributes(typeof(SerializableAttribute), true)
-                where attributes.Length > 0
-                select type;
-
-            foreach (Type type in typesWithSerializableAttribute)
-            {
-                types.Add(type);
-            }
-
-            return _serializableTypeLookupCache = types.ToDictionary(type => type.AssemblyQualifiedName);
-        }
-
-        /// <summary>
-        /// 0-8 are reserved
-        /// </summary>
-        private const int StartIndex = 8;
-
         private readonly Dictionary<Type, int> _idLookup = new Dictionary<Type, int>();
         private readonly Dictionary<int, Type> _typeLookup = new Dictionary<int, Type>();
-        private int _typeIndex = StartIndex;
 
-        public TypeTable()
+        public TypeEncoder()
         {
-            var serializableTypes = GetSerializableTypeLookup();
-            foreach (Type type in serializableTypes.Values)
+            var types = new[]
             {
-                RegisterType(type);
+                typeof(bool), typeof(byte), typeof(sbyte), typeof(char),
+                typeof(decimal),
+                typeof(double),
+                typeof(float),
+                typeof(int),
+                typeof(uint),
+                typeof(long),
+                typeof(ulong),
+                typeof(short),
+                typeof(ushort),
+                typeof(string),
+                typeof(Guid),
+                typeof(ObservableCollection<>),
+                typeof(ObservableDictionary<,>),
+                typeof(ObservableHashSet<>)
+            };
+
+            foreach (Type type in types)
+            {
+                RegisterDefaultType(type);
             }
         }
 
-        public TypeTable(ExtendedBinaryReader reader)
+        public void WriteAllTypes(ExtendedBinaryWriter writer)
         {
-            Dictionary<string, Type> serializableTypeLookup = GetSerializableTypeLookup();
+            writer.Write7BitEncodedInt(_allCustomTypes.Count);
+            foreach (Type type in _allCustomTypes)
+            {
+                writer.Write(type.AssemblyQualifiedName);
+            }
+        }
 
+        public void WriteAddedTypes(ExtendedBinaryWriter writer)
+        {
+            writer.Write7BitEncodedInt(_addedCustomTypes.Count);
+            foreach (var type in _addedCustomTypes)
+            {
+                writer.Write(type.AssemblyQualifiedName);
+            }
+        }
+
+        public void Read(ExtendedBinaryReader reader)
+        {
             int count = reader.Read7BitEncodedInt();
             for (int i = 0; i < count; i++)
             {
                 string assemblyQualifiedName = reader.ReadString();
-                if (serializableTypeLookup.TryGetValue(assemblyQualifiedName, out Type serializableType))
-                {
-                    RegisterType(serializableType);
-                }
-                else
-                {
-                    throw new TypeNotSerializableException(assemblyQualifiedName);
-                }
+                var type = Type.GetType(assemblyQualifiedName);
+                RegisterDefaultType(type);
             }
         }
 
-        public void Serialize(ExtendedBinaryWriter writer)
+        /// <summary>
+        /// Registers the type
+        /// </summary>
+        /// <param name="type"></param>
+        public bool RegisterType(Type type)
         {
-            writer.Write7BitEncodedInt(_typeLookup.Count);
-            foreach (var valuePair in _typeLookup)
+            if (type.IsGenericType)
             {
-                writer.Write(valuePair.Value.AssemblyQualifiedName);
+                // Recursive generic argument registration
+                foreach (Type genericArgument in type.GetGenericArguments())
+                {
+                    RegisterType(genericArgument);
+                }
+                type = type.GetGenericTypeDefinition();
             }
+
+            if (RegisterDefaultType(type))
+            {
+                _allCustomTypes.Add(type);
+                _addedCustomTypes.Add(type);
+                return true;
+            }
+            return false;
         }
 
-        public void RegisterType(Type type)
+        /// <summary>
+        /// Registers the type without serializing it
+        /// </summary>
+        /// <param name="type"></param>
+        private bool RegisterDefaultType(Type type)
         {
-            int index = _typeIndex++;
+            int index = _typeLookup.Count + ReservedIndexOffset;
             if (type.IsGenericType && type.IsGenericTypeDefinition == false)
             {
                 throw new ArgumentException($"{nameof(type)} must be a GenericTypeDefinition");
             }
-
-            if (_typeLookup.TryGetValue(index, out Type registeredType))
-            {
-                throw new IdentifierAlreadyRegisteredException(index, registeredType);
-            }
-
             if (_idLookup.ContainsKey(type))
             {
-                throw new TypeAlreadyRegisteredException(type);
+                return false;
             }
-
             _idLookup.Add(type, index);
             _typeLookup.Add(index, type);
+            return true;
         }
 
         public void RegisterType<T>()
@@ -151,17 +157,7 @@ namespace MonoSync
             }
             throw new TypeNotSerializableException(type.AssemblyQualifiedName);
         }
-    }
 
-    public class TypeEncoder : ITypeEncoder
-    {
-        private readonly TypeTable _typeTable;
-        private readonly Dictionary<Type, byte[]> _typeEncodingCache = new Dictionary<Type, byte[]>();
-
-        public TypeEncoder(TypeTable typeTable)
-        {
-            _typeTable = typeTable;
-        }
 
         public Type ReadType(ExtendedBinaryReader reader)
         {
@@ -207,7 +203,7 @@ namespace MonoSync
         {
             var typeIdentifier = typeIdentifiers.Dequeue();
 
-            if (typeIdentifier == TypeTable.ReservedIdentifiers.ArrayIdentifier)
+            if (typeIdentifier == ReservedIdentifiers.ArrayIdentifier)
             {
                 var arrayRank = typeIdentifiers.Dequeue();
                 Type arrayType = arrayRank == 1
@@ -216,7 +212,7 @@ namespace MonoSync
                 return arrayType;
             }
 
-            Type type = _typeTable.GetTypeById(typeIdentifier);
+            Type type = GetTypeById(typeIdentifier);
             if (type.IsGenericTypeDefinition)
             {
                 var typeCount = type.GetGenericArguments().Length;
@@ -242,7 +238,7 @@ namespace MonoSync
             if (type.IsArray)
             {
                 // Enqueue Array indicator
-                output.Enqueue(TypeTable.ReservedIdentifiers.ArrayIdentifier);
+                output.Enqueue(ReservedIdentifiers.ArrayIdentifier);
 
                 // Enqueue Array rank/dimensions
                 var arrayRank = type.GetArrayRank();
@@ -255,7 +251,7 @@ namespace MonoSync
 
             else if (type.IsGenericType)
             {
-                int identifier = _typeTable.GetIdByType(type.GetGenericTypeDefinition());
+                int identifier = GetIdByType(type.GetGenericTypeDefinition());
                 output.Enqueue(identifier);
                 
                 for (var index = 0; index < type.GenericTypeArguments.Length; index++)
@@ -266,9 +262,14 @@ namespace MonoSync
             }
             else
             {
-                int identifier = _typeTable.GetIdByType(type);
+                int identifier = GetIdByType(type);
                 output.Enqueue(identifier);
             }
+        }
+
+        public void EndWrite()
+        {
+            _addedCustomTypes.Clear();
         }
     }
 }

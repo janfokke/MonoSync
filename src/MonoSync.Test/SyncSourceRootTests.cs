@@ -3,29 +3,11 @@ using System.Linq;
 using MonoSync.Test.TestObjects;
 using MonoSync.Test.TestUtils;
 using Xunit;
-using static MonoSync.TypeEncoder.ReservedIdentifiers;
 
 namespace MonoSync.Test.Synchronization
 {
-    public class SyncSourceRootTests
+    public class SourceSynchronizerRootTests
     {
-        public SyncSourceRootTests()
-        {
-            var typeEncoder = new TypeEncoder();
-            typeEncoder.RegisterType<TestGameWorld>(StartingIndexNonReservedTypes);
-            typeEncoder.RegisterType<TestPlayer>(StartingIndexNonReservedTypes + 1);
-            typeEncoder.RegisterType<ReferencingCircleHelper>(StartingIndexNonReservedTypes + 2);
-
-            _sourceSettings = SyncSourceSettings.Default;
-            _sourceSettings.TypeEncoder = typeEncoder;
-
-            _targetSettings = SyncTargetSettings.Default;
-            _targetSettings.TypeEncoder = typeEncoder;
-        }
-
-        private readonly SyncSourceSettings _sourceSettings;
-        private readonly SyncTargetSettings _targetSettings;
-
         [Fact]
         public void SettingReferenceToNull_ThatIsCyclic_WillNotBeUntracked()
         {
@@ -34,13 +16,13 @@ namespace MonoSync.Test.Synchronization
 
             var referenceToChild = new ReferencingCircleHelper {Other = selfReferencingChild};
 
-            var syncSourceRoot = new SyncSourceRoot(referenceToChild, _sourceSettings);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(referenceToChild);
 
-            Assert.Equal(2, syncSourceRoot.TrackedObjects.Count());
+            Assert.Equal(2, SourceSynchronizerRoot.TrackedObjects.Count());
 
             referenceToChild.Other = null;
 
-            Assert.Equal(2, syncSourceRoot.TrackedObjects.Count());
+            Assert.Equal(2, SourceSynchronizerRoot.TrackedObjects.Count());
         }
 
         [Fact]
@@ -58,20 +40,20 @@ namespace MonoSync.Test.Synchronization
 
             ReferencingCircleHelper referencingCircleHelper = ReferencingCircleHelper();
 
-            var syncSourceRoot = new SyncSourceRoot(referencingCircleHelper, _sourceSettings);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(referencingCircleHelper);
 
             // Write changes to remove reference from pending tracked objects
-            syncSourceRoot.WriteChangesAndDispose();
+            SourceSynchronizerRoot.WriteChangesAndDispose();
 
             referencingCircleHelper.Other = null;
 
             // Write changes to remove reference from dirty objects
-            syncSourceRoot.WriteChangesAndDispose();
+            SourceSynchronizerRoot.WriteChangesAndDispose();
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
 
-            Assert.Equal(1, syncSourceRoot.PendingUntrackedObjectCount);
+            Assert.Equal(1, SourceSynchronizerRoot.PendingUntrackedObjectCount);
         }
     }
 }

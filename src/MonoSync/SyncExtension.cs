@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using MonoSync.Exceptions;
-using MonoSync.SyncTargetObjects;
+using MonoSync.Synchronizers;
 
 namespace MonoSync
 {
@@ -32,28 +32,28 @@ namespace MonoSync
             Expression<Func<TSyncType, object>> selector)
         {
             var propertyName = GetMemberName(selector.Body);
-            List<NotifyPropertyChangedSynchronizerTarget> syncTargetObjects = GetSyncTargetObjects(source).ToList();
+            List<NotifyPropertyChangedTargetSynchronizer> syncTargetObjects = GetSyncTargetObjects(source).ToList();
             if (syncTargetObjects.Count == 0)
             {
                 throw new SyncTargetPropertyNotFoundException(propertyName);
             }
 
-            foreach (NotifyPropertyChangedSynchronizerTarget targetObject in syncTargetObjects)
+            foreach (NotifyPropertyChangedTargetSynchronizer targetObject in syncTargetObjects)
             {
                 yield return targetObject.GetSyncTargetProperty(propertyName);
             }
         }
 
         /// <summary>
-        ///     The <see cref="NotifyPropertyChangedSynchronizerTarget" /> is resolved by scanning the
+        ///     The <see cref="NotifyPropertyChangedTargetSynchronizer" /> is resolved by scanning the
         ///     <see cref="INotifyPropertyChanged.PropertyChanged" /> event delegate targets
         /// </summary>
-        private static IEnumerable<NotifyPropertyChangedSynchronizerTarget> GetSyncTargetObjects<T>(this T sync)
+        private static IEnumerable<NotifyPropertyChangedTargetSynchronizer> GetSyncTargetObjects<T>(this T sync)
         {
             return GetSyncTargetObjects(sync.GetType(), sync);
         }
 
-        public static IEnumerable<NotifyPropertyChangedSynchronizerTarget> GetSyncTargetObjects(Type type, object sync)
+        public static IEnumerable<NotifyPropertyChangedTargetSynchronizer> GetSyncTargetObjects(Type type, object sync)
         {
             FieldInfo fieldInfo = null;
             while (type != null)
@@ -79,13 +79,13 @@ namespace MonoSync
                 (MulticastDelegate) fieldInfo
                     .GetValue(sync);
 
-            var syncSyncTargetObjects = new List<NotifyPropertyChangedSynchronizerTarget>();
+            var syncSyncTargetObjects = new List<NotifyPropertyChangedTargetSynchronizer>();
 
             if (eventDelegate != null)
             {
                 foreach (Delegate handler in eventDelegate.GetInvocationList())
                 {
-                    if (handler.Target is NotifyPropertyChangedSynchronizerTarget syncSyncTargetObject)
+                    if (handler.Target is NotifyPropertyChangedTargetSynchronizer syncSyncTargetObject)
                     {
                         syncSyncTargetObjects.Add(syncSyncTargetObject);
                     }

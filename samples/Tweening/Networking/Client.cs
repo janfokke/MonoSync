@@ -12,7 +12,7 @@ namespace MonoSync.Sample.Tweening
     {
         private readonly byte[] _buffer = new byte [1024];
         private readonly TcpClient _tcpClient;
-        private SyncTargetRoot<Map> _gameWorldSyncRoot;
+        private TargetSynchronizerRoot<Map> _gameWorldSyncRoot;
         private NetworkStream _stream;
         private TaskCompletionSource<Map> _connectionTaskCompletionSource;
 
@@ -35,9 +35,6 @@ namespace MonoSync.Sample.Tweening
         {
             if (_gameWorldSyncRoot != null)
             {
-                var settings = SyncSourceSettings.Default;
-                settings.TypeEncoder = new TweenGameTypeEncoder();
-                settings.SourceFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
                 _gameWorldSyncRoot.Update();
                 if (_gameWorldSyncRoot.Clock.OwnTick % 60 == 0)
                 {
@@ -96,11 +93,10 @@ namespace MonoSync.Sample.Tweening
 
         private void InitializeSyncTargetRoot(byte[] worldData)
         {
-            var settings = SyncTargetSettings.Default;
-            settings.TypeEncoder = new TweenGameTypeEncoder();
-            settings.TargetFieldDeserializerResolverFactory = new TweenGameFieldSerializerFactory();
-            _gameWorldSyncRoot = new SyncTargetRoot<Map>(worldData, settings);
-            _connectionTaskCompletionSource.SetResult(_gameWorldSyncRoot.Root);
+            _gameWorldSyncRoot = new TargetSynchronizerRoot<Map>(worldData);
+            _gameWorldSyncRoot.Settings.Serializers.AddSerializer(new ColorSerializer());
+            _gameWorldSyncRoot.Settings.Serializers.AddSerializer(new Vector2Serializer());
+            _connectionTaskCompletionSource.SetResult(_gameWorldSyncRoot.Reference);
         }
 
         public void SendMouseClick(Vector2 position)
