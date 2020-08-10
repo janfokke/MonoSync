@@ -6,23 +6,22 @@ using MonoSync.Attributes;
 
 namespace MonoSync.Synchronizers
 {
-    public class PropertyCollection
+    public class SyncPropertyCollection
     {
         private readonly Dictionary<string, SyncSourceProperty> _propertiesByName;
-
         private readonly SyncSourceProperty[] _syncSourceProperties;
 
         public int Length { get; }
         public SyncSourceProperty this[int index] => _syncSourceProperties[index];
 
-        private PropertyCollection(SyncSourceProperty[] syncSourceProperties)
+        private SyncPropertyCollection(SyncSourceProperty[] syncSourceProperties)
         {
             _syncSourceProperties = syncSourceProperties;
             _propertiesByName = syncSourceProperties.ToDictionary(x => x.Name);
             Length = _syncSourceProperties.Length;
         }
 
-        public bool TryGetByName(string propertyName, out SyncSourceProperty syncSourceProperty)
+        public bool TryGetPropertyByName(string propertyName, out SyncSourceProperty syncSourceProperty)
         {
             return _propertiesByName.TryGetValue(propertyName, out syncSourceProperty);
         }
@@ -31,19 +30,19 @@ namespace MonoSync.Synchronizers
         {
             private readonly SerializerCollection _serializerCollection;
 
-            private readonly Dictionary<Type, PropertyCollection> _typeCache =
-                new Dictionary<Type, PropertyCollection>();
+            private readonly Dictionary<Type, SyncPropertyCollection> _typeCache =
+                new Dictionary<Type, SyncPropertyCollection>();
 
             public Factory(SerializerCollection serializerCollection)
             {
                 _serializerCollection = serializerCollection;
             }
 
-            public PropertyCollection FromType(Type type)
+            public SyncPropertyCollection FromType(Type type)
             {
-                if (_typeCache.TryGetValue(type, out PropertyCollection cachedPropertyCollection) == false)
+                if (_typeCache.TryGetValue(type, out SyncPropertyCollection cachedPropertyCollection) == false)
                 {
-                    List<PropertyInfo> syncProperties = GetSyncProperties(type);
+                    List<PropertyInfo> syncProperties = GetSynchronizableProperties(type);
                     var syncSourceProperties = new SyncSourceProperty[syncProperties.Count];
                     for (short syncPropertyIndex = 0; syncPropertyIndex < syncProperties.Count; syncPropertyIndex++)
                     {
@@ -55,22 +54,21 @@ namespace MonoSync.Synchronizers
                         syncSourceProperties[syncPropertyIndex] = property;
                     }
 
-                    cachedPropertyCollection = new PropertyCollection(syncSourceProperties);
+                    cachedPropertyCollection = new SyncPropertyCollection(syncSourceProperties);
                     _typeCache.Add(type, cachedPropertyCollection);
                 }
-
                 return cachedPropertyCollection;
             }
 
-            private List<PropertyInfo> GetSyncProperties(Type type)
+            private List<PropertyInfo> GetSynchronizableProperties(Type type)
             {
                 var result = new List<PropertyInfo>();
-                PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+                PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 foreach (PropertyInfo propertyInfo in properties)
                 {
                     var hasSyncAttribute = propertyInfo
                         .GetCustomAttributes(true)
-                        .Any(x => x is SyncAttribute);
+                        .Any(x => x is SynchronizeAttribute);
 
                     if (hasSyncAttribute)
                     {

@@ -8,11 +8,11 @@ namespace MonoSync.Attributes
     ///     Properties with this attribute will be synchronized.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
-    public class SyncAttribute : Attribute
+    public class SynchronizeAttribute : Attribute
     {
         public SynchronizationBehaviour SynchronizationBehaviour { get; }
 
-        public SyncAttribute(
+        public SynchronizeAttribute(
             SynchronizationBehaviour synchronizationBehaviour = SynchronizationBehaviour.TakeSynchronized)
         {
             SynchronizationBehaviour = synchronizationBehaviour;

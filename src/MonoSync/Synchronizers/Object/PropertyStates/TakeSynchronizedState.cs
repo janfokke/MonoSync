@@ -11,7 +11,7 @@
 
         public void Dispose()
         {
-            // Ignore
+            // Manual
         }
 
         public void HandleRead(object value)

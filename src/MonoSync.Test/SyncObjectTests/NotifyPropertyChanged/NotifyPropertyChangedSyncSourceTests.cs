@@ -10,7 +10,7 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void Initializing_NonConstructorPropertyWithoutSetter_ThrowsSetterNotFoundException()
         {
-            var attributeMarkedMethodMockSource = new GetterOnlyMock();
+            var attributeMarkedMethodMockSource = new NotifyPropertyChangedGetterOnlyMock();
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
 

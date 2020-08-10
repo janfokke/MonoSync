@@ -5,13 +5,13 @@ namespace MonoSync.Utils
 {
     public class SyncPropertyInfo
     {
-        public SyncPropertyInfo(SyncAttribute syncAttribute, PropertyInfo propertyInfo)
+        public SyncPropertyInfo(SynchronizeAttribute synchronizeAttribute, PropertyInfo propertyInfo)
         {
-            SyncAttribute = syncAttribute;
+            SynchronizeAttribute = synchronizeAttribute;
             PropertyInfo = propertyInfo;
         }
 
         public PropertyInfo PropertyInfo { get; }
-        public SyncAttribute SyncAttribute { get; }
+        public SynchronizeAttribute SynchronizeAttribute { get; }
     }
 }

@@ -11,10 +11,10 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void SettingReferenceToNull_ThatIsCyclic_WillNotBeUntracked()
         {
-            var selfReferencingChild = new ReferencingCircleHelper();
+            var selfReferencingChild = new NotifyPropertyChangedReferencingCircleHelper();
             selfReferencingChild.Other = selfReferencingChild;
 
-            var referenceToChild = new ReferencingCircleHelper {Other = selfReferencingChild};
+            var referenceToChild = new NotifyPropertyChangedReferencingCircleHelper {Other = selfReferencingChild};
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(referenceToChild);
 
@@ -29,23 +29,23 @@ namespace MonoSync.Test.Synchronization
         public void GarbageCollection_UntracksObjectThatHaveNoReferences()
         {
             // Local function to avoid reference from stack when garbage collector runs
-            static ReferencingCircleHelper ReferencingCircleHelper()
+            static NotifyPropertyChangedReferencingCircleHelper ReferencingCircleHelper()
             {
-                var selfReferencingObject = new ReferencingCircleHelper();
+                var selfReferencingObject = new NotifyPropertyChangedReferencingCircleHelper();
                 selfReferencingObject.Other = selfReferencingObject;
 
-                var otherReferencingObject = new ReferencingCircleHelper {Other = selfReferencingObject};
+                var otherReferencingObject = new NotifyPropertyChangedReferencingCircleHelper {Other = selfReferencingObject};
                 return otherReferencingObject;
             }
 
-            ReferencingCircleHelper referencingCircleHelper = ReferencingCircleHelper();
+            NotifyPropertyChangedReferencingCircleHelper notifyPropertyChangedReferencingCircleHelper = ReferencingCircleHelper();
 
-            var SourceSynchronizerRoot = new SourceSynchronizerRoot(referencingCircleHelper);
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(notifyPropertyChangedReferencingCircleHelper);
 
             // Write changes to remove reference from pending tracked objects
             SourceSynchronizerRoot.WriteChangesAndDispose();
 
-            referencingCircleHelper.Other = null;
+            notifyPropertyChangedReferencingCircleHelper.Other = null;
 
             // Write changes to remove reference from dirty objects
             SourceSynchronizerRoot.WriteChangesAndDispose();

@@ -57,8 +57,7 @@ namespace MonoSync.Sample.Tweening
         {
             while (true)
             {
-                try
-                {
+                
                     int count = await _stream.ReadAsync(_buffer, 0, _buffer.Length);
                     if (count == 0)
                     {
@@ -83,11 +82,7 @@ namespace MonoSync.Sample.Tweening
                             break;
                         }
                     }
-                }
-                catch
-                {
-                    Environment.Exit(0);
-                }
+                
             }
         }
 

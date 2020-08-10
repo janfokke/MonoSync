@@ -15,30 +15,30 @@ namespace MonoSync.Utils
         {
             return SyncPropertyInfoCache.GetOrAdd(type, type =>
             {
-                PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+                PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
                 var syncProperties = new List<SyncPropertyInfo>();
                 for (var i = 0; i < properties.Length; i++)
                 {
                     PropertyInfo propertyInfo = properties[i];
-                    SyncAttribute syncAttribute = GetSyncAttribute(propertyInfo);
-                    if (syncAttribute == null)
+                    SynchronizeAttribute synchronizeAttribute = GetSyncAttribute(propertyInfo);
+                    if (synchronizeAttribute == null)
                     {
                         continue;
                     }
-                    syncProperties.Add(new SyncPropertyInfo(syncAttribute,properties[i]));
+                    syncProperties.Add(new SyncPropertyInfo(synchronizeAttribute,properties[i]));
                 }
 
                 return syncProperties;
             });
         }
 
-        private static SyncAttribute GetSyncAttribute(PropertyInfo propertyInfo)
+        private static SynchronizeAttribute GetSyncAttribute(PropertyInfo propertyInfo)
         {
             object[] attributes = propertyInfo.GetCustomAttributes(true);
             for (var i = 0; i < attributes.Length; i++)
             {
-                if (attributes[i] is SyncAttribute syncAttribute)
+                if (attributes[i] is SynchronizeAttribute syncAttribute)
                 {
                     return syncAttribute;
                 }

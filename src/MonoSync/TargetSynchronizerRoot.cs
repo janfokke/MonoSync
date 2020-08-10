@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
 using System.Text;
@@ -19,6 +20,9 @@ namespace MonoSync
 
     public class TargetSynchronizerRoot
     {
+        internal static readonly List<WeakReference<TargetSynchronizerRoot>> Instances = 
+            new List<WeakReference<TargetSynchronizerRoot>>();
+
         public Settings Settings { get; }
         public object Reference { get; }
 
@@ -38,11 +42,13 @@ namespace MonoSync
 
         public TargetSynchronizerRoot(byte[] initialFullSynchronization,Settings settings = null ,IServiceProvider serviceProvider = null)
         {
+            Instances.Add(new WeakReference<TargetSynchronizerRoot>(this));
+
             Settings = settings ?? Settings.Default();
             Settings.Serializers.AddSerializer(new TargetReferenceSerializer(ReferencePool));
 
             ServiceProvider = serviceProvider;
-
+            
             Read(initialFullSynchronization);
 
             // SyncObject 1 is always synchronizerRoot object.
@@ -101,13 +107,9 @@ namespace MonoSync
                 else
                 {
                     Type referenceType = _typeEncoder.ReadType(reader);
-
                     ISynchronizer synchronizer = Settings.Synchronizers.FindSynchronizerByType(referenceType);
-
                     targetSynchronizer = synchronizer.Synchronize(this, referenceId, referenceType);
-
                     targetSynchronizer.Read(reader);
-
                     ReferencePool.AddSyncronizer(referenceId, targetSynchronizer);
                 }
             }

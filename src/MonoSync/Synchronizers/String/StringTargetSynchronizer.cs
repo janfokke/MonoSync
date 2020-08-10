@@ -12,7 +12,7 @@ namespace MonoSync.Synchronizers
 
         public override void Dispose()
         {
-            // Ignore
+            // Manual
         }
 
         public sealed override void Read(ExtendedBinaryReader reader)

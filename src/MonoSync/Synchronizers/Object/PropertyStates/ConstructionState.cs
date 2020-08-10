@@ -4,7 +4,7 @@ namespace MonoSync.Synchronizers.PropertyStates
 {
     /// <summary>
     ///     Only sets value on construction.
-    ///     If <see cref="SyncAttribute" /> is used on a get only property this state will also be implicitly used.
+    ///     If <see cref="SynchronizeAttribute" /> is used on a get only property this state will also be implicitly used.
     /// </summary>
     internal class ConstructionState : ISyncTargetPropertyState
     {

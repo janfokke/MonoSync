@@ -4,33 +4,33 @@ using PropertyChanged;
 namespace MonoSync.Test.TestObjects
 {
     [AddINotifyPropertyChangedInterface]
-    internal class SynchronizeManySyncAttributesTest
+    internal class NotifyPropertyChangedSynchronizeManySyncAttributesTest
     {
-        [Sync]
+        [Synchronize]
         public int Test { get; set; }
 
-        [Sync]
+        [Synchronize]
         public double Test2 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public float Test3 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public byte Test4 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public int Test5 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public double Test6 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public float Test7 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public byte Test8 { get; set; }
 
-        [Sync]
+        [Synchronize]
         public double Test9 { get; set; }
     }
 }

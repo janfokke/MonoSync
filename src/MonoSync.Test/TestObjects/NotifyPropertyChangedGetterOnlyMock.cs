@@ -4,8 +4,9 @@ using PropertyChanged;
 namespace MonoSync.Test.TestObjects
 {
     [AddINotifyPropertyChangedInterface]
-    internal class ReferencingCircleHelper
+    public class NotifyPropertyChangedGetterOnlyMock
     {
-        [Sync] public ReferencingCircleHelper Other { get; set; }
+        [Synchronize]
+        public int IntProperty { get; }
     }
 }

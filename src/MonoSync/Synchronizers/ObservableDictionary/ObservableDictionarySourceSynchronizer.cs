@@ -18,7 +18,7 @@ namespace MonoSync.Synchronizers
         /// </summary>
         private bool _commandsInvalidated;
 
-        public Collections.ObservableDictionary<TKey, TValue> Reference => (Collections.ObservableDictionary<TKey, TValue>) base.Reference;
+        private new Collections.ObservableDictionary<TKey, TValue> Reference => (Collections.ObservableDictionary<TKey, TValue>) base.Reference;
 
         public ObservableDictionarySourceSynchronizer(SourceSynchronizerRoot sourceSynchronizerRoot, int referenceId, Collections.ObservableDictionary<TKey, TValue> reference) : base(sourceSynchronizerRoot, referenceId, reference)
         {

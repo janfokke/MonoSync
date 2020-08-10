@@ -24,7 +24,7 @@ namespace MonoSync
         private readonly HashSet<SourceSynchronizer> _pendingUntrackedSyncSourceObjects = new HashSet<SourceSynchronizer>();
 
         private readonly SourceReferencePool _referencePool = new SourceReferencePool();
-        private readonly PropertyCollection.Factory _syncPropertyFactory;
+        private readonly SyncPropertyCollection.Factory _syncPropertyFactory;
         private int _referenceIdIncrementer = 1; //Reference index 0 is reserved for null
         private bool _writeSessionOpen;
         private readonly TypeEncoder _typeEncoder = new TypeEncoder();
@@ -57,7 +57,7 @@ namespace MonoSync
             Settings = settings??Settings.Default();
             Settings.Serializers.AddSerializer(new SourceReferenceSerializer(_referencePool));
 
-            _syncPropertyFactory = new PropertyCollection.Factory(Settings.Serializers);
+            _syncPropertyFactory = new SyncPropertyCollection.Factory(Settings.Serializers);
             Synchronize(reference);
         }
 
@@ -65,7 +65,7 @@ namespace MonoSync
         ///     Gets the type of the properties from.
         /// </summary>
         /// <param name="baseType">Type of the base.</param>
-        internal PropertyCollection GetPropertiesFromType(Type baseType)
+        internal SyncPropertyCollection GetPropertiesFromType(Type baseType)
         {
             return _syncPropertyFactory.FromType(baseType);
         }

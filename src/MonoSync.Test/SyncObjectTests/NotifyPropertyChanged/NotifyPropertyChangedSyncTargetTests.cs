@@ -11,7 +11,7 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void Initializing_NonConstructorPropertyWithoutSetter_ThrowsSetterNotFoundException()
         {
-            var attributeMarkedMethodMockSource = new GetterOnlyMock();
+            var attributeMarkedMethodMockSource = new NotifyPropertyChangedGetterOnlyMock();
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
 
@@ -24,11 +24,11 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void Constructing_DependencyConstructorParameter_ResolvesFromDependencyResolver()
         {
-            var dependencyConstructorMock = new ConstructedDependencyMock();
+            var dependencyConstructorMock = new NotifyPropertyChangedConstructedDependencyMock();
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(dependencyConstructorMock);
 
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<ConstructedDependencyMock>(SourceSynchronizerRoot.WriteFullAndDispose(), serviceProvider: new SomeServiceProvider());
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<NotifyPropertyChangedConstructedDependencyMock>(SourceSynchronizerRoot.WriteFullAndDispose(), serviceProvider: new TestServiceProvider());
             Assert.NotNull(TargetSynchronizerRoot.Reference.SomeService);
         }
 
@@ -52,74 +52,23 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void Synchronizing_PropertyWithoutSetterThroughConstructor_Synchronizes()
         {
-            var getterOnlyConstructorMockSource = new GetterOnlyConstructorMock(5);
+            var getterOnlyConstructorMockSource = new NotifyPropertyChangedGetterOnlyConstructorMock(5);
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(getterOnlyConstructorMockSource);
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<GetterOnlyConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
-            GetterOnlyConstructorMock getterOnlyConstructorMockRoot = TargetSynchronizerRoot.Reference;
-            Assert.Equal(getterOnlyConstructorMockSource.IntProperty, getterOnlyConstructorMockRoot.IntProperty);
-        }
-
-        [Fact]
-        public void Synchronizing_WithOnSynchronizedCallback_InvokesCallback()
-        {
-            var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodMock
-            {
-                IntProperty = 123
-            };
-
-            var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<OnSynchronizedAttributeMarkedMethodMock>(SourceSynchronizerRoot.WriteFullAndDispose());
-
-            OnSynchronizedAttributeMarkedMethodMock attributeMarkedMethodMockTarget = TargetSynchronizerRoot.Reference;
-            
-            Assert.Equal(
-                attributeMarkedMethodMockSource.IntProperty, 
-                attributeMarkedMethodMockTarget.IntPropertyWhenSynchronizedMethodWasCalled
-                );
-        }
-
-        [Fact]
-        public void Synchronizing_WithOnSynchronizedCallbackInBaseClass_InvokesCallback()
-        {
-            var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodMockChild
-            {
-                IntProperty = 123
-            };
-
-            var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<OnSynchronizedAttributeMarkedMethodMockChild>(SourceSynchronizerRoot.WriteFullAndDispose());
-
-            OnSynchronizedAttributeMarkedMethodMockChild attributeMarkedMethodMockTarget = TargetSynchronizerRoot.Reference;
-
-            Assert.Equal(
-                attributeMarkedMethodMockSource.IntProperty,
-                attributeMarkedMethodMockTarget.IntPropertyWhenSynchronizedMethodWasCalled
-            );
-        }
-
-        [Fact]
-        public void Synchronizing_WithParmiterizedOnSynchronizedCallback_ThrowsParameterizedSynchronizedCallbackException()
-        {
-            var attributeMarkedMethodMockSource = new OnSynchronizedAttributeMarkedMethodWithParametersMock();
-
-            var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
-
-            Assert.Throws<ParameterizedSynchronizedCallbackException>(() =>
-            {
-                var TargetSynchronizerRoot = new TargetSynchronizerRoot<OnSynchronizedAttributeMarkedMethodWithParametersMock>(SourceSynchronizerRoot.WriteFullAndDispose());
-            });
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<NotifyPropertyChangedGetterOnlyConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
+            NotifyPropertyChangedGetterOnlyConstructorMock notifyPropertyChangedGetterOnlyConstructorMockRoot = TargetSynchronizerRoot.Reference;
+            Assert.Equal(getterOnlyConstructorMockSource.IntProperty, notifyPropertyChangedGetterOnlyConstructorMockRoot.IntProperty);
         }
 
         [Fact]
         public void Synchronizing_PropertiesUsedAsConstructorParameters_ShouldNotSynchronizeAfterConstructor()
         {
-            var sourceConstructorMock = new SynchronizeConstructorMock();
+            var sourceConstructorMock = new NotifyPropertyChangedSynchronizeConstructorMock();
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceConstructorMock);
 
             var TargetSynchronizerRoot =
-                new TargetSynchronizerRoot<SynchronizeConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
-            SynchronizeConstructorMock targetConstructorMock = TargetSynchronizerRoot.Reference;
+                new TargetSynchronizerRoot<NotifyPropertyChangedSynchronizeConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
+            NotifyPropertyChangedSynchronizeConstructorMock targetConstructorMock = TargetSynchronizerRoot.Reference;
 
             Assert.Equal(1, targetConstructorMock.DictionarySetCount);
         }
@@ -127,18 +76,35 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void Synchronizing_MarkedParameterizedConstructor_InvokesConstructorWithParameters()
         {
-            var sourceConstructorMock = new SynchronizeConstructorMock();
+            var sourceConstructorMock = new NotifyPropertyChangedSynchronizeConstructorMock();
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceConstructorMock);
 
             var TargetSynchronizerRoot =
-                new TargetSynchronizerRoot<SynchronizeConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
+                new TargetSynchronizerRoot<NotifyPropertyChangedSynchronizeConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
 
             TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(0));
 
-            SynchronizeConstructorMock targetConstructorMock = TargetSynchronizerRoot.Reference;
+            NotifyPropertyChangedSynchronizeConstructorMock targetConstructorMock = TargetSynchronizerRoot.Reference;
 
             Assert.True(targetConstructorMock.SyncConstructorCalled);
+        }
+
+        [Fact]
+        public void Synchronizing_GetterManual_Resolves()
+        {
+            var sourceConstructorMock = new NotifyPropertyChangedManualGetterOnlyMock();
+
+            var sourceSynchronizerRoot = new SourceSynchronizerRoot(sourceConstructorMock);
+            Assert.Equal(5, sourceConstructorMock.SomeValue);
+
+            sourceConstructorMock.SomeValue = 6;
+
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<NotifyPropertyChangedManualGetterOnlyMock>(sourceSynchronizerRoot.WriteFullAndDispose());
+
+            NotifyPropertyChangedManualGetterOnlyMock targetConstructorMock = TargetSynchronizerRoot.Reference;
+
+            Assert.Equal(6, targetConstructorMock.SomeValue);
         }
     }
 }

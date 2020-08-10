@@ -34,14 +34,14 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void SynchronizingFull_TargetObjectEqualsSource()
         {
-            var sourceGameWorld = new HashSetTestObject { RandomIntProperty = 5};
-            sourceGameWorld.Players.Add(new TestPlayer {Name = "player1", Health = 100, Level = 30 });
-            sourceGameWorld.Players.Add(new TestPlayer {Name = "player2", Health = 44, Level = 1337 });
+            var sourceGameWorld = new NotifyPropertyChangedHashSetTestObject { RandomIntProperty = 5};
+            sourceGameWorld.Players.Add(new NotifyPropertyChangedTestPlayer {Name = "player1", Health = 100, Level = 30 });
+            sourceGameWorld.Players.Add(new NotifyPropertyChangedTestPlayer {Name = "player2", Health = 44, Level = 1337 });
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceGameWorld);
 
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<HashSetTestObject>(SourceSynchronizerRoot.WriteFullAndDispose());
-            HashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<NotifyPropertyChangedHashSetTestObject>(SourceSynchronizerRoot.WriteFullAndDispose());
+            NotifyPropertyChangedHashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
 
             AssertExtension.AssertCloneEqual(sourceGameWorld, targetGameWorld);
         }
@@ -49,20 +49,20 @@ namespace MonoSync.Test.Synchronization
         [Fact]
         public void AddingItems_AfterClear_ShouldSynchronizeItems()
         {
-            var hashSetTestObject = new HashSetTestObject { RandomIntProperty = 5 };
+            var hashSetTestObject = new NotifyPropertyChangedHashSetTestObject { RandomIntProperty = 5 };
             
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(hashSetTestObject);
 
             hashSetTestObject.Players.Clear();
 
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<HashSetTestObject>(SourceSynchronizerRoot.WriteFullAndDispose());
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<NotifyPropertyChangedHashSetTestObject>(SourceSynchronizerRoot.WriteFullAndDispose());
 
-            hashSetTestObject.Players.Add(new TestPlayer { Name = "player1", Health = 100, Level = 30 });
-            hashSetTestObject.Players.Add(new TestPlayer { Name = "player2", Health = 44, Level = 1337 });
+            hashSetTestObject.Players.Add(new NotifyPropertyChangedTestPlayer { Name = "player1", Health = 100, Level = 30 });
+            hashSetTestObject.Players.Add(new NotifyPropertyChangedTestPlayer { Name = "player2", Health = 44, Level = 1337 });
 
             TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(10));
 
-            HashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
+            NotifyPropertyChangedHashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
 
             AssertExtension.AssertCloneEqual(hashSetTestObject, targetGameWorld);
         }

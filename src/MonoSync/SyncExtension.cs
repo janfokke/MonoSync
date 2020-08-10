@@ -11,6 +11,21 @@ namespace MonoSync
 {
     public static class SyncExtensions
     {
+        public static TProp SynchronizeProperty<TTarget, TProp>(this TTarget target, Expression<Func<TTarget, TProp>> selector, Func<TProp> defaultValue)
+        {
+            if (TryGetSyncTargetProperty(target, out var result, selector))
+            {
+                var syncTargetObjects = GetNotifyPropertyChangedTargetSynchronizer(target).ToList();
+                if (syncTargetObjects.Any())
+                {
+                    var propertyName = GetMemberName(selector.Body);
+                    var syncTargetProperty = syncTargetObjects.Single().GetSyncTargetProperty(propertyName);
+                    return (TProp)syncTargetProperty.SynchronizedValue;
+                }
+            }
+            return defaultValue();
+        }
+
         /// <summary>
         ///     Returns a single <see cref="SyncTargetProperty" />, and throws an exception if there is not exactly one
         ///     <see cref="SyncTargetProperty" />
@@ -23,76 +38,41 @@ namespace MonoSync
             return GetSyncTargetProperties(source, selector).Single();
         }
 
+        public static bool TryGetSyncTargetProperty<TSyncType, TProp>(this TSyncType source, out SyncTargetProperty syncTargetProperty,
+            Expression<Func<TSyncType, TProp>> selector)
+        {
+            var t = GetSyncTargetProperties(source, selector).FirstOrDefault();
+            syncTargetProperty = t;
+            return t != null;
+        }
+
         /// <summary>
         ///     Returns all the <see cref="SyncTargetProperty">SyncTargetProperties</see> that are bound to the Property
         /// </summary>
         /// <param name="source">The Synchronization-object that contains the target member</param>
         /// <param name="selector">The Expression to the intended member Property</param>
-        public static IEnumerable<SyncTargetProperty> GetSyncTargetProperties<TSyncType>(this TSyncType source,
-            Expression<Func<TSyncType, object>> selector)
+        public static IEnumerable<SyncTargetProperty> GetSyncTargetProperties<TSyncType, TProp>(this TSyncType source,
+            Expression<Func<TSyncType, TProp>> selector)
         {
             var propertyName = GetMemberName(selector.Body);
-            List<NotifyPropertyChangedTargetSynchronizer> syncTargetObjects = GetSyncTargetObjects(source).ToList();
-            if (syncTargetObjects.Count == 0)
-            {
-                throw new SyncTargetPropertyNotFoundException(propertyName);
-            }
-
-            foreach (NotifyPropertyChangedTargetSynchronizer targetObject in syncTargetObjects)
+            List<ObjectTargetSynchronizer> syncTargetObjects = GetNotifyPropertyChangedTargetSynchronizer(source).ToList();
+            foreach (ObjectTargetSynchronizer targetObject in syncTargetObjects)
             {
                 yield return targetObject.GetSyncTargetProperty(propertyName);
             }
         }
 
-        /// <summary>
-        ///     The <see cref="NotifyPropertyChangedTargetSynchronizer" /> is resolved by scanning the
-        ///     <see cref="INotifyPropertyChanged.PropertyChanged" /> event delegate targets
-        /// </summary>
-        private static IEnumerable<NotifyPropertyChangedTargetSynchronizer> GetSyncTargetObjects<T>(this T sync)
+        public static IEnumerable<ObjectTargetSynchronizer> GetNotifyPropertyChangedTargetSynchronizer(object reference)
         {
-            return GetSyncTargetObjects(sync.GetType(), sync);
-        }
-
-        public static IEnumerable<NotifyPropertyChangedTargetSynchronizer> GetSyncTargetObjects(Type type, object sync)
-        {
-            FieldInfo fieldInfo = null;
-            while (type != null)
+            foreach (WeakReference<TargetSynchronizerRoot> weakReference in TargetSynchronizerRoot.Instances)
             {
-                fieldInfo = type.GetField(nameof(INotifyPropertyChanged.PropertyChanged),
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-
-                if (fieldInfo != null)
+                if (weakReference.TryGetTarget(out TargetSynchronizerRoot targetSynchronizerRoot))
                 {
-                    break;
-                }
-
-                type = type.BaseType;
-            }
-
-            if (fieldInfo == null)
-            {
-                throw new Exception($"{nameof(INotifyPropertyChanged.PropertyChanged)} not found");
-            }
-
-            var eventDelegate =
-                // ReSharper disable once PossibleNullReferenceException
-                (MulticastDelegate) fieldInfo
-                    .GetValue(sync);
-
-            var syncSyncTargetObjects = new List<NotifyPropertyChangedTargetSynchronizer>();
-
-            if (eventDelegate != null)
-            {
-                foreach (Delegate handler in eventDelegate.GetInvocationList())
-                {
-                    if (handler.Target is NotifyPropertyChangedTargetSynchronizer syncSyncTargetObject)
-                    {
-                        syncSyncTargetObjects.Add(syncSyncTargetObject);
-                    }
+                    var notifyPropertyChangedTargetSynchronizer = (ObjectTargetSynchronizer) targetSynchronizerRoot.ReferencePool.GetSyncObject(reference);
+                    if(notifyPropertyChangedTargetSynchronizer != null)
+                        yield return notifyPropertyChangedTargetSynchronizer;
                 }
             }
-
-            return syncSyncTargetObjects;
         }
 
         /// <summary>

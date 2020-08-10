@@ -12,6 +12,7 @@ namespace MonoSync
 
         public SynchronizerCollection()
         {
+            AddSynchronizer(new ObjectSynchronizer());
             AddSynchronizer(new NotifyPropertyChangedSynchronizer());
             AddSynchronizer(new StringSynchronizer());
             AddSynchronizer(new ObservableDictionarySynchronizer());

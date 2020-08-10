@@ -3,9 +3,9 @@
     public enum SynchronizationBehaviour
     {
         /// <summary>
-        ///     Only synchronizes value on construction and ignores and further synchronizations
+        ///     Synchronization is done manually
         /// </summary>
-        Ignore,
+        Manual,
 
         /// <summary>
         ///     Always overrides the target with the synchronized value
@@ -24,7 +24,7 @@
 
         /// <summary>
         ///     Only sets value on construction.
-        ///     If <see cref="SyncAttribute" /> is used on a get only property, this state will also be implicitly used.
+        ///     If <see cref="SynchronizeAttribute" /> is used on a get only property, this state will also be implicitly used.
         /// </summary>
         Construction
     }

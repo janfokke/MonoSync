@@ -70,8 +70,8 @@ namespace MonoSync.Synchronizers
 
                 switch (value)
                 {
-                    case SynchronizationBehaviour.Ignore:
-                        _state = new IgnoreState();
+                    case SynchronizationBehaviour.Manual:
+                        _state = new ManualState();
                         break;
                     case SynchronizationBehaviour.Construction:
                         _state = new ConstructionState();
@@ -117,7 +117,7 @@ namespace MonoSync.Synchronizers
             _getter = getter;
             _targetSynchronizerRoot = targetSynchronizerRoot;
             _serializer = serializer;
-            _state = IgnoreState.Instance;
+            _state = ManualState.Instance;
         }
 
         public void Dispose()

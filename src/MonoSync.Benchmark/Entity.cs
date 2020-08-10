@@ -3,16 +3,15 @@ using PropertyChanged;
 
 namespace MonoSync.Benchmark
 {
-    [AddINotifyPropertyChangedInterface]
     class Entity
     {
-        [Sync]
+        [Synchronize]
         public int XPos { get; set; }
-        [Sync]
+        [Synchronize]
         public int YPos { get; set; }
-        [Sync]
+        [Synchronize]
         public int XVel { get; set; }
-        [Sync]
+        [Synchronize]
         public int YVel { get; set; }
     }
 }

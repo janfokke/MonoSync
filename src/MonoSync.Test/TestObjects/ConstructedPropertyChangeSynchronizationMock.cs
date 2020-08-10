@@ -7,7 +7,7 @@ namespace MonoSync.Test.TestObjects
     [AddINotifyPropertyChangedInterface]
     public class ConstructedPropertyChangeSynchronizationMock
     {
-        [Sync]
+        [Synchronize]
         public float ChangeableProperty { get; set; }
 
         [SyncConstructor]

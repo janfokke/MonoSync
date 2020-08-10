@@ -25,7 +25,7 @@ namespace MonoSync.Sample.Tweening
             Players = players;
         }
 
-        [Sync] 
+        [Synchronize] 
         public ObservableHashSet<Player> Players { get; set; }
     }
 }

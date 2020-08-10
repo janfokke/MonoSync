@@ -3,9 +3,9 @@
     /// <summary>
     ///     ignores synchronization
     /// </summary>
-    internal class IgnoreState : ISyncTargetPropertyState
+    internal class ManualState : ISyncTargetPropertyState
     {
-        public static IgnoreState Instance { get; } = new IgnoreState();
+        public static ManualState Instance { get; } = new ManualState();
 
         public void Dispose()
         {

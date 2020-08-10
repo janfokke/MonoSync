@@ -13,10 +13,10 @@ namespace MonoSync.Test.SyncObjectTests.NotifyPropertyChanged.SynchronizationBeh
         [Fact]
         public void Synchronizing_ValueWithLowerTickThanDirtyTick_ShouldNotBeSet()
         {
-            var sourceObject = new LatestTickMock { Value = 5 };
+            var sourceObject = new NotifyPropertyChangedLatestTickMock { Value = 5 };
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(sourceObject);
             
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<LatestTickMock>(SourceSynchronizerRoot.WriteFullAndDispose());
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<NotifyPropertyChangedLatestTickMock>(SourceSynchronizerRoot.WriteFullAndDispose());
             var targetObject = TargetSynchronizerRoot.Reference;
             Assert.Equal(5, targetObject.Value);
 
