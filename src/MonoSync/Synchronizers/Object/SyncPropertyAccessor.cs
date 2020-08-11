@@ -8,7 +8,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
-    public class SyncTargetProperty : IDisposable
+    public class SyncPropertyAccessor : IDisposable
     {
         private readonly ISerializer _serializer;
         private readonly Action<object> _setter;
@@ -28,7 +28,7 @@ namespace MonoSync.Synchronizers
         {
             set
             {
-                HasSetter();
+                AssertHasSetter();
                 _changing = true;
                 _setter(value);
                 _changing = false;
@@ -78,15 +78,15 @@ namespace MonoSync.Synchronizers
                         break;
                     case SynchronizationBehaviour.Interpolated:
                         _state = new InterpolationState(this, _targetSynchronizerRoot, _serializer);
-                        HasSetter();
+                        AssertHasSetter();
                         break;
                     case SynchronizationBehaviour.HighestTick:
                         _state = new HighestTickState(this, _targetSynchronizerRoot);
-                        HasSetter();
+                        AssertHasSetter();
                         break;
                     case SynchronizationBehaviour.TakeSynchronized:
                         _state = new TakeSynchronizedState(this);
-                        HasSetter();
+                        AssertHasSetter();
                         break;
                 }
             }
@@ -105,7 +105,7 @@ namespace MonoSync.Synchronizers
             }
         }
 
-        public SyncTargetProperty(
+        public SyncPropertyAccessor(
             PropertyInfo propertyInfo,
             Action<object> setter,
             Func<object> getter,
@@ -125,7 +125,7 @@ namespace MonoSync.Synchronizers
             _state?.Dispose();
         }
 
-        private void HasSetter()
+        private void AssertHasSetter()
         {
             if (_setter == null)
             {

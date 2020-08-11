@@ -27,31 +27,31 @@ namespace MonoSync
         }
 
         /// <summary>
-        ///     Returns a single <see cref="SyncTargetProperty" />, and throws an exception if there is not exactly one
-        ///     <see cref="SyncTargetProperty" />
+        ///     Returns a single <see cref="SyncPropertyAccessor" />, and throws an exception if there is not exactly one
+        ///     <see cref="SyncPropertyAccessor" />
         /// </summary>
         /// <param name="source">The Synchronization-object that contains the target member</param>
         /// <param name="selector">The Expression to the intended member Property</param>
-        public static SyncTargetProperty GetSyncTargetProperty<TSyncType>(this TSyncType source,
+        public static SyncPropertyAccessor GetSyncTargetProperty<TSyncType>(this TSyncType source,
             Expression<Func<TSyncType, object>> selector)
         {
             return GetSyncTargetProperties(source, selector).Single();
         }
 
-        public static bool TryGetSyncTargetProperty<TSyncType, TProp>(this TSyncType source, out SyncTargetProperty syncTargetProperty,
+        public static bool TryGetSyncTargetProperty<TSyncType, TProp>(this TSyncType source, out SyncPropertyAccessor syncPropertyAccessor,
             Expression<Func<TSyncType, TProp>> selector)
         {
             var t = GetSyncTargetProperties(source, selector).FirstOrDefault();
-            syncTargetProperty = t;
+            syncPropertyAccessor = t;
             return t != null;
         }
 
         /// <summary>
-        ///     Returns all the <see cref="SyncTargetProperty">SyncTargetProperties</see> that are bound to the Property
+        ///     Returns all the <see cref="SyncPropertyAccessor">SyncTargetProperties</see> that are bound to the Property
         /// </summary>
         /// <param name="source">The Synchronization-object that contains the target member</param>
         /// <param name="selector">The Expression to the intended member Property</param>
-        public static IEnumerable<SyncTargetProperty> GetSyncTargetProperties<TSyncType, TProp>(this TSyncType source,
+        public static IEnumerable<SyncPropertyAccessor> GetSyncTargetProperties<TSyncType, TProp>(this TSyncType source,
             Expression<Func<TSyncType, TProp>> selector)
         {
             var propertyName = GetMemberName(selector.Body);

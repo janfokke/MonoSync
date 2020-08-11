@@ -17,7 +17,7 @@ namespace MonoSync.Synchronizers
 
         public override void WriteChanges(ExtendedBinaryWriter binaryWriter)
         {
-            var changedPropertiesMask = new BitArray(SyncPropertyCollection.Length);
+            var changedPropertiesMask = new BitArray(SourceMemberCollection.Length);
 
             // Mark changed properties bitArray
             foreach (SyncSourceProperty syncSourceProperty in _changedProperties.Values)
@@ -29,20 +29,17 @@ namespace MonoSync.Synchronizers
 
             foreach (SyncSourceProperty sourceProperty in _changedProperties.Values)
             {
-                object value = TypeAccessor[Reference, sourceProperty.Name];
-                sourceProperty.Serializer.Write(value, binaryWriter);
+                sourceProperty.Serialize(binaryWriter);
             }
             MarkClean();
         }
 
         private void SourceObjectOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var propertyName = e.PropertyName;
-
             // Property changed event might be from a non-sync property
-            if (SyncPropertyCollection.TryGetPropertyByName(e.PropertyName, out SyncSourceProperty syncSourceProperty))
+            if (SourceMemberCollection.TryGetPropertyByName(e.PropertyName, out SyncSourceProperty syncSourceProperty))
             {
-                object newValue = TypeAccessor[Reference, propertyName];
+                object newValue = syncSourceProperty.Value;
 
                 if (syncSourceProperty.IsValueType == false)
                 {
@@ -62,7 +59,7 @@ namespace MonoSync.Synchronizers
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
         {
-            var changedPropertiesMask = new BitArray(SyncPropertyCollection.Length, true);
+            var changedPropertiesMask = new BitArray(SourceMemberCollection.Length, true);
             // All properties are marked as changed because this is a full write 
             binaryWriter.Write(changedPropertiesMask);
             base.WriteFull(binaryWriter);

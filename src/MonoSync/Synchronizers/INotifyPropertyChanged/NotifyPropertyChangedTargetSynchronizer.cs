@@ -21,7 +21,7 @@ namespace MonoSync.Synchronizers
 
         private void TargetOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (!TargetPropertyByNameLookup.TryGetValue(e.PropertyName, out SyncTargetProperty syncTargetProperty))
+            if (!TargetPropertyByNameLookup.TryGetValue(e.PropertyName, out SyncPropertyAccessor syncTargetProperty))
             {
                 return;
             }
@@ -33,10 +33,10 @@ namespace MonoSync.Synchronizers
             BitArray changedProperties = reader.ReadBitArray(TargetPropertyByIndexLookup.Length);
             for (var index = 0; index < TargetPropertyByIndexLookup.Length; index++)
             {
-                SyncTargetProperty syncTargetProperty = TargetPropertyByIndexLookup[index];
+                SyncPropertyAccessor syncPropertyAccessor = TargetPropertyByIndexLookup[index];
                 if (changedProperties[index])
                 {
-                    syncTargetProperty.ReadChanges(reader);
+                    syncPropertyAccessor.ReadChanges(reader);
                 }
             }
         }

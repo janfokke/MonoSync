@@ -4,19 +4,19 @@ namespace MonoSync.Synchronizers.PropertyStates
 {
     internal class HighestTickState : ISyncTargetPropertyState
     {
-        private readonly SyncTargetProperty _syncTargetProperty;
+        private readonly SyncPropertyAccessor _syncPropertyAccessor;
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
 
         private bool _subscribedToEndRead;
 
-        public HighestTickState(SyncTargetProperty syncTargetProperty, TargetSynchronizerRoot targetSynchronizerRoot)
+        public HighestTickState(SyncPropertyAccessor syncPropertyAccessor, TargetSynchronizerRoot targetSynchronizerRoot)
         {
-            _syncTargetProperty = syncTargetProperty;
+            _syncPropertyAccessor = syncPropertyAccessor;
             _targetSynchronizerRoot = targetSynchronizerRoot;
-            _syncTargetProperty.Dirty += SyncTargetPropertyOnDirty;
+            _syncPropertyAccessor.Dirty += SyncPropertyAccessorOnDirty;
         }
 
-        private void SyncTargetPropertyOnDirty(object sender, EventArgs e)
+        private void SyncPropertyAccessorOnDirty(object sender, EventArgs e)
         {
             // The Property should be restored to the value of the source if the source's tick is higher than the property's dirty tick.
             SubscribeToEndRead();
@@ -24,7 +24,7 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         public void Dispose()
         {
-            _syncTargetProperty.Dirty -= SyncTargetPropertyOnDirty;
+            _syncPropertyAccessor.Dirty -= SyncPropertyAccessorOnDirty;
             UnSubscribeToEndRead();
         }
 
@@ -35,9 +35,9 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         private void TargetSynchronizerRootOnEndRead(object sender, EventArgs e)
         {
-            if (_targetSynchronizerRoot.Clock.OtherTick > _syncTargetProperty.TickWhenDirty)
+            if (_targetSynchronizerRoot.Clock.OtherTick > _syncPropertyAccessor.TickWhenDirty)
             {
-                _syncTargetProperty.Property = _syncTargetProperty.SynchronizedValue;
+                _syncPropertyAccessor.Property = _syncPropertyAccessor.SynchronizedValue;
                 UnSubscribeToEndRead();
             }
         }

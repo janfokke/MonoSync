@@ -2,11 +2,11 @@
 {
     internal class TakeSynchronizedState : ISyncTargetPropertyState
     {
-        private readonly SyncTargetProperty _syncTargetProperty;
+        private readonly SyncPropertyAccessor _syncPropertyAccessor;
 
-        public TakeSynchronizedState(SyncTargetProperty syncTargetProperty)
+        public TakeSynchronizedState(SyncPropertyAccessor syncPropertyAccessor)
         {
-            _syncTargetProperty = syncTargetProperty;
+            _syncPropertyAccessor = syncPropertyAccessor;
         }
 
         public void Dispose()
@@ -16,7 +16,7 @@
 
         public void HandleRead(object value)
         {
-            _syncTargetProperty.Property = value;
+            _syncPropertyAccessor.Property = value;
         }
     }
 }

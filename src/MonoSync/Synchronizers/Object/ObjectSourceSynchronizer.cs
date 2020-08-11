@@ -1,34 +1,63 @@
 ﻿using System;
-using FastMember;
+using System.Reflection;
+using MonoSync.Exceptions;
 using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
     public class ObjectSourceSynchronizer : SourceSynchronizer
     {
-        protected readonly SyncPropertyCollection SyncPropertyCollection;
-        protected readonly TypeAccessor TypeAccessor;
+        protected readonly SourceMemberCollection SourceMemberCollection;
 
         public ObjectSourceSynchronizer(SourceSynchronizerRoot sourceSynchronizerRoot, int referenceId,
             object reference) :
             base(sourceSynchronizerRoot, referenceId, reference)
         {
             Type baseType = reference.GetType();
-            TypeAccessor = TypeAccessor.Create(baseType, true);
-            SyncPropertyCollection = sourceSynchronizerRoot.GetPropertiesFromType(baseType);
+            SourceMemberCollection = InitializeSourceMemberCollection();
             
-            for (var i = 0; i < SyncPropertyCollection.Length; i++)
+            for (var i = 0; i < SourceMemberCollection.Length; i++)
             {
-                SyncSourceProperty syncSourceProperty = SyncPropertyCollection[i];
+                SyncSourceProperty syncSourceProperty = SourceMemberCollection[i];
                 if (!syncSourceProperty.IsValueType)
                 {
-                    object initialValue = TypeAccessor[Reference, syncSourceProperty.Name];
+                    object initialValue = syncSourceProperty.Value;
                     if (initialValue != null)
                     {
                         sourceSynchronizerRoot.Synchronize(initialValue);
                     }
                 }
             }
+        }
+
+        private SourceMemberCollection InitializeSourceMemberCollection()
+        {
+            Type type = Reference.GetType();
+
+            SynchronizablePropertyInfo[] synchronizableProperties = SynchronizablePropertyInfo.FromType(type);
+
+            var syncSourceProperties = new SyncSourceProperty[synchronizableProperties.Length];
+
+            for (short index = 0; index < synchronizableProperties.Length; index++)
+            {
+                SynchronizablePropertyInfo synchronizablePropertyInfo = synchronizableProperties[index];
+                PropertyInfo propertyInfo = synchronizablePropertyInfo.PropertyInfo;
+
+                Type propertyType = propertyInfo.PropertyType;
+
+                if (ReflectionUtils.TryResolvePropertyGetter(out Func<object, object> getter, propertyInfo))
+                {
+                    var property = new SyncSourceProperty(index, propertyInfo.Name,
+                        SourceSynchronizerRoot.Settings.Serializers.FindSerializerByType(propertyType),
+                        propertyType.IsValueType, () => getter(Reference));
+                    syncSourceProperties[index] = property;
+                }
+                else
+                {
+                    throw new GetterNotFoundException(propertyInfo.Name);
+                }
+            }
+            return new SourceMemberCollection(syncSourceProperties);
         }
 
         public override void WriteChanges(ExtendedBinaryWriter binaryWriter)
@@ -38,11 +67,9 @@ namespace MonoSync.Synchronizers
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
         {
-            for (var index = 0; index < SyncPropertyCollection.Length; index++)
+            for (var index = 0; index < SourceMemberCollection.Length; index++)
             {
-                SyncSourceProperty sourceProperty = SyncPropertyCollection[index];
-                object value = TypeAccessor[Reference, sourceProperty.Name];
-                sourceProperty.Serializer.Write(value, binaryWriter);
+                SourceMemberCollection[index].Serialize(binaryWriter);
             }
         }
     }

@@ -3,37 +3,36 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using FastMember;
 using MonoSync.Attributes;
 using MonoSync.Exceptions;
 using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
+
+
     public class ObjectTargetSynchronizer : TargetSynchronizer
     {
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
-        protected readonly SyncTargetProperty[] TargetPropertyByIndexLookup;
-        protected readonly Dictionary<string, SyncTargetProperty> TargetPropertyByNameLookup = new Dictionary<string, SyncTargetProperty>();
-        protected readonly TypeAccessor TypeAccessor;
-
+        protected readonly SyncPropertyAccessor[] TargetPropertyByIndexLookup;
+        protected readonly Dictionary<string, SyncPropertyAccessor> TargetPropertyByNameLookup = new Dictionary<string, SyncPropertyAccessor>();
+        
         private bool _constructing;
         private Action<List<object>> _constructor;
 
         public ObjectTargetSynchronizer(TargetSynchronizerRoot targetSynchronizerRoot, int referenceId, Type referenceType) : base(referenceId)
         {
             _targetSynchronizerRoot = targetSynchronizerRoot;
-            TypeAccessor = TypeAccessor.Create(referenceType, false);
             Reference = FormatterServices.GetUninitializedObject(referenceType);
-            SyncPropertyInfo[] syncPropertiesInfo = GetProperties();
+            SynchronizablePropertyInfo[] syncPropertiesInfo = GetProperties();
 
-            TargetPropertyByIndexLookup = new SyncTargetProperty[syncPropertiesInfo.Length];
+            TargetPropertyByIndexLookup = new SyncPropertyAccessor[syncPropertiesInfo.Length];
             for (var syncPropertyIndex = 0; syncPropertyIndex < syncPropertiesInfo.Length; syncPropertyIndex++)
             {
                 var syncPropertyInfo = syncPropertiesInfo[syncPropertyIndex];
-                SyncTargetProperty syncTargetProperty = CreateSyncTargetProperty(targetSynchronizerRoot.Settings.Serializers, syncPropertyInfo.PropertyInfo);
-                TargetPropertyByNameLookup[syncPropertyInfo.PropertyInfo.Name] = syncTargetProperty;
-                TargetPropertyByIndexLookup[syncPropertyIndex] = syncTargetProperty;
+                SyncPropertyAccessor syncPropertyAccessor = CreateSyncTargetProperty(targetSynchronizerRoot.Settings.Serializers, syncPropertyInfo.PropertyInfo);
+                TargetPropertyByNameLookup[syncPropertyInfo.PropertyInfo.Name] = syncPropertyAccessor;
+                TargetPropertyByIndexLookup[syncPropertyIndex] = syncPropertyAccessor;
             }
 
             _constructor = constructionPath =>
@@ -44,33 +43,37 @@ namespace MonoSync.Synchronizers
             _targetSynchronizerRoot.EndRead += TargetSynchronizerRootOnEndRead;
         }
 
-        private SyncTargetProperty CreateSyncTargetProperty(SerializerCollection fieldDeserializerResolver, PropertyInfo propertyInfo)
+        private SyncPropertyAccessor CreateSyncTargetProperty(SerializerCollection fieldDeserializerResolver, PropertyInfo propertyInfo)
         {
             ISerializer serializer = fieldDeserializerResolver.FindSerializerByType(propertyInfo.PropertyType);
 
-            Action<object> setter = propertyInfo.SetMethod != null
-                ? (Action<object>) (value => { TypeAccessor[Reference, propertyInfo.Name] = value; })
-                : null;
+            Action <object> directSetter = null;
+            if (ReflectionUtils.TryResolvePropertySetter(out Action<object, object> referenceSetter, propertyInfo))
+            {
+                directSetter = value => referenceSetter(Reference, value);
+            }
 
-            Func<object> getter = propertyInfo.GetMethod != null
-                ? (Func<object>) (() => TypeAccessor[Reference, propertyInfo.Name])
-                : null;
+            Func<object> directGetter = null;
+            if (ReflectionUtils.TryResolvePropertyGetter(out Func<object, object> referenceGetter, propertyInfo))
+            {
+                directGetter = () => referenceGetter(Reference);
+            }
 
-            var syncTargetProperty = new SyncTargetProperty(
+            var syncTargetProperty = new SyncPropertyAccessor(
                 propertyInfo,
-                setter,
-                getter,
+                directSetter,
+                directGetter,
                 _targetSynchronizerRoot, serializer);
             return syncTargetProperty;
         }
 
         private void InvokeConstructor(ConstructorInfo constructor,
-            SyncPropertyInfo[] syncProperties, List<object> constructionPath)
+            SynchronizablePropertyInfo[] syncProperties, List<object> constructionPath)
         {
             ParameterInfo[] constructorParametersInfos = constructor.GetParameters();
             
             object[] constructorParameters = new object[constructorParametersInfos.Length];
-            var syncTargetPropertyParameters = new HashSet<SyncTargetProperty>();
+            var syncTargetPropertyParameters = new HashSet<SyncPropertyAccessor>();
 
             for (var i = 0; i < constructorParametersInfos.Length; i++)
             {
@@ -83,7 +86,7 @@ namespace MonoSync.Synchronizers
                         // Resolve property parameter explicit with attribute
                         if (customAttribute is SyncConstructorParameterAttribute constructorParameterAttribute)
                         {
-                            if (TargetPropertyByNameLookup.TryGetValue(constructorParameterAttribute.PropertyName, out SyncTargetProperty explicitSyncTargetProperty))
+                            if (TargetPropertyByNameLookup.TryGetValue(constructorParameterAttribute.PropertyName, out SyncPropertyAccessor explicitSyncTargetProperty))
                             {
                                 syncTargetPropertyParameters.Add(explicitSyncTargetProperty);
                                 return explicitSyncTargetProperty.SynchronizedValue;
@@ -99,7 +102,7 @@ namespace MonoSync.Synchronizers
                     // Resolve property implicit
                     // If Property doesn't have a SyncConstructorParameter attribute, use PascalCase.
                     string propertyName = CapitalizeFirstLetter(constructorParametersInfo.Name);
-                    if (TargetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty implicitSyncTargetProperty))
+                    if (TargetPropertyByNameLookup.TryGetValue(propertyName, out SyncPropertyAccessor implicitSyncTargetProperty))
                     {
                         syncTargetPropertyParameters.Add(implicitSyncTargetProperty);
                         return implicitSyncTargetProperty.SynchronizedValue;
@@ -112,7 +115,7 @@ namespace MonoSync.Synchronizers
             }
 
             // Make sure properties are initialized before invoking constructor
-            foreach (SyncTargetProperty syncTargetProperty in syncTargetPropertyParameters)
+            foreach (SyncPropertyAccessor syncTargetProperty in syncTargetPropertyParameters)
             {
                 ConstructProperty(syncTargetProperty, constructionPath);
             }
@@ -121,19 +124,19 @@ namespace MonoSync.Synchronizers
 
             for (var index = 0; index < TargetPropertyByIndexLookup.Length; index++)
             {
-                SyncTargetProperty syncTargetProperty = TargetPropertyByIndexLookup[index];
+                SyncPropertyAccessor syncPropertyAccessor = TargetPropertyByIndexLookup[index];
 
-                syncTargetProperty.SynchronizationBehaviour = syncProperties[index].SynchronizeAttribute.SynchronizationBehaviour;
+                syncPropertyAccessor.SynchronizationBehaviour = syncProperties[index].SynchronizeAttribute.SynchronizationBehaviour;
                 
-                if(syncTargetProperty.SynchronizationBehaviour != SynchronizationBehaviour.Manual &&
-                   syncTargetProperty.SynchronizationBehaviour != SynchronizationBehaviour.Construction)
-                    syncTargetProperty.Property = syncTargetProperty.SynchronizedValue;
+                if(syncPropertyAccessor.SynchronizationBehaviour != SynchronizationBehaviour.Manual &&
+                   syncPropertyAccessor.SynchronizationBehaviour != SynchronizationBehaviour.Construction)
+                    syncPropertyAccessor.Property = syncPropertyAccessor.SynchronizedValue;
             }
         }
 
-        private void ConstructProperty(SyncTargetProperty syncTargetProperty, List<object> constructionPath)
+        private void ConstructProperty(SyncPropertyAccessor syncPropertyAccessor, List<object> constructionPath)
         {
-            object synchronizedValue = syncTargetProperty.SynchronizedValue;
+            object synchronizedValue = syncPropertyAccessor.SynchronizedValue;
             if (synchronizedValue != null)
             {
                 Type type = synchronizedValue.GetType();
@@ -175,10 +178,10 @@ namespace MonoSync.Synchronizers
             return input.First().ToString().ToUpper() + input.Substring(1);
         }
 
-        private SyncPropertyInfo[] GetProperties()
+        private SynchronizablePropertyInfo[] GetProperties()
         {
-            SyncPropertyInfo[] syncProperties =
-                SyncPropertyResolver.GetSyncProperties(Reference.GetType()).ToArray();
+            SynchronizablePropertyInfo[] syncProperties =
+                SynchronizablePropertyInfo.FromType(Reference.GetType()).ToArray();
             return syncProperties;
         }
 
@@ -210,9 +213,9 @@ namespace MonoSync.Synchronizers
             _targetSynchronizerRoot.EndRead -= TargetSynchronizerRootOnEndRead;
         }
 
-        internal SyncTargetProperty GetSyncTargetProperty(string propertyName)
+        internal SyncPropertyAccessor GetSyncTargetProperty(string propertyName)
         {
-            if (TargetPropertyByNameLookup.TryGetValue(propertyName, out SyncTargetProperty property))
+            if (TargetPropertyByNameLookup.TryGetValue(propertyName, out SyncPropertyAccessor property))
             {
                 return property;
             }
@@ -222,7 +225,7 @@ namespace MonoSync.Synchronizers
 
         public override void Dispose()
         {
-            foreach (SyncTargetProperty syncTargetProperty in TargetPropertyByIndexLookup)
+            foreach (SyncPropertyAccessor syncTargetProperty in TargetPropertyByIndexLookup)
             {
                 syncTargetProperty.Dispose();
             }
@@ -232,8 +235,8 @@ namespace MonoSync.Synchronizers
         {
             for (var index = 0; index < TargetPropertyByIndexLookup.Length; index++)
             {
-                SyncTargetProperty syncTargetProperty = TargetPropertyByIndexLookup[index];
-                syncTargetProperty.ReadChanges(reader);
+                SyncPropertyAccessor syncPropertyAccessor = TargetPropertyByIndexLookup[index];
+                syncPropertyAccessor.ReadChanges(reader);
             }
         }
     }

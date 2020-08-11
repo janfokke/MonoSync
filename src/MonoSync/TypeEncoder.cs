@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Security.Policy;
 using MonoSync.Collections;
 using MonoSync.Exceptions;
 using MonoSync.Utils;
