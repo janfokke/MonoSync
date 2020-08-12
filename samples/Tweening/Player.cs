@@ -4,6 +4,7 @@ using PropertyChanged;
 
 namespace MonoSync.Sample.Tweening
 {
+    [Synchronizable]
     [AddINotifyPropertyChangedInterface]
     public class Player
     {
