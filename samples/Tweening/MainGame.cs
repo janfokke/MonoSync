@@ -70,7 +70,7 @@ namespace MonoSync.Sample.Tweening
             Player self = map.Players.Last();
 
             // Configure Position property synchronization behaviour to highestTick to avoid player snapping back, because server version is older
-            self.GetSyncTargetProperty(x => x.Position).SynchronizationBehaviour =
+            self.GetSyncTargetMember(nameof(self.Position)).SynchronizationBehaviour =
                 SynchronizationBehaviour.HighestTick;
 
             Components.Add(_client);
