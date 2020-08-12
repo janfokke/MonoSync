@@ -369,7 +369,7 @@ namespace MonoSync.Collections
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Values)));
-            OnPropertyChanged(new PropertyChangedEventArgs($"Item[{item.Key.ToString()}]"));
+            OnPropertyChanged(new PropertyChangedEventArgs($"Item[{item.Key}]"));
         }
 
 
@@ -388,7 +388,7 @@ namespace MonoSync.Collections
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Keys)));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Values)));
-            OnPropertyChanged(new PropertyChangedEventArgs($"Item[{item.Key.ToString()}]"));
+            OnPropertyChanged(new PropertyChangedEventArgs($"Item[{item.Key}]"));
         }
 
         /// <summary>
@@ -406,7 +406,7 @@ namespace MonoSync.Collections
             OnCollectionChanged(
                 new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItem, oldItem));
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Values)));
-            OnPropertyChanged(new PropertyChangedEventArgs($"Item[{oldItem.Key.ToString()}]"));
+            OnPropertyChanged(new PropertyChangedEventArgs($"Item[{oldItem.Key}]"));
         }
 
         /// <summary>
@@ -438,7 +438,7 @@ namespace MonoSync.Collections
         /// <summary>
         ///     Raises the property change notification
         /// </summary>
-        /// <param name="e">Property event args.</param>
+        /// <param name="e">Value event args.</param>
         protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
         {
             if (_shouldRaiseNotifications)

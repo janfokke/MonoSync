@@ -7,7 +7,7 @@ namespace MonoSync.Sample.Tweening
     [AddINotifyPropertyChangedInterface]
     public class Map
     {
-        public Map() : this(new ObservableDictionary<int, Player>())
+        public Map() : this(new ObservableHashSet<Player>())
         {
         }
 
@@ -20,11 +20,12 @@ namespace MonoSync.Sample.Tweening
         /// </summary>
         /// <param name="players"></param>
         [SyncConstructor]
-        public Map(ObservableDictionary<int, Player> players)
+        public Map(ObservableHashSet<Player> players)
         {
             Players = players;
         }
 
-        [Sync] public ObservableDictionary<int, Player> Players { get; set; }
+        [Synchronize] 
+        public ObservableHashSet<Player> Players { get; set; }
     }
 }

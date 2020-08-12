@@ -7,9 +7,7 @@ namespace MonoSync.Sample.Tweening
     [AddINotifyPropertyChangedInterface]
     public class Player
     {
-        /// <summary>
-        /// Sync constructor. <see cref="SyncConstructorAttribute"/> is optional
-        /// </summary>
+        [SyncConstructor]
         public Player()
         {
         }
@@ -19,13 +17,13 @@ namespace MonoSync.Sample.Tweening
             Color = color;
         }
 
-        [Sync(SynchronizationBehaviour.Interpolated)]
+        [Synchronize (SynchronizationBehaviour.Interpolated)]
         public Vector2 Position { get; set; }
 
-        [Sync] 
+        [Synchronize] 
         public Vector2 TargetPosition { get; set; }
 
-        [Sync] 
+        [Synchronize] 
         public Color Color { get; set; }
     }
 }

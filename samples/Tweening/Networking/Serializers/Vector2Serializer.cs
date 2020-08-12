@@ -1,11 +1,10 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
-using MonoSync.FieldSerializers;
 using MonoSync.Utils;
 
 namespace MonoSync.Sample.Tweening
 {
-    public class Vector2Serializer : FieldSerializer<Vector2>
+    public class Vector2Serializer : Serializer<Vector2>
     {
         public override void Write(Vector2 value, ExtendedBinaryWriter writer)
         {
@@ -13,11 +12,11 @@ namespace MonoSync.Sample.Tweening
             writer.Write(value.Y);
         }
 
-        public override void Read(ExtendedBinaryReader reader, Action<Vector2> valueFixup)
+        public override void Read(ExtendedBinaryReader reader, Action<Vector2> synchronizationCallback)
         {
             float x = reader.ReadSingle();
             float y = reader.ReadSingle();
-            valueFixup(new Vector2(x, y));
+            synchronizationCallback(new Vector2(x, y));
         }
 
         /// <remarks>

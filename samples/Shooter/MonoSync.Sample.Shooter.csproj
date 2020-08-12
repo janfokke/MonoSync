@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <ApplicationIcon />
+    <StartupObject />
+    <AssemblyName>MonoSync.Sample.Shooter</AssemblyName>
+    <RootNamespace>MonoSync.Sample.Shooter</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="**\*.mgcb" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Fody" Version="6.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MonoGame.Content.Builder" Version="3.7.0.8" />
+    <PackageReference Include="MonoGame.Extended" Version="3.7.0" />
+    <PackageReference Include="MonoGame.Extended.Input" Version="3.7.0" />
+    <PackageReference Include="MonoGame.Extended.Tweening" Version="3.7.0" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL.Core" Version="3.7.0.7" />
+    <PackageReference Include="Myra" Version="0.9.8.194" />
+    <PackageReference Include="PropertyChanged.Fody" Version="3.2.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MonoSync\MonoSync.csproj" />
+  </ItemGroup>
+</Project>

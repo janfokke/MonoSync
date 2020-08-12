@@ -17,9 +17,7 @@ namespace MonoSync.Benchmark
             Console.WriteLine($"Benchmark with {entityCount} entities");
 
             var world = new World();
-            var syncSourceSettings = SyncSourceSettings.Default;
-            syncSourceSettings.TypeEncoder = new TestTypeEncoder();
-            var syncSourceRoot = new SyncSourceRoot(world, syncSourceSettings);
+            var syncSourceRoot = new SourceSynchronizerRoot(world);
 
             // Initialization
             Console.Write("Begin initializing: ");

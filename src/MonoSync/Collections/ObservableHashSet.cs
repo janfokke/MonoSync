@@ -7,7 +7,6 @@ using System.Linq;
 
 namespace MonoSync.Collections
 {
-    [Obsolete("Not supported yet")]
     public class ObservableHashSet<T>
         : ISet<T>, IReadOnlyCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged, INotifyPropertyChanging
     {
@@ -19,7 +18,7 @@ namespace MonoSync.Collections
         public virtual IEqualityComparer<T> Comparer => _set.Comparer;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ObservableHashSet{T}" /> class
+        ///     Initializes a new instance of the <see cref="ObservableHashSetTargetSynchronizer{T}" /> class
         ///     that is empty and uses the default equality comparer for the set type.
         /// </summary>
         public ObservableHashSet()
@@ -28,7 +27,7 @@ namespace MonoSync.Collections
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ObservableHashSet{T}" /> class
+        ///     Initializes a new instance of the <see cref="ObservableHashSetTargetSynchronizer{T}" /> class
         ///     that is empty and uses the specified equality comparer for the set type.
         /// </summary>
         /// <param name="comparer">
@@ -42,7 +41,7 @@ namespace MonoSync.Collections
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ObservableHashSet{T}" /> class
+        ///     Initializes a new instance of the <see cref="ObservableHashSetTargetSynchronizer{T}" /> class
         ///     that uses the default equality comparer for the set type, contains elements copied
         ///     from the specified collection, and has sufficient capacity to accommodate the
         ///     number of elements copied.
@@ -54,7 +53,7 @@ namespace MonoSync.Collections
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ObservableHashSet{T}" /> class
+        ///     Initializes a new instance of the <see cref="ObservableHashSetTargetSynchronizer{T}" /> class
         ///     that uses the specified equality comparer for the set type, contains elements
         ///     copied from the specified collection, and has sufficient capacity to accommodate
         ///     the number of elements copied.
@@ -101,8 +100,6 @@ namespace MonoSync.Collections
             }
 
             OnCountPropertyChanging();
-
-            List<T> removed = this.ToList();
 
             _set.Clear();
 
@@ -502,8 +499,7 @@ namespace MonoSync.Collections
 
         private void OnCollectionChanged(IList newItems, IList oldItems)
         {
-            OnCollectionChanged(
-                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems, oldItems));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems, oldItems));
         }
 
         /// <summary>

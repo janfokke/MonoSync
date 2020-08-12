@@ -31,8 +31,6 @@ namespace MonoSync.Sample.Tweening
 
         public void HostGame()
         {
-
-
             _server = new Server();
             _server.StartListening();
             var tweenGame = new TweenGame(this, _server.Map);
@@ -68,8 +66,8 @@ namespace MonoSync.Sample.Tweening
             _client = new Client();
 
             Map map = await _client.Join();
-
-            Player self = map.Players.Last().Value;
+          
+            Player self = map.Players.Last();
 
             // Configure Position property synchronization behaviour to highestTick to avoid player snapping back, because server version is older
             self.GetSyncTargetProperty(x => x.Position).SynchronizationBehaviour =

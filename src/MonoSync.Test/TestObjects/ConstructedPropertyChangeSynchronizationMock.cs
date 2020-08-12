@@ -1,14 +1,14 @@
 using System;
 using MonoSync.Attributes;
-using MonoSync.SyncTargetObjects;
 using PropertyChanged;
 
 namespace MonoSync.Test.TestObjects
 {
+    [Synchronizable]
     [AddINotifyPropertyChangedInterface]
     public class ConstructedPropertyChangeSynchronizationMock
     {
-        [Sync]
+        [Synchronize]
         public float ChangeableProperty { get; set; }
 
         [SyncConstructor]

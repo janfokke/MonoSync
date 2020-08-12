@@ -7,66 +7,66 @@ namespace MonoSync
 {
     internal class TargetReferencePool : IReferenceResolver
     {
-        private readonly Dictionary<int, List<Action<object>>> _referenceFixups =
+        private readonly Dictionary<int, List<Action<object>>> _synchronizationCallbacks =
             new Dictionary<int, List<Action<object>>>();
-        private readonly Dictionary<int, SyncTarget> _syncObjectLookup = new Dictionary<int, SyncTarget>();
+        private readonly Dictionary<int, TargetSynchronizer> _syncObjectLookup = new Dictionary<int, TargetSynchronizer>();
         private readonly Dictionary<object, int> _syncObjectReferenceIdLookup = new Dictionary<object, int>(ReferenceEqualityComparer.Default);
 
-        public IEnumerable<SyncBase> SyncObjects => _syncObjectLookup.Values;
+        public IEnumerable<SynchronizerBase> SyncObjects => _syncObjectLookup.Values;
 
         /// <summary>
         ///     Resolves the reference if it is available or becomes available
         /// </summary>
         /// <remarks>Reference might never become available</remarks>
         /// <param name="referenceId"></param>
-        /// <param name="fixup">When the reference is available this delegate will be called with the reference.</param>
-        public void ResolveReference(in int referenceId, Action<object> fixup)
+        /// <param name="synchronizationCallback">When the reference is available this delegate will be called with the reference.</param>
+        public void ResolveReference(in int referenceId, Action<object> synchronizationCallback)
         {
             if (referenceId == 0)
             {
-                fixup(null);
+                synchronizationCallback(null);
                 return;
             }
 
             // resolve immediately if reference is already resolved.
-            if (TryGetSyncTargetByIdentifier(referenceId, out SyncTarget syncObject))
+            if (TryGetSyncTargetByIdentifier(referenceId, out TargetSynchronizer syncObject))
             {
-                fixup(syncObject.BaseObject);
+                synchronizationCallback(syncObject.Reference);
                 return;
             }
 
-            // Else register reference for fixup
-            if (_referenceFixups.TryGetValue(referenceId, out List<Action<object>> referenceFixups))
+            // Else register reference for synchronizationCallback
+            if (_synchronizationCallbacks.TryGetValue(referenceId, out List<Action<object>> synchronizationCallbacks))
             {
-                referenceFixups.Add(fixup);
+                synchronizationCallbacks.Add(synchronizationCallback);
             }
             else
             {
-                _referenceFixups.Add(referenceId, new List<Action<object>>
+                _synchronizationCallbacks.Add(referenceId, new List<Action<object>>
                 {
-                    fixup
+                    synchronizationCallback
                 });
             }
         }
 
-        public void AddSyncObject(int referenceId, SyncTarget syncObject)
+        public void AddSyncronizer(int referenceId, TargetSynchronizer targetSynchronizerObject)
         {
-            object baseObject = syncObject.BaseObject;
+            object baseObject = targetSynchronizerObject.Reference;
             if (_syncObjectReferenceIdLookup.ContainsKey(baseObject))
                 throw new DoubleSynchronizedReferenceException();
             {
                 _syncObjectReferenceIdLookup.Add(baseObject, referenceId);
-                _syncObjectLookup.Add(referenceId, syncObject);
-                FixupReferenceDependencies(referenceId, baseObject);
+                _syncObjectLookup.Add(referenceId, targetSynchronizerObject);
+                ResolveReferenceDependencies(referenceId, baseObject);
             }
         }
 
-        private void FixupReferenceDependencies(int referenceId, object reference)
+        private void ResolveReferenceDependencies(int referenceId, object reference)
         {
-            if (_referenceFixups.TryGetValue(referenceId, out List<Action<object>> fixups))
+            if (_synchronizationCallbacks.TryGetValue(referenceId, out List<Action<object>> synchronizationCallback))
             {
-                _referenceFixups.Remove(referenceId);
-                foreach (Action<object> action in fixups)
+                _synchronizationCallbacks.Remove(referenceId);
+                foreach (Action<object> action in synchronizationCallback)
                 {
                     action(reference);
                 }
@@ -77,11 +77,11 @@ namespace MonoSync
         ///     Lookup the <see cref="TSync" /> of the <see cref="target" />
         /// </summary>
         /// <returns>The <see cref="TSync" /> if available. Else it returns null</returns>
-        public SyncTarget GetSyncObject(object reference)
+        public TargetSynchronizer GetSyncObject(object reference)
         {
             if (_syncObjectReferenceIdLookup.TryGetValue(reference, out var referenceId))
             {
-                if (_syncObjectLookup.TryGetValue(referenceId, out SyncTarget syncObject))
+                if (_syncObjectLookup.TryGetValue(referenceId, out TargetSynchronizer syncObject))
                 {
                     return syncObject;
                 }
@@ -90,20 +90,20 @@ namespace MonoSync
             return null;
         }
 
-        public bool TryGetSyncTargetByIdentifier(int referenceIdentifier, out SyncTarget syncObject)
+        public bool TryGetSyncTargetByIdentifier(int referenceIdentifier, out TargetSynchronizer targetSynchronizerObject)
         {
             if (referenceIdentifier == 0)
             {
-                syncObject = null;
+                targetSynchronizerObject = null;
                 return true;
             }
 
-            return _syncObjectLookup.TryGetValue(referenceIdentifier, out syncObject);
+            return _syncObjectLookup.TryGetValue(referenceIdentifier, out targetSynchronizerObject);
         }
 
         public void RemoveReference(int referenceId)
         {
-            if (TryGetSyncTargetByIdentifier(referenceId, out SyncTarget syncObject))
+            if (TryGetSyncTargetByIdentifier(referenceId, out TargetSynchronizer syncObject))
             {
                 RemoveSyncObject(syncObject);
             }
@@ -113,11 +113,11 @@ namespace MonoSync
             }
         }
 
-        public void RemoveSyncObject(SyncTarget syncObject)
+        public void RemoveSyncObject(TargetSynchronizer targetSynchronizerObject)
         {
-            syncObject.Dispose();
-            _syncObjectLookup.Remove(syncObject.ReferenceId);
-            _syncObjectReferenceIdLookup.Remove(syncObject.BaseObject);
+            targetSynchronizerObject.Dispose();
+            _syncObjectLookup.Remove(targetSynchronizerObject.ReferenceId);
+            _syncObjectReferenceIdLookup.Remove(targetSynchronizerObject.Reference);
         }
 
         public void RemoveReferences(int[] removedReferenceIds)
