@@ -14,50 +14,31 @@ namespace MonoSync.Synchronizers
             base(sourceSynchronizerRoot, referenceId, reference)
         {
             Type baseType = reference.GetType();
-            SourceMemberCollection = InitializeSourceMemberCollection();
-            
+
+            Type type = Reference.GetType();
+            SynchronizableMember[] synchronizableMembers = SynchronizableMember.FromType(type);
+
+            var synchronizableSourceMembers = new SynchronizableSourceMember[synchronizableMembers.Length];
+            for (var i = 0; i < synchronizableMembers.Length; i++)
+            {
+                SynchronizableMember synchronizableMember = synchronizableMembers[i];
+                var synchronizableSourceMember = new SynchronizableSourceMember(Reference, synchronizableMember, sourceSynchronizerRoot);
+                synchronizableSourceMembers[i] = synchronizableSourceMember;
+            }
+            SourceMemberCollection = new SourceMemberCollection(synchronizableSourceMembers);
+
             for (var i = 0; i < SourceMemberCollection.Length; i++)
             {
-                SyncSourceProperty syncSourceProperty = SourceMemberCollection[i];
-                if (!syncSourceProperty.IsValueType)
+                SynchronizableSourceMember synchronizableSourceMember = SourceMemberCollection[i];
+                if (!synchronizableSourceMember.IsValueType)
                 {
-                    object initialValue = syncSourceProperty.Value;
+                    object initialValue = synchronizableSourceMember.Value;
                     if (initialValue != null)
                     {
                         sourceSynchronizerRoot.Synchronize(initialValue);
                     }
                 }
             }
-        }
-
-        private SourceMemberCollection InitializeSourceMemberCollection()
-        {
-            Type type = Reference.GetType();
-
-            SynchronizablePropertyInfo[] synchronizableProperties = SynchronizablePropertyInfo.FromType(type);
-
-            var syncSourceProperties = new SyncSourceProperty[synchronizableProperties.Length];
-
-            for (short index = 0; index < synchronizableProperties.Length; index++)
-            {
-                SynchronizablePropertyInfo synchronizablePropertyInfo = synchronizableProperties[index];
-                PropertyInfo propertyInfo = synchronizablePropertyInfo.PropertyInfo;
-
-                Type propertyType = propertyInfo.PropertyType;
-
-                if (ReflectionUtils.TryResolvePropertyGetter(out Func<object, object> getter, propertyInfo))
-                {
-                    var property = new SyncSourceProperty(index, propertyInfo.Name,
-                        SourceSynchronizerRoot.Settings.Serializers.FindSerializerByType(propertyType),
-                        propertyType.IsValueType, () => getter(Reference));
-                    syncSourceProperties[index] = property;
-                }
-                else
-                {
-                    throw new GetterNotFoundException(propertyInfo.Name);
-                }
-            }
-            return new SourceMemberCollection(syncSourceProperties);
         }
 
         public override void WriteChanges(ExtendedBinaryWriter binaryWriter)

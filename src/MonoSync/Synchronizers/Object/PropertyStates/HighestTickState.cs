@@ -4,27 +4,27 @@ namespace MonoSync.Synchronizers.PropertyStates
 {
     internal class HighestTickState : ISyncTargetPropertyState
     {
-        private readonly SyncPropertyAccessor _syncPropertyAccessor;
+        private readonly SynchronizableTargetMember _synchronizableTargetMember;
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
 
         private bool _subscribedToEndRead;
 
-        public HighestTickState(SyncPropertyAccessor syncPropertyAccessor, TargetSynchronizerRoot targetSynchronizerRoot)
+        public HighestTickState(SynchronizableTargetMember synchronizableTargetMember, TargetSynchronizerRoot targetSynchronizerRoot)
         {
-            _syncPropertyAccessor = syncPropertyAccessor;
+            _synchronizableTargetMember = synchronizableTargetMember;
             _targetSynchronizerRoot = targetSynchronizerRoot;
-            _syncPropertyAccessor.Dirty += SyncPropertyAccessorOnDirty;
+            _synchronizableTargetMember.Dirty += SynchronizableTargetMemberOnDirty;
         }
 
-        private void SyncPropertyAccessorOnDirty(object sender, EventArgs e)
+        private void SynchronizableTargetMemberOnDirty(object sender, EventArgs e)
         {
-            // The Property should be restored to the value of the source if the source's tick is higher than the property's dirty tick.
+            // The Value should be restored to the value of the source if the source's tick is higher than the property's dirty tick.
             SubscribeToEndRead();
         }
 
         public void Dispose()
         {
-            _syncPropertyAccessor.Dirty -= SyncPropertyAccessorOnDirty;
+            _synchronizableTargetMember.Dirty -= SynchronizableTargetMemberOnDirty;
             UnSubscribeToEndRead();
         }
 
@@ -35,9 +35,9 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         private void TargetSynchronizerRootOnEndRead(object sender, EventArgs e)
         {
-            if (_targetSynchronizerRoot.Clock.OtherTick > _syncPropertyAccessor.TickWhenDirty)
+            if (_targetSynchronizerRoot.Clock.OtherTick > _synchronizableTargetMember.TickWhenDirty)
             {
-                _syncPropertyAccessor.Property = _syncPropertyAccessor.SynchronizedValue;
+                _synchronizableTargetMember.Value = _synchronizableTargetMember.SynchronizedValue;
                 UnSubscribeToEndRead();
             }
         }

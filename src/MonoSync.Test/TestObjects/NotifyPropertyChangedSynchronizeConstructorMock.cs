@@ -4,6 +4,7 @@ using PropertyChanged;
 
 namespace MonoSync.Test.TestObjects
 {
+    [Synchronizable]
     [AddINotifyPropertyChangedInterface]
     internal class NotifyPropertyChangedSynchronizeConstructorMock
     {

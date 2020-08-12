@@ -5,7 +5,7 @@ namespace MonoSync.Synchronizers.PropertyStates
     internal class InterpolationState : ISyncTargetPropertyState
     {
         private readonly ISerializer _serializer;
-        private readonly SyncPropertyAccessor _syncPropertyAccessor;
+        private readonly SynchronizableTargetMember _synchronizableTargetMember;
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
         private int _interpolatingStartTick;
         private bool _subscribedToEndRead;
@@ -15,13 +15,13 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         public bool Interpolating { get; private set; }
 
-        public InterpolationState(SyncPropertyAccessor syncPropertyAccessor, TargetSynchronizerRoot targetSynchronizerRoot,
+        public InterpolationState(SynchronizableTargetMember synchronizableTargetMember, TargetSynchronizerRoot targetSynchronizerRoot,
             ISerializer serializer)
         {
-            _syncPropertyAccessor = syncPropertyAccessor;
+            _synchronizableTargetMember = synchronizableTargetMember;
             _targetSynchronizerRoot = targetSynchronizerRoot;
             _serializer = serializer;
-            _syncPropertyAccessor.Dirty += SyncPropertyAccessorOnDirty;
+            _synchronizableTargetMember.Dirty += SynchronizableTargetMemberOnDirty;
         }
 
         public void HandleRead(object value)
@@ -32,12 +32,12 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         public void Dispose()
         {
-            _syncPropertyAccessor.Dirty -= SyncPropertyAccessorOnDirty;
+            _synchronizableTargetMember.Dirty -= SynchronizableTargetMemberOnDirty;
             UnSubscribeToEndRead();
             EndInterpolate();
         }
 
-        private void SyncPropertyAccessorOnDirty(object sender, EventArgs e)
+        private void SynchronizableTargetMemberOnDirty(object sender, EventArgs e)
         {
             if (Interpolating == false)
             {
@@ -49,7 +49,7 @@ namespace MonoSync.Synchronizers.PropertyStates
         {
             var interpolationFactor = Math.Min(1f,
                 (_targetSynchronizerRoot.Clock.OwnTick - _interpolatingStartTick) / (float) _targetSynchronizerRoot.UpdateRate);
-            _syncPropertyAccessor.Property = _serializer.Interpolate(
+            _synchronizableTargetMember.Value = _serializer.Interpolate(
                 _interpolationSource,
                 _interpolationTarget,
                 interpolationFactor);
@@ -85,12 +85,12 @@ namespace MonoSync.Synchronizers.PropertyStates
 
             // Previous interpolation is still running
             _interpolatingStartTick = _targetSynchronizerRoot.Clock.OwnTick;
-            _interpolationSource = _syncPropertyAccessor.Property;
+            _interpolationSource = _synchronizableTargetMember.Value;
 
             if (_interpolationSource == null || _interpolationTarget == null)
             {
                 // Quick set
-                _syncPropertyAccessor.Property = _interpolationTarget;
+                _synchronizableTargetMember.Value = _interpolationTarget;
             }
             else
             {

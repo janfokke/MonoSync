@@ -9,7 +9,8 @@ namespace MonoSync.Synchronizers
     {
         public bool CanSynchronize(Type type)
         {
-            return true;
+            var canSynchronize = type.GetCustomAttributes(true).OfType<SynchronizableAttribute>().Any();
+            return canSynchronize;
         }
 
         public SourceSynchronizer Synchronize(SourceSynchronizerRoot sourceSynchronizerRoot, int referenceId, object reference)

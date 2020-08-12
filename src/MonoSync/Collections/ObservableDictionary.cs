@@ -438,7 +438,7 @@ namespace MonoSync.Collections
         /// <summary>
         ///     Raises the property change notification
         /// </summary>
-        /// <param name="e">Property event args.</param>
+        /// <param name="e">Value event args.</param>
         protected virtual void OnPropertyChanged(PropertyChangedEventArgs e)
         {
             if (_shouldRaiseNotifications)

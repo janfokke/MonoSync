@@ -11,22 +11,22 @@ namespace MonoSync.Synchronizers
 {
     public class SourceMemberCollection
     {
-        private readonly Dictionary<string, SyncSourceProperty> _propertiesByName;
-        private readonly SyncSourceProperty[] _syncSourceProperties;
+        private readonly Dictionary<string, SynchronizableSourceMember> _propertiesByName;
+        private readonly SynchronizableSourceMember[] _syncSourceProperties;
 
         public int Length { get; }
-        public SyncSourceProperty this[int index] => _syncSourceProperties[index];
+        public SynchronizableSourceMember this[int index] => _syncSourceProperties[index];
 
-        public SourceMemberCollection(SyncSourceProperty[] syncSourceProperties)
+        public SourceMemberCollection(SynchronizableSourceMember[] syncSourceProperties)
         {
             _syncSourceProperties = syncSourceProperties;
             _propertiesByName = syncSourceProperties.ToDictionary(x => x.Name);
             Length = _syncSourceProperties.Length;
         }
 
-        public bool TryGetPropertyByName(string propertyName, out SyncSourceProperty syncSourceProperty)
+        public bool TryGetPropertyByName(string propertyName, out SynchronizableSourceMember synchronizableSourceMember)
         {
-            return _propertiesByName.TryGetValue(propertyName, out syncSourceProperty);
+            return _propertiesByName.TryGetValue(propertyName, out synchronizableSourceMember);
         }
     }
 }

@@ -62,7 +62,6 @@ namespace MonoSync
 
                 throw new SerializerNotFoundException(type);
             }
-
             return serializer;
         }
 

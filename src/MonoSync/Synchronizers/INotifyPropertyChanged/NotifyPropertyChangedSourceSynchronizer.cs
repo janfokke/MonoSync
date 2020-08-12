@@ -8,39 +8,21 @@ namespace MonoSync.Synchronizers
     public class NotifyPropertyChangedSourceSynchronizer : ObjectSourceSynchronizer
     {
         private new INotifyPropertyChanged Reference => (INotifyPropertyChanged)base.Reference;
-        private readonly SortedDictionary<int, SyncSourceProperty> _changedProperties = new SortedDictionary<int, SyncSourceProperty>();
-
+        private readonly BitArray _changedProperties;
         public NotifyPropertyChangedSourceSynchronizer(SourceSynchronizerRoot sourceSynchronizerRoot, int referenceId, INotifyPropertyChanged reference) : base(sourceSynchronizerRoot, referenceId, reference)
         {
+            _changedProperties = new BitArray(SourceMemberCollection.Length);
             reference.PropertyChanged += SourceObjectOnPropertyChanged;
-        }
-
-        public override void WriteChanges(ExtendedBinaryWriter binaryWriter)
-        {
-            var changedPropertiesMask = new BitArray(SourceMemberCollection.Length);
-
-            // Mark changed properties bitArray
-            foreach (SyncSourceProperty syncSourceProperty in _changedProperties.Values)
-            {
-                changedPropertiesMask[syncSourceProperty.Index] = true;
-            }
-
-            binaryWriter.Write(changedPropertiesMask);
-
-            foreach (SyncSourceProperty sourceProperty in _changedProperties.Values)
-            {
-                sourceProperty.Serialize(binaryWriter);
-            }
-            MarkClean();
         }
 
         private void SourceObjectOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Property changed event might be from a non-sync property
-            if (SourceMemberCollection.TryGetPropertyByName(e.PropertyName, out SyncSourceProperty syncSourceProperty))
+            // Value changed event might be from a non-sync property
+            if (SourceMemberCollection.TryGetPropertyByName(e.PropertyName, out SynchronizableSourceMember syncSourceProperty))
             {
                 object newValue = syncSourceProperty.Value;
 
+                // Synchronize newly added references
                 if (syncSourceProperty.IsValueType == false)
                 {
                     if (newValue != null)
@@ -48,13 +30,25 @@ namespace MonoSync.Synchronizers
                         SourceSynchronizerRoot.Synchronize(newValue);
                     }
                 }
-
-                _changedProperties.TryAdd(syncSourceProperty.Index, syncSourceProperty);
+                _changedProperties[syncSourceProperty.Index] = true;
                 if (Dirty == false)
                 {
                     MarkDirty();
                 }
             }
+        }
+
+        public override void WriteChanges(ExtendedBinaryWriter binaryWriter)
+        {
+            binaryWriter.Write(_changedProperties);
+            for (var i = 0; i < _changedProperties.Count; i++)
+            {
+                if (_changedProperties[i])
+                {
+                    SourceMemberCollection[i].Serialize(binaryWriter);
+                }
+            }
+            MarkClean();
         }
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
@@ -69,7 +63,7 @@ namespace MonoSync.Synchronizers
         public override void MarkClean()
         {
             base.MarkClean();
-            _changedProperties.Clear();
+            _changedProperties.SetAll(false);
         }
 
         public override void Dispose()

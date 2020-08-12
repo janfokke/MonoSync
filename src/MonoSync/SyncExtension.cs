@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -11,58 +12,48 @@ namespace MonoSync
 {
     public static class SyncExtensions
     {
-        public static TProp SynchronizeProperty<TTarget, TProp>(this TTarget target, Expression<Func<TTarget, TProp>> selector, Func<TProp> defaultValue)
+        public static TMember InitializeSynchronizableMember<TTarget, TMember>(this TTarget target, string name, Func<TMember> defaultValue)
         {
-            if (TryGetSyncTargetProperty(target, out var result, selector))
+            if (TryGetSyncTargetMember(target, name, out SynchronizableTargetMember result))
             {
-                var syncTargetObjects = GetNotifyPropertyChangedTargetSynchronizer(target).ToList();
-                if (syncTargetObjects.Any())
-                {
-                    var propertyName = GetMemberName(selector.Body);
-                    var syncTargetProperty = syncTargetObjects.Single().GetSyncTargetProperty(propertyName);
-                    return (TProp)syncTargetProperty.SynchronizedValue;
-                }
+                return (TMember) result.SynchronizedValue;
             }
             return defaultValue();
         }
 
         /// <summary>
-        ///     Returns a single <see cref="SyncPropertyAccessor" />, and throws an exception if there is not exactly one
-        ///     <see cref="SyncPropertyAccessor" />
+        ///     Returns a single <see cref="SynchronizableTargetMember" />, and throws an exception if there is not exactly one
+        ///     <see cref="SynchronizableTargetMember" />
         /// </summary>
         /// <param name="source">The Synchronization-object that contains the target member</param>
-        /// <param name="selector">The Expression to the intended member Property</param>
-        public static SyncPropertyAccessor GetSyncTargetProperty<TSyncType>(this TSyncType source,
-            Expression<Func<TSyncType, object>> selector)
+        /// <param name="selector">The Expression to the intended member Value</param>
+        public static SynchronizableTargetMember GetSyncTargetMember<TSyncType>(this TSyncType source, string name)
         {
-            return GetSyncTargetProperties(source, selector).Single();
+            return GetSyncTargetMembers(source, name).Single();
         }
 
-        public static bool TryGetSyncTargetProperty<TSyncType, TProp>(this TSyncType source, out SyncPropertyAccessor syncPropertyAccessor,
-            Expression<Func<TSyncType, TProp>> selector)
+        public static bool TryGetSyncTargetMember<TSyncType>(this TSyncType source, string name, out SynchronizableTargetMember synchronizableTargetMember)
         {
-            var t = GetSyncTargetProperties(source, selector).FirstOrDefault();
-            syncPropertyAccessor = t;
-            return t != null;
+            SynchronizableTargetMember targetMember = GetSyncTargetMembers(source, name).FirstOrDefault();
+            synchronizableTargetMember = targetMember;
+            return targetMember != null;
         }
 
         /// <summary>
-        ///     Returns all the <see cref="SyncPropertyAccessor">SyncTargetProperties</see> that are bound to the Property
+        ///     Returns all the <see cref="SynchronizableTargetMember">SyncTargetProperties</see> that are bound to the Value
         /// </summary>
         /// <param name="source">The Synchronization-object that contains the target member</param>
-        /// <param name="selector">The Expression to the intended member Property</param>
-        public static IEnumerable<SyncPropertyAccessor> GetSyncTargetProperties<TSyncType, TProp>(this TSyncType source,
-            Expression<Func<TSyncType, TProp>> selector)
+        /// <param name="selector">The Expression to the intended member Value</param>
+        public static IEnumerable<SynchronizableTargetMember> GetSyncTargetMembers<TSyncType>(this TSyncType source, string name)
         {
-            var propertyName = GetMemberName(selector.Body);
-            List<ObjectTargetSynchronizer> syncTargetObjects = GetNotifyPropertyChangedTargetSynchronizer(source).ToList();
+            IEnumerable<ObjectTargetSynchronizer> syncTargetObjects = GetTargetSynchronizer(source);
             foreach (ObjectTargetSynchronizer targetObject in syncTargetObjects)
             {
-                yield return targetObject.GetSyncTargetProperty(propertyName);
+                yield return targetObject.GetSyncTargetMember(name);
             }
         }
 
-        public static IEnumerable<ObjectTargetSynchronizer> GetNotifyPropertyChangedTargetSynchronizer(object reference)
+        public static IEnumerable<ObjectTargetSynchronizer> GetTargetSynchronizer(object reference)
         {
             foreach (WeakReference<TargetSynchronizerRoot> weakReference in TargetSynchronizerRoot.Instances)
             {
@@ -73,22 +64,6 @@ namespace MonoSync
                         yield return notifyPropertyChangedTargetSynchronizer;
                 }
             }
-        }
-
-        /// <summary>
-        ///     Helper method to get the Property name from an expression
-        /// </summary>
-        private static string GetMemberName(Expression expression)
-        {
-            return expression switch
-            {
-                null => throw new ArgumentNullException(nameof(expression)),
-                MemberExpression memberExpression => memberExpression.Member.Name,
-                UnaryExpression unaryExpression when unaryExpression.Operand is MethodCallExpression methodExpression =>
-                methodExpression.Method.Name,
-                UnaryExpression unaryExpression => ((MemberExpression) unaryExpression.Operand).Member.Name,
-                _ => throw new ArgumentException("Invalid expression.")
-            };
         }
     }
 }

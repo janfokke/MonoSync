@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
+using MonoSync.Attributes;
 
 namespace MonoSync.Synchronizers
 {
@@ -7,7 +9,8 @@ namespace MonoSync.Synchronizers
     {
         public bool CanSynchronize(Type type)
         {
-            return typeof(INotifyPropertyChanged).IsAssignableFrom(type);
+            return typeof(INotifyPropertyChanged).IsAssignableFrom(type) && 
+                   type.GetCustomAttributes(true).OfType<SynchronizableAttribute>().Any(); ;
         }
 
         public SourceSynchronizer Synchronize(SourceSynchronizerRoot sourceSynchronizerRoot, int referenceId, object reference)

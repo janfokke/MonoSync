@@ -10,8 +10,7 @@ namespace MonoSync.Utils
 {
     static class ReflectionUtils
     {
-        private static readonly ConcurrentDictionary<PropertyInfo, Func<object, object>> PropertyGetterCache = new ConcurrentDictionary<PropertyInfo, Func<object, object>>();
-        public static bool TryResolvePropertyGetter(out Func<object, object> getter, PropertyInfo propertyInfo)
+        public static Func<object, object> CompilePropertyGetter(PropertyInfo propertyInfo)
         {
             if (propertyInfo == null)
             {
@@ -20,22 +19,16 @@ namespace MonoSync.Utils
 
             if (propertyInfo.CanRead == false)
             {
-                getter = null;
-                return false;
+                return null;
             }
 
-            getter = PropertyGetterCache.GetOrAdd(propertyInfo, key =>
-            {
-                var param = Expression.Parameter(typeof(object));
-                var instance = Expression.Convert(param, key.DeclaringType);
-                var convert = Expression.TypeAs(Expression.Property(instance, key), typeof(object));
-                return Expression.Lambda<Func<object, object>>(convert, param).Compile();
-            });
-            return true;
+            var param = Expression.Parameter(typeof(object));
+            var instance = Expression.Convert(param, propertyInfo.DeclaringType);
+            var convert = Expression.TypeAs(Expression.Property(instance, propertyInfo), typeof(object));
+            return Expression.Lambda<Func<object, object>>(convert, param).Compile();
         }
 
-        private static readonly ConcurrentDictionary<PropertyInfo, Action<object, object>> PropertySetterCache = new ConcurrentDictionary<PropertyInfo, Action<object, object>>();
-        public static bool TryResolvePropertySetter(out Action<object, object> setter, PropertyInfo propertyInfo)
+        public static Action<object, object> CompilePropertySetter(PropertyInfo propertyInfo)
         {
             if (propertyInfo == null)
             {
@@ -44,21 +37,47 @@ namespace MonoSync.Utils
 
             if (propertyInfo.CanWrite == false)
             {
-                setter = null;
-                return false;
+                return null;
             }
 
-            setter = PropertySetterCache.GetOrAdd(propertyInfo, key =>
+            var param = Expression.Parameter(typeof(object));
+            var argument = Expression.Parameter(typeof(object));
+            var expression = Expression.Convert(param, propertyInfo.DeclaringType);
+            var methodInfo = propertyInfo.SetMethod;
+            var arguments = Expression.Convert(argument, propertyInfo.PropertyType);
+            var setterCall = Expression.Call(expression, methodInfo, arguments);
+            return Expression.Lambda<Action<object, object>>(setterCall, param, argument).Compile();
+        }
+
+        public static Func<object, object> CompileFieldGetter(FieldInfo fieldInfo)
+        {
+            var param = Expression.Parameter(typeof(object));
+            var instance = Expression.Convert(param, fieldInfo.DeclaringType);
+            var convert = Expression.TypeAs(Expression.Field(instance, fieldInfo), typeof(object));
+            return Expression.Lambda<Func<object, object>>(convert, param).Compile();
+        }
+
+        public static Action<object, object> CompileFieldSetter(FieldInfo fieldInfo)
+        {
+            if (fieldInfo == null)
             {
-                var param = Expression.Parameter(typeof(object));
-                var argument = Expression.Parameter(typeof(object));
-                var expression = Expression.Convert(param, key.DeclaringType);
-                var methodInfo = key.SetMethod;
-                var arguments = Expression.Convert(argument, key.PropertyType);
-                var setterCall = Expression.Call(expression, methodInfo, arguments);
-                return Expression.Lambda<Action<object, object>>(setterCall, param, argument).Compile();
-            });
-            return true;
+                throw new ArgumentNullException(nameof(fieldInfo));
+            }
+
+            if (fieldInfo.IsInitOnly)
+            {
+                return null;
+            }
+
+            ParameterExpression referenceParameter = Expression.Parameter(typeof(object));
+            ParameterExpression valueParameter = Expression.Parameter(typeof(object));
+
+            UnaryExpression reference = Expression.Convert(referenceParameter, fieldInfo.DeclaringType);
+            UnaryExpression value = Expression.Convert(valueParameter, fieldInfo.FieldType);
+
+            MemberExpression fieldExp = Expression.Field(reference, fieldInfo);
+            BinaryExpression assignExp = Expression.Assign(fieldExp, value);
+            return Expression.Lambda<Action<object, object>>(assignExp, referenceParameter, valueParameter).Compile();
         }
     }
 }

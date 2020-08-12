@@ -3,6 +3,7 @@ using PropertyChanged;
 
 namespace MonoSync.Test.TestObjects
 {
+    [Synchronizable]
     [AddINotifyPropertyChangedInterface]
     class NotifyPropertyChangedManualGetterOnlyMock
     {
@@ -11,7 +12,7 @@ namespace MonoSync.Test.TestObjects
 
         public NotifyPropertyChangedManualGetterOnlyMock()
         {
-            SomeValue = this.SynchronizeProperty(x => x.SomeValue, () => 5);
+            SomeValue = this.InitializeSynchronizableMember(nameof(SomeValue), () => 5);
         }
     }
 }

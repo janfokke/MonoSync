@@ -8,32 +8,41 @@ using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
-    public class SyncPropertyAccessor : IDisposable
+    public class SynchronizableTargetMember : IDisposable
     {
         private readonly ISerializer _serializer;
-        private readonly Action<object> _setter;
-        private readonly Func<object> _getter;
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
-        private readonly PropertyInfo _propertyInfo;
-
+        private readonly object _declaringReference;
+        private readonly SynchronizableMember _synchronizableMember;
         private bool _changing;
-
         private ISyncTargetPropertyState _state;
         private SynchronizationBehaviour _synchronizationBehaviour;
         private object _synchronizedValue;
 
+        public SynchronizableTargetMember(
+            object declaringReference,
+            SynchronizableMember synchronizableMember,
+            TargetSynchronizerRoot targetSynchronizerRoot)
+        {
+            _synchronizableMember = synchronizableMember;
+            _targetSynchronizerRoot = targetSynchronizerRoot;
+            _serializer = targetSynchronizerRoot.Settings.Serializers.FindSerializerByType(synchronizableMember.MemberType);
+            _declaringReference = declaringReference;
+            _state = ManualState.Instance;
+        }
+
         internal event EventHandler Dirty;
 
-        internal object Property
+        internal object Value
         {
             set
             {
                 AssertHasSetter();
                 _changing = true;
-                _setter(value);
+                _synchronizableMember.SetValue(_declaringReference, value);
                 _changing = false;
             }
-            get => _getter();
+            get => _synchronizableMember.GetValue(_declaringReference);
         }
 
         /// <summary>
@@ -105,21 +114,6 @@ namespace MonoSync.Synchronizers
             }
         }
 
-        public SyncPropertyAccessor(
-            PropertyInfo propertyInfo,
-            Action<object> setter,
-            Func<object> getter,
-            TargetSynchronizerRoot targetSynchronizerRoot,
-            ISerializer serializer)
-        {
-            _propertyInfo = propertyInfo;
-            _setter = setter;
-            _getter = getter;
-            _targetSynchronizerRoot = targetSynchronizerRoot;
-            _serializer = serializer;
-            _state = ManualState.Instance;
-        }
-
         public void Dispose()
         {
             _state?.Dispose();
@@ -127,9 +121,9 @@ namespace MonoSync.Synchronizers
 
         private void AssertHasSetter()
         {
-            if (_setter == null)
+            if (_synchronizableMember.CanSet == false)
             {
-                throw new SetterNotFoundException(_propertyInfo);
+                throw new SetterNotAvailableException(_synchronizableMember.MemberInfo);
             }
         }
 

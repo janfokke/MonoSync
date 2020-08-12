@@ -4,6 +4,7 @@ using PropertyChanged;
 
 namespace MonoSync.Benchmark
 {
+    [Synchronizable]
     [AddINotifyPropertyChangedInterface]
     class World
     {

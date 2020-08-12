@@ -15,7 +15,7 @@ namespace MonoSync.Test.Synchronization
 
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(attributeMarkedMethodMockSource);
 
-            Assert.Throws<SetterNotFoundException>(() =>
+            Assert.Throws<SetterNotAvailableException>(() =>
             {
                 var TargetSynchronizerRoot = new TargetSynchronizerRoot(SourceSynchronizerRoot.WriteFullAndDispose());
             });
