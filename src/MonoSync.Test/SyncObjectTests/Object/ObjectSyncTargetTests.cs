@@ -13,9 +13,10 @@ namespace MonoSync.Test.Synchronization
         {
             var playerMock = new PlayerMock();
             playerMock.Level = 5;
-            var SourceSynchronizerRoot = new SourceSynchronizerRoot(playerMock);
-            var TargetSynchronizerRoot = new TargetSynchronizerRoot<PlayerMock>(SourceSynchronizerRoot.WriteFullAndDispose());
-            Assert.Equal(5, TargetSynchronizerRoot.Reference.Level);
+            var sourceSynchronizerRoot = new SourceSynchronizerRoot(playerMock);
+            var targetSynchronizerRoot = new TargetSynchronizerRoot<PlayerMock>(sourceSynchronizerRoot.WriteFullAndDispose());
+
+            Assert.Equal(5, targetSynchronizerRoot.Reference.Level);
         }
 
         [Fact]
