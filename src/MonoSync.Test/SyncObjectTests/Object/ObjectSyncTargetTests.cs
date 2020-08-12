@@ -26,5 +26,20 @@ namespace MonoSync.Test.Synchronization
             var TargetSynchronizerRoot = new TargetSynchronizerRoot<PrivateFieldMock>(SourceSynchronizerRoot.WriteFullAndDispose());
             Assert.Equal(5, TargetSynchronizerRoot.Reference.GetTestValue);
         }
+
+        [Fact]
+        public void Synchronizing_Array_Test()
+        {
+            int[,,] expected = new int[3, 3, 5]
+            {
+                {{1, 2, 6, 4, 5}, {2, 2, 3, 4, 5}, {3, 2, 3, 4, 5}},
+                {{1, 2, 3, 4, 5}, {2, 2, 3, 4, 5}, {3, 2, 3, 4, 5}},
+                {{1, 2, 3, 4, 5}, {99, 2, 3, 4, 5}, {3, 2, 3, 99, 3}}
+            };
+
+            var SourceSynchronizerRoot = new SourceSynchronizerRoot(expected);
+            var TargetSynchronizerRoot = new TargetSynchronizerRoot<int[,,]>(SourceSynchronizerRoot.WriteFullAndDispose());
+            Assert.Equal(expected, TargetSynchronizerRoot.Reference);
+        }
     }
 }

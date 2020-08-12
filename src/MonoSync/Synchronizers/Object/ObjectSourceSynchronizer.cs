@@ -13,8 +13,6 @@ namespace MonoSync.Synchronizers
             object reference) :
             base(sourceSynchronizerRoot, referenceId, reference)
         {
-            Type baseType = reference.GetType();
-
             Type type = Reference.GetType();
             SynchronizableMember[] synchronizableMembers = SynchronizableMember.FromType(type);
 
