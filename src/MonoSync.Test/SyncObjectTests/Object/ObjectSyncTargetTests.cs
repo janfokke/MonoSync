@@ -37,7 +37,6 @@ namespace MonoSync.Test.Synchronization
                 {{1, 2, 3, 4, 5}, {2, 2, 3, 4, 5}, {3, 2, 3, 4, 5}},
                 {{1, 2, 3, 4, 5}, {99, 2, 3, 4, 5}, {3, 2, 3, 99, 3}}
             };
-
             var SourceSynchronizerRoot = new SourceSynchronizerRoot(expected);
             var TargetSynchronizerRoot = new TargetSynchronizerRoot<int[,,]>(SourceSynchronizerRoot.WriteFullAndDispose());
             Assert.Equal(expected, TargetSynchronizerRoot.Reference);

@@ -1,7 +1,6 @@
 ﻿using System;
-using MonoSync.Exceptions;
 
-namespace MonoSync.Synchronizers
+namespace MonoSync.Exceptions
 {
     internal class MultipleConstructorsException : MonoSyncException
     {

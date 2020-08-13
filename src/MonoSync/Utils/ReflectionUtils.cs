@@ -8,7 +8,7 @@ using MonoSync.Exceptions;
 
 namespace MonoSync.Utils
 {
-    static class ReflectionUtils
+    internal static class ReflectionUtils
     {
         public static Func<object, object> CompilePropertyGetter(PropertyInfo propertyInfo)
         {

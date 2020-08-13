@@ -59,7 +59,7 @@ namespace MonoSync
             {
                 if (weakReference.TryGetTarget(out TargetSynchronizerRoot targetSynchronizerRoot))
                 {
-                    var notifyPropertyChangedTargetSynchronizer = (ObjectTargetSynchronizer) targetSynchronizerRoot.ReferencePool.GetSyncObject(reference);
+                    var notifyPropertyChangedTargetSynchronizer = (ObjectTargetSynchronizer) targetSynchronizerRoot.ReferencePool.GetSynchronizer(reference);
                     if(notifyPropertyChangedTargetSynchronizer != null)
                         yield return notifyPropertyChangedTargetSynchronizer;
                 }

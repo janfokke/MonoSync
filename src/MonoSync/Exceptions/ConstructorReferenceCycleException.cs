@@ -12,11 +12,4 @@ namespace MonoSync.Exceptions
             Path = path;
         }
     }
-
-    public class DoubleSynchronizedReferenceException : MonoSyncException
-    {
-        public DoubleSynchronizedReferenceException() : base("Object reference got synchronized twice")
-        {
-        }
-    }
 }

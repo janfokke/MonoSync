@@ -60,7 +60,7 @@ namespace MonoSync.Synchronizers
                     foreach (Attribute customAttribute in constructorParametersInfo.GetCustomAttributes())
                     {
                         // Resolve property parameter explicit with attribute
-                        if (customAttribute is SyncConstructorParameterAttribute constructorParameterAttribute)
+                        if (customAttribute is SynchronizationParameterAttribute constructorParameterAttribute)
                         {
                             if (TargetMemberByNameLookup.TryGetValue(constructorParameterAttribute.PropertyName, out SynchronizableTargetMember explicitSyncTargetProperty))
                             {
@@ -70,15 +70,20 @@ namespace MonoSync.Synchronizers
                             throw new SyncTargetMemberNotFoundException(constructorParameterAttribute.PropertyName);
                         }
                         // Resolve dependency parameter explicit with attribute
-                        if (customAttribute is SyncDependencyAttribute)
+                        if (customAttribute is SynchronizationDependencyAttribute)
                         {
                             return _targetSynchronizerRoot.ServiceProvider.GetService(constructorParametersInfo.ParameterType) ?? throw new ArgumentNullException($"{constructor.Name}:{constructorParametersInfo.Name}");
                         }
                     }
                     // Resolve property implicit
                     // If Value doesn't have a SyncConstructorParameter attribute, use PascalCase.
-                    string propertyName = CapitalizeFirstLetter(constructorParametersInfo.Name);
-                    if (TargetMemberByNameLookup.TryGetValue(propertyName, out SynchronizableTargetMember implicitSyncTargetProperty))
+                    var  genericMemberName = ToGenericMemberName(constructorParametersInfo.Name);
+
+                    SynchronizableTargetMember implicitSyncTargetProperty = TargetMemberByNameLookup
+                        .FirstOrDefault(keyValuePair => genericMemberName == ToGenericMemberName(keyValuePair.Key))
+                        .Value;
+
+                    if (implicitSyncTargetProperty != null)
                     {
                         syncTargetPropertyParameters.Add(implicitSyncTargetProperty);
                         return implicitSyncTargetProperty.SynchronizedValue;
@@ -109,6 +114,16 @@ namespace MonoSync.Synchronizers
             }
         }
 
+        private string ToGenericMemberName(string memberName)
+        {
+            memberName = memberName.TrimStart('_');
+            if (memberName != string.Empty && char.IsUpper(memberName[0]))
+            {
+                memberName = char.ToLower(memberName[0]) + memberName.Substring(1);
+            }
+            return memberName;
+        }
+
         private void ConstructProperty(SynchronizableTargetMember synchronizableTargetMember, List<object> constructionPath)
         {
             object synchronizedValue = synchronizableTargetMember.SynchronizedValue;
@@ -117,7 +132,7 @@ namespace MonoSync.Synchronizers
                 Type type = synchronizedValue.GetType();
                 if (type.IsValueType == false)
                 {
-                    TargetSynchronizer target = _targetSynchronizerRoot.ReferencePool.GetSyncObject(synchronizedValue);
+                    TargetSynchronizer target = _targetSynchronizerRoot.ReferencePool.GetSynchronizer(synchronizedValue);
                     if (target is ObjectTargetSynchronizer notifyPropertyChangedSyncTarget)
                     {
                         notifyPropertyChangedSyncTarget.Construct(constructionPath);
@@ -148,19 +163,14 @@ namespace MonoSync.Synchronizers
             _constructor = null;
         }
 
-        private static string CapitalizeFirstLetter(string input)
-        {
-            return input.First().ToString().ToUpper() + input.Substring(1);
-        }
-
         private static ConstructorInfo ResolveConstructor(Type baseType)
         {
             ConstructorInfo[] constructors = baseType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.CreateInstance | BindingFlags.Instance);
 
-            // Prioritize constructor with SyncConstructorAttribute
+            // Prioritize constructor with SynchronizationConstructorAttribute
             foreach (ConstructorInfo constructorInfo in constructors)
             {
-                if (constructorInfo.GetCustomAttributes().Any(a => a is SyncConstructorAttribute))
+                if (constructorInfo.GetCustomAttributes().Any(a => a is SynchronizationConstructorAttribute))
                 {
                     return constructorInfo;
                 }

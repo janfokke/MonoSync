@@ -7,8 +7,7 @@ namespace MonoSync
 {
     internal class TargetReferencePool : IReferenceResolver
     {
-        private readonly Dictionary<int, List<Action<object>>> _synchronizationCallbacks =
-            new Dictionary<int, List<Action<object>>>();
+        private readonly Dictionary<int, List<Action<object>>> _synchronizationCallbacks = new Dictionary<int, List<Action<object>>>();
         private readonly Dictionary<int, TargetSynchronizer> _syncObjectLookup = new Dictionary<int, TargetSynchronizer>();
         private readonly Dictionary<object, int> _syncObjectReferenceIdLookup = new Dictionary<object, int>(ReferenceEqualityComparer.Default);
 
@@ -29,7 +28,7 @@ namespace MonoSync
             }
 
             // resolve immediately if reference is already resolved.
-            if (TryGetSyncTargetByIdentifier(referenceId, out TargetSynchronizer syncObject))
+            if (TryGetSynchronizerByIdentifier(referenceId, out TargetSynchronizer syncObject))
             {
                 synchronizationCallback(syncObject.Reference);
                 return;
@@ -49,11 +48,11 @@ namespace MonoSync
             }
         }
 
-        public void AddSyncronizer(int referenceId, TargetSynchronizer targetSynchronizerObject)
+        public void AddSynchronizer(int referenceId, TargetSynchronizer targetSynchronizerObject)
         {
             object baseObject = targetSynchronizerObject.Reference;
             if (_syncObjectReferenceIdLookup.ContainsKey(baseObject))
-                throw new DoubleSynchronizedReferenceException();
+                throw new InvalidOperationException("Synchronizer already added.");
             {
                 _syncObjectReferenceIdLookup.Add(baseObject, referenceId);
                 _syncObjectLookup.Add(referenceId, targetSynchronizerObject);
@@ -77,7 +76,7 @@ namespace MonoSync
         ///     Lookup the <see cref="TSync" /> of the <see cref="target" />
         /// </summary>
         /// <returns>The <see cref="TSync" /> if available. Else it returns null</returns>
-        public TargetSynchronizer GetSyncObject(object reference)
+        public TargetSynchronizer GetSynchronizer(object reference)
         {
             if (_syncObjectReferenceIdLookup.TryGetValue(reference, out var referenceId))
             {
@@ -90,7 +89,7 @@ namespace MonoSync
             return null;
         }
 
-        public bool TryGetSyncTargetByIdentifier(int referenceIdentifier, out TargetSynchronizer targetSynchronizerObject)
+        public bool TryGetSynchronizerByIdentifier(int referenceIdentifier, out TargetSynchronizer targetSynchronizerObject)
         {
             if (referenceIdentifier == 0)
             {
@@ -103,9 +102,9 @@ namespace MonoSync
 
         public void RemoveReference(int referenceId)
         {
-            if (TryGetSyncTargetByIdentifier(referenceId, out TargetSynchronizer syncObject))
+            if (TryGetSynchronizerByIdentifier(referenceId, out TargetSynchronizer syncObject))
             {
-                RemoveSyncObject(syncObject);
+                RemoveSynchronizer(syncObject);
             }
             else
             {
@@ -113,7 +112,7 @@ namespace MonoSync
             }
         }
 
-        public void RemoveSyncObject(TargetSynchronizer targetSynchronizerObject)
+        public void RemoveSynchronizer(TargetSynchronizer targetSynchronizerObject)
         {
             targetSynchronizerObject.Dispose();
             _syncObjectLookup.Remove(targetSynchronizerObject.ReferenceId);

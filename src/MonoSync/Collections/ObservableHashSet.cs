@@ -7,8 +7,7 @@ using System.Linq;
 
 namespace MonoSync.Collections
 {
-    public class ObservableHashSet<T>
-        : ISet<T>, IReadOnlyCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged, INotifyPropertyChanging
+    public class ObservableHashSet<T> : ISet<T>, IReadOnlyCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged, INotifyPropertyChanging
     {
         private HashSet<T> _set;
 

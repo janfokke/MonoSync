@@ -11,7 +11,7 @@ namespace MonoSync.Test.Synchronization
         // ReSharper disable once ConvertToAutoProperty
         public int GetTestValue => _test;
 
-        [SyncConstructor]
+        [SynchronizationConstructor]
         public PrivateFieldMock()
         {
             _test = this.InitializeSynchronizableMember(nameof(_test), () => 0);

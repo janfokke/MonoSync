@@ -7,7 +7,7 @@ namespace MonoSync.Test.TestObjects
     [AddINotifyPropertyChangedInterface]
     public class NotifyPropertyChangedGetterOnlyConstructorMock
     {
-        [SyncConstructor]
+        [SynchronizationConstructor]
         public NotifyPropertyChangedGetterOnlyConstructorMock(int intProperty)
         {
             IntProperty = intProperty;

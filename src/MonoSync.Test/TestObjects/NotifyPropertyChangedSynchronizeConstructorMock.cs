@@ -14,7 +14,7 @@ namespace MonoSync.Test.TestObjects
         {
         }
 
-        [SyncConstructor]
+        [SynchronizationConstructor]
         public NotifyPropertyChangedSynchronizeConstructorMock(ObservableDictionary<int, int> dictionary)
         {
             Dictionary = dictionary;

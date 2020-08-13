@@ -52,7 +52,7 @@ namespace MonoSync
             Read(initialFullSynchronization);
 
             // SyncObject 1 is always synchronizerRoot object.
-            ReferencePool.TryGetSyncTargetByIdentifier(1, out TargetSynchronizer syncTargetObject);
+            ReferencePool.TryGetSynchronizerByIdentifier(1, out TargetSynchronizer syncTargetObject);
             Reference = syncTargetObject.Reference;
         }
 
@@ -100,7 +100,7 @@ namespace MonoSync
             {
                 var referenceId = reader.Read7BitEncodedInt();
 
-                if (ReferencePool.TryGetSyncTargetByIdentifier(referenceId, out TargetSynchronizer targetSynchronizer))
+                if (ReferencePool.TryGetSynchronizerByIdentifier(referenceId, out TargetSynchronizer targetSynchronizer))
                 {
                     targetSynchronizer.Read(reader);
                 }
@@ -110,7 +110,7 @@ namespace MonoSync
                     ISynchronizer synchronizer = Settings.Synchronizers.FindSynchronizerByType(referenceType);
                     targetSynchronizer = synchronizer.Synchronize(this, referenceId, referenceType);
                     targetSynchronizer.Read(reader);
-                    ReferencePool.AddSyncronizer(referenceId, targetSynchronizer);
+                    ReferencePool.AddSynchronizer(referenceId, targetSynchronizer);
                 }
             }
         }

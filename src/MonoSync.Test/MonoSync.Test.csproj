@@ -13,6 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TypeEncoding\**" />
+    <EmbeddedResource Remove="TypeEncoding\**" />
+    <None Remove="TypeEncoding\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Fody" Version="6.2.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -28,10 +34,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MonoSync\MonoSync.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="TypeEncoding\" />
   </ItemGroup>
 
 </Project>

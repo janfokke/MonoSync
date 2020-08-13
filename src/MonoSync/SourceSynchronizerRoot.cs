@@ -214,8 +214,12 @@ namespace MonoSync
                 }
 
                 Type referenceType = reference.GetType();
-                
+                if(referenceType.HasElementType)
+                {
+                    _typeEncoder.RegisterType(referenceType.GetElementType());
+                }
                 _typeEncoder.RegisterType(referenceType);
+
                 ISynchronizer sourceFactory = Settings.Synchronizers.FindSynchronizerByType(referenceType);
                 var referenceId = _referenceIdIncrementer++;
                 _pendingForSynchronization.Add(reference);
