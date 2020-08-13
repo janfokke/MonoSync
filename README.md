@@ -5,6 +5,14 @@
 [![Azure DevOps tests](https://img.shields.io/azure-devops/tests/janfokkeurk/MonoSync/1)](https://dev.azure.com/janfokkeurk/MonoSync/_build?definitionId=1&_a=summary&view=runs)
 [![Discord](https://img.shields.io/discord/670985266374115370)](https://discord.gg/GNnKY6j)
 
+# What is MonoSync
+MonoSync is a synchronization library that you can easily implement with attributes and helper functions.
+MonoSync enables you to synchronize an object (e.g. a game world) just like you would with a JSON serializer. MonoSync automatically keeps track of all changes and references. Which you can synchronize periodically.
+
+**What is MonoSync not**
+
+MonoSync is not a Network library. The serialized data is provided as ```byte[]``` 
+and the user is free to choose his own Network layer.
 
 # Features
 
