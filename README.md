@@ -1,4 +1,4 @@
-![banner](https://user-images.githubusercontent.com/17224428/73125281-6c754580-3fa5-11ea-904e-bfe19d2d4088.png)
+![banner](Images/banner.svg)
 # MonoSync
 An efficient and easy to implement synchronization layer for games
 
