@@ -1,4 +1,4 @@
-![banner](Images/banner.svg)
+[![banner](Images/banner.svg)](https://www.nuget.org/packages/MonoSync/)
 
 [![Nuget](https://badgen.net/nuget/v/MonoSync)](https://www.nuget.org/packages/MonoSync/)
 [![Build Status](https://dev.azure.com/janfokkeurk/MonoSync/_apis/build/status/janfokke.MonoSync?branchName=master)](https://dev.azure.com/janfokkeurk/MonoSync/_build/latest?definitionId=1&branchName=master)
