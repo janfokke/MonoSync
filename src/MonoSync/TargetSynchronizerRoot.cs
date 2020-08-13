@@ -27,11 +27,14 @@ namespace MonoSync
         public object Reference { get; }
 
         private readonly TypeEncoder _typeEncoder = new TypeEncoder();
+
         public readonly IServiceProvider ServiceProvider;
 
         public Clock Clock { get; } = new Clock();
 
         internal TargetReferencePool ReferencePool { get; } = new TargetReferencePool();
+        internal SynchronizableMemberFactory SynchronizableMemberFactory { get; }
+
 
         /// <summary>
         /// Amount of updates between reads
@@ -46,6 +49,7 @@ namespace MonoSync
 
             Settings = settings ?? Settings.Default();
             Settings.Serializers.AddSerializer(new TargetReferenceSerializer(ReferencePool));
+            SynchronizableMemberFactory = new SynchronizableMemberFactory(Settings.Serializers);
 
             ServiceProvider = serviceProvider;
             

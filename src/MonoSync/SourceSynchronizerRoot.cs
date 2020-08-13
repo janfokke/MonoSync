@@ -29,6 +29,8 @@ namespace MonoSync
         private bool _writeSessionOpen;
         private readonly TypeEncoder _typeEncoder = new TypeEncoder();
         
+        internal SynchronizableMemberFactory SynchronizableMemberFactory { get; } 
+
         /// <summary>
         ///     Gets the objects that are being tracked.
         /// </summary>
@@ -48,14 +50,14 @@ namespace MonoSync
         /// <summary>
         ///     Objects that have changed since the previous write session
         /// </summary>
-        public IEnumerable<object> DirtyObjects =>
-            _dirtySyncSourceObjects.Select(sourceObject => sourceObject.Reference);
+        public IEnumerable<object> DirtyObjects => _dirtySyncSourceObjects.Select(sourceObject => sourceObject.Reference);
         public Settings Settings { get; }
 
         public SourceSynchronizerRoot(object reference, Settings settings = null)
         {
             Settings = settings??Settings.Default();
             Settings.Serializers.AddSerializer(new SourceReferenceSerializer(_referencePool));
+            SynchronizableMemberFactory = new SynchronizableMemberFactory(Settings.Serializers);
             Synchronize(reference);
         }
 

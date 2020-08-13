@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Text.Json;
+using System.Threading;
+using Newtonsoft.Json;
 
 namespace MonoSync.Benchmark
 {
@@ -6,22 +10,43 @@ namespace MonoSync.Benchmark
     {
         static void Main()
         {
-            RunTest(500);
-            RunTest(1000000);
+            RunMonoSyncTest(1000);
+            RunMonoSyncTest(1000000);
+
+            //RunJsonTest(1000);
+            //RunJsonTest(1000000);
+
             Console.ReadLine();
         }
 
-        private static void RunTest(int entityCount)
+        private static void RunJsonTest(int entityCount)
+        {
+            // Initialization
+            Console.Write("Running RunJsonTest test");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var world = new JsonWorld();
+            for (int i = 0; i < entityCount; i++)
+            {
+                world.Entities.Add(i, new Entity());
+            }
+            JsonConvert.SerializeObject(world);
+            stopwatch.Stop();
+            Console.WriteLine("FullWrite:" + stopwatch.ElapsedMilliseconds);
+        }
+
+        private static void RunMonoSyncTest(int entityCount)
         {
             Console.WriteLine();
             Console.WriteLine($"Benchmark with {entityCount} entities");
 
-            var world = new World();
+            // Initialization
+            Console.Write("Initializing: ");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var world = new MonoSyncWorld();
             var syncSourceRoot = new SourceSynchronizerRoot(world);
 
-            // Initialization
-            Console.Write("Begin initializing: ");
-            var date = DateTime.Now;
             using (world.Entities.BeginMassUpdate())
             {
                 for (int i = 0; i < entityCount; i++)
@@ -29,21 +54,25 @@ namespace MonoSync.Benchmark
                     world.Entities.Add(i, new Entity());
                 }
             }
-            Console.WriteLine((DateTime.Now - date).TotalMilliseconds + " MS");
-
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds + "MS");
+            stopwatch.Reset();
+            
             // Full write
-            Console.Write("Begin full write: ");
-            date = DateTime.Now;
+            Console.Write("Full write: ");
+            stopwatch.Start();
             using (WriteSession writeSession = syncSourceRoot.BeginWrite())
             {
                 writeSession.WriteFull();
             }
-            Console.WriteLine((DateTime.Now - date).TotalMilliseconds + " MS");
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds + "MS");
+            stopwatch.Reset();
 
-            // Changes
-            Console.Write("Begin change only write: ");
-            date = DateTime.Now;
-            int changes = 100;
+            int changes = entityCount / 10;
+            Console.Write($"{changes} changes write: ");
+            stopwatch.Start();
+            
             for (int i = 0; i < changes; i++)
             {
                 world.Entities[i].XPos = 2;
@@ -51,8 +80,9 @@ namespace MonoSync.Benchmark
             using (WriteSession writeSession = syncSourceRoot.BeginWrite())
             {
                 int size = writeSession.WriteChanges().SetTick(0).Length;
-                Console.WriteLine($"{(DateTime.Now - date).TotalMilliseconds * 1000} Micro sec, Changes: {changes}, Size in bytes: {size}");
             }
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds + "MS");
         }
     }
 }

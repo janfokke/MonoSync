@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using MonoSync.Utils;
@@ -9,16 +10,31 @@ namespace MonoSync.Synchronizers
     {
         private new INotifyPropertyChanged Reference => (INotifyPropertyChanged)base.Reference;
         private readonly BitArray _changedProperties;
+        
         public NotifyPropertyChangedSourceSynchronizer(SourceSynchronizerRoot sourceSynchronizerRoot, int referenceId, INotifyPropertyChanged reference) : base(sourceSynchronizerRoot, referenceId, reference)
         {
-            _changedProperties = new BitArray(SourceMemberCollection.Length);
+            _changedProperties = new BitArray(SynchronizableSourceMembers.Length);
             reference.PropertyChanged += SourceObjectOnPropertyChanged;
         }
 
+        public bool TryGetMemberByName(string memberName, out SynchronizableSourceMember synchronizableSourceMember)
+        {
+            synchronizableSourceMember = null;
+            for (var i = 0; i < SynchronizableSourceMembers.Length; i++)
+            {
+                SynchronizableSourceMember x = SynchronizableSourceMembers[i];
+                if (x.Name == memberName)
+                {
+                    synchronizableSourceMember = x;
+                    break;
+                }
+            }
+            return synchronizableSourceMember != null;
+        }
         private void SourceObjectOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             // Value changed event might be from a non-sync property
-            if (SourceMemberCollection.TryGetPropertyByName(e.PropertyName, out SynchronizableSourceMember syncSourceProperty))
+            if (TryGetMemberByName(e.PropertyName, out SynchronizableSourceMember syncSourceProperty))
             {
                 object newValue = syncSourceProperty.Value;
 
@@ -45,7 +61,7 @@ namespace MonoSync.Synchronizers
             {
                 if (_changedProperties[i])
                 {
-                    SourceMemberCollection[i].Serialize(binaryWriter);
+                    SynchronizableSourceMembers[i].Serialize(binaryWriter);
                 }
             }
             MarkClean();
@@ -53,9 +69,10 @@ namespace MonoSync.Synchronizers
 
         public override void WriteFull(ExtendedBinaryWriter binaryWriter)
         {
-            var changedPropertiesMask = new BitArray(SourceMemberCollection.Length, true);
+            Span<byte> bitMask = stackalloc byte[(SynchronizableSourceMembers.Length + 7) / 8];
+            bitMask.Fill(0xFF);
             // All properties are marked as changed because this is a full write 
-            binaryWriter.Write(changedPropertiesMask);
+            binaryWriter.Write(bitMask);
             base.WriteFull(binaryWriter);
             MarkClean();
         }

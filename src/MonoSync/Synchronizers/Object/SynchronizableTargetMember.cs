@@ -10,7 +10,6 @@ namespace MonoSync.Synchronizers
 {
     public class SynchronizableTargetMember : IDisposable
     {
-        private readonly ISerializer _serializer;
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
         private readonly object _declaringReference;
         private readonly SynchronizableMember _synchronizableMember;
@@ -26,7 +25,6 @@ namespace MonoSync.Synchronizers
         {
             _synchronizableMember = synchronizableMember;
             _targetSynchronizerRoot = targetSynchronizerRoot;
-            _serializer = targetSynchronizerRoot.Settings.Serializers.FindSerializerByType(synchronizableMember.MemberType);
             _declaringReference = declaringReference;
             _state = ManualState.Instance;
         }
@@ -86,7 +84,7 @@ namespace MonoSync.Synchronizers
                         _state = new ConstructionState();
                         break;
                     case SynchronizationBehaviour.Interpolated:
-                        _state = new InterpolationState(this, _targetSynchronizerRoot, _serializer);
+                        _state = new InterpolationState(this, _targetSynchronizerRoot, _synchronizableMember.Serializer);
                         AssertHasSetter();
                         break;
                     case SynchronizationBehaviour.HighestTick:
@@ -129,7 +127,7 @@ namespace MonoSync.Synchronizers
 
         internal void ReadChanges(ExtendedBinaryReader reader)
         {
-            _serializer.Read(reader, value =>
+            _synchronizableMember.Serializer.Read(reader, value =>
             {
                 SynchronizedValue = value;
                 _state.HandleRead(value);

@@ -23,14 +23,13 @@ namespace MonoSync.Synchronizers
             _targetSynchronizerRoot = targetSynchronizerRoot;
             Reference = FormatterServices.GetUninitializedObject(referenceType);
 
-            SynchronizableMember[] synchronizableMembers = SynchronizableMember.FromType(referenceType);
+            SynchronizableMember[] synchronizableMembers = targetSynchronizerRoot.SynchronizableMemberFactory.FromType(referenceType);
 
             TargetMemberByIndexLookup = new SynchronizableTargetMember[synchronizableMembers.Length];
             for (var syncPropertyIndex = 0; syncPropertyIndex < synchronizableMembers.Length; syncPropertyIndex++)
             {
                 SynchronizableMember synchronizableMember = synchronizableMembers[syncPropertyIndex];
                 var synchronizableTargetMember = new SynchronizableTargetMember(Reference, synchronizableMember, _targetSynchronizerRoot);
-
                 TargetMemberByNameLookup[synchronizableMember.MemberInfo.Name] = synchronizableTargetMember;
                 TargetMemberByIndexLookup[syncPropertyIndex] = synchronizableTargetMember;
             }
