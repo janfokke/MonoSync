@@ -41,12 +41,11 @@ namespace MonoSync.Test.Synchronization
             var TargetSynchronizerRoot = new TargetSynchronizerRoot<ConstructedPropertyChangeSynchronizationMock>(SourceSynchronizerRoot.WriteFullAndDispose());
 
             ConstructedPropertyChangeSynchronizationMock getterOnlyConstructorMockRoot = TargetSynchronizerRoot.Reference;
-            Assert.Equal(getterOnlyConstructorMockSource.ChangeableProperty, getterOnlyConstructorMockRoot.ChangeableProperty);
+            Assert.Equal(getterOnlyConstructorMockSource.Accessor, getterOnlyConstructorMockRoot.Accessor);
 
-            getterOnlyConstructorMockSource.ChangeableProperty = 6;
             TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(0));
 
-            Assert.Equal(getterOnlyConstructorMockSource.ChangeableProperty, getterOnlyConstructorMockRoot.ChangeableProperty);
+            Assert.Equal(getterOnlyConstructorMockSource.Accessor, getterOnlyConstructorMockRoot.Accessor);
         }
 
         [Fact]

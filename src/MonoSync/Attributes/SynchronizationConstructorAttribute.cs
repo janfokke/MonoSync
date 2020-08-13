@@ -6,7 +6,7 @@ namespace MonoSync.Attributes
     ///     Indicates which constructor should be used for synchronization
     /// </summary>
     [AttributeUsage(AttributeTargets.Constructor)]
-    public class SyncConstructorAttribute : Attribute
+    public class SynchronizationConstructorAttribute : Attribute
     {
     }
 }

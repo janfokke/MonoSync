@@ -8,7 +8,7 @@
         Manual,
 
         /// <summary>
-        ///     Always overrides the target with the synchronized value
+        ///     Always takes the synchronized value
         /// </summary>
         TakeSynchronized,
 

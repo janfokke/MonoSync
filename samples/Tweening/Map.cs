@@ -14,13 +14,13 @@ namespace MonoSync.Sample.Tweening
 
         /// <summary>
         ///     Properties can be accessed during construction using parameters.
-        ///     The parameter name should be camelCase or Marked with the <see cref="SyncConstructorParameterAttribute" />.
-        ///     MonoSync will use the default constructor if no <see cref="SyncConstructorAttribute" /> Marked constructor is
+        ///     The parameter name should be camelCase or Marked with the <see cref="SynchronizationParameterAttribute" />.
+        ///     MonoSync will use the default constructor if no <see cref="SynchronizationConstructorAttribute" /> Marked constructor is
         ///     provided.
         ///     Properties that do not occur in the constructor parameter will be synchronized after the constructor call.
         /// </summary>
         /// <param name="players"></param>
-        [SyncConstructor]
+        [SynchronizationConstructor]
         public Map(ObservableHashSet<Player> players)
         {
             Players = players;

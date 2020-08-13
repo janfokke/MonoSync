@@ -14,7 +14,7 @@ namespace MonoSync.Test.TestObjects
             
         }
 
-        [SyncConstructor]
+        [SynchronizationConstructor]
         public NotifyPropertyChangedConstructedDependencyMock(ISomeService someService)
         {
             SomeService = someService;

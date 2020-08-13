@@ -14,6 +14,13 @@ namespace MonoSync.Synchronizers
         {
             Type type = reference.GetType();
             _elementSerializer = sourceSynchronizerRoot.Settings.Serializers.FindSerializerByType(type.GetElementType());
+            if (type.GetElementType().IsValueType == false)
+            {
+                foreach (object item in Reference)
+                {
+                    sourceSynchronizerRoot.Synchronize(item);
+                }
+            }
         }
 
         public override void WriteChanges(ExtendedBinaryWriter binaryWriter)

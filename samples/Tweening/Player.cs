@@ -8,7 +8,7 @@ namespace MonoSync.Sample.Tweening
     [AddINotifyPropertyChangedInterface]
     public class Player
     {
-        [SyncConstructor]
+        [SynchronizationConstructor]
         public Player()
         {
         }
