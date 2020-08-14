@@ -20,15 +20,15 @@ namespace MonoSync.Test.SyncObjectTests.NotifyPropertyChanged.SynchronizationBeh
             var targetObject = TargetSynchronizerRoot.Reference;
             Assert.Equal(5, targetObject.Value);
 
-            TargetSynchronizerRoot.Clock.OwnTick = 10;
+            TargetSynchronizerRoot.Clock.OwnTick = TimeSpan.FromMilliseconds(10);
             targetObject.Value = 7;
             sourceObject.Value = 6;
 
-            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(9));
+            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.FromMilliseconds(9)));
 
             Assert.Equal(7,targetObject.Value);
 
-            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(11));
+            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.FromMilliseconds(11)));
 
             Assert.Equal(6, targetObject.Value);
         }

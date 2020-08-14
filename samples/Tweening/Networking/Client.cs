@@ -36,7 +36,7 @@ namespace MonoSync.Sample.Tweening
             if (_gameWorldSyncRoot != null)
             {
                 _gameWorldSyncRoot.Update();
-                if (_gameWorldSyncRoot.Clock.OwnTick % 60 == 0)
+                if ((int)(_gameWorldSyncRoot.Clock.OwnTick.TotalMilliseconds % 1000) == 0)
                 {
                     // Sending tick every second to refine precision on the server
                     SendTick();
@@ -49,7 +49,7 @@ namespace MonoSync.Sample.Tweening
             using var memoryStream = new MemoryStream();
             using var binaryWriter = new BinaryWriter(memoryStream);
             binaryWriter.Write((byte) Commands.TICK_UPDATE);
-            binaryWriter.Write(_gameWorldSyncRoot.Clock.OwnTick);
+            binaryWriter.Write(_gameWorldSyncRoot.Clock.OwnTick.Ticks);
             _stream.Write(memoryStream.ToArray());
         }
 

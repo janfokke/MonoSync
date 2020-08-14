@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using MonoSync.Collections;
 using MonoSync.Test.TestObjects;
@@ -21,10 +22,10 @@ namespace MonoSync.Test.Synchronization
             ObservableDictionary<int, string> targetDictionary = targetSynchronizerRoot.Reference;
             targetDictionary.Add(1, "2");
 
-            targetSynchronizerRoot.Clock.OwnTick = 5;
+            targetSynchronizerRoot.Clock.OwnTick = TimeSpan.FromMilliseconds(5);
 
             //Set tick older than client tick
-            byte[] changes = sourceSynchronizerRoot.WriteChangesAndDispose().SetTick(6);
+            byte[] changes = sourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.FromMilliseconds(5));
             targetSynchronizerRoot.Read(changes);
 
             // Recently added item should be rolled back
@@ -60,7 +61,7 @@ namespace MonoSync.Test.Synchronization
             sourceGameWorld.Players.Add("player1", new NotifyPropertyChangedTestPlayer { Name = "player1", Health = 100, Level = 30 });
             sourceGameWorld.Players.Add("player2", new NotifyPropertyChangedTestPlayer { Name = "player2", Health = 44, Level = 1337 });
 
-            targetSynchronizerRoot.Read(sourceSynchronizerRoot.WriteChangesAndDispose().SetTick(10));
+            targetSynchronizerRoot.Read(sourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.FromMilliseconds(10)));
 
             NotifyPropertyChangedTestGameWorld targetGameWorld = targetSynchronizerRoot.Reference;
 

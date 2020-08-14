@@ -79,7 +79,7 @@ namespace MonoSync.Benchmark
             }
             using (WriteSession writeSession = syncSourceRoot.BeginWrite())
             {
-                int size = writeSession.WriteChanges().SetTick(0).Length;
+                int size = writeSession.WriteChanges().SetTick(TimeSpan.Zero).Length;
             }
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds + "MS");

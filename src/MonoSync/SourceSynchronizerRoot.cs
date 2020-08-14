@@ -113,7 +113,7 @@ namespace MonoSync
                 _typeEncoder.WriteType(syncSourceObject.Reference.GetType(), writer);
                 syncSourceObject.WriteFull(writer);
             }
-            return new SynchronizationPacket(memoryStream.ToArray()).SetTick(0);
+            return new SynchronizationPacket(memoryStream.ToArray()).SetTick(TimeSpan.Zero);
         }
 
         /// <summary>

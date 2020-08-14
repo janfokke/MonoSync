@@ -168,9 +168,9 @@ namespace MonoSync.Synchronizers
 
         private abstract class TargetCommand
         {
-            public int Tick { get; }
+            public TimeSpan Tick { get; }
 
-            protected TargetCommand(int tick)
+            protected TargetCommand(TimeSpan tick)
             {
                 Tick = tick;
             }
@@ -186,7 +186,7 @@ namespace MonoSync.Synchronizers
         {
             private readonly TItem _item;
 
-            public TargetRemoveCommand(int tick, TItem item) : base(tick)
+            public TargetRemoveCommand(TimeSpan tick, TItem item) : base(tick)
             {
                 _item = item;
             }
@@ -207,7 +207,7 @@ namespace MonoSync.Synchronizers
             private readonly TItem _addedItem;
             private bool _added;
 
-            public TargetAddCommand(int tick, TItem addedItem) : base(tick)
+            public TargetAddCommand(TimeSpan tick, TItem addedItem) : base(tick)
             {
                 _addedItem = addedItem;
             }

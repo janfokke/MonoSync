@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using MonoSync.Utils;
 
 namespace MonoSync
@@ -20,11 +21,11 @@ namespace MonoSync
         /// </summary>
         /// <param name="synchronizationTick"></param>
         /// <returns></returns>
-        public byte[] SetTick(int synchronizationTick)
+        public byte[] SetTick(TimeSpan synchronizationTick)
         {
             using var memoryStream = new MemoryStream();
             using var writer = new ExtendedBinaryWriter(memoryStream);
-            writer.Write7BitEncodedInt(synchronizationTick);
+            writer.Write(synchronizationTick.Ticks);
             writer.Write(_synchronizationPacket);
             return memoryStream.ToArray();
         }

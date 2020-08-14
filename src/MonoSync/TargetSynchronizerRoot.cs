@@ -38,9 +38,9 @@ namespace MonoSync
         /// <summary>
         /// Amount of updates between reads
         /// </summary>
-        public int UpdateRate { get; private set; }
+        public TimeSpan UpdateRate => _currentUpdateDateTime - _previousUpdateDateTime;
 
-        private int _updateRateCounter;
+      
 
         public TargetSynchronizerRoot(byte[] initialFullSynchronization,Settings settings = null ,IServiceProvider serviceProvider = null)
         {
@@ -59,17 +59,20 @@ namespace MonoSync
             Reference = syncTargetObject.Reference;
         }
 
+        private DateTime _currentUpdateDateTime;
+        private DateTime _previousUpdateDateTime;
+
         public void Read(byte[] data)
         {
-            UpdateRate = _updateRateCounter;
-            _updateRateCounter = 0;
+            _previousUpdateDateTime = _currentUpdateDateTime;
+            _currentUpdateDateTime = DateTime.Now;
 
             OnBeginRead();
 
             using var memoryStream = new MemoryStream(data);
             using var reader = new ExtendedBinaryReader(memoryStream);
 
-            Clock.OtherTick = reader.Read7BitEncodedInt();
+            Clock.OtherTick = TimeSpan.FromTicks(reader.ReadInt64());
 
             _typeEncoder.Read(reader);
 
@@ -125,8 +128,6 @@ namespace MonoSync
 
         public void Update()
         {
-            _updateRateCounter++;
-
             Clock.Update();
             OnUpdated();
         }

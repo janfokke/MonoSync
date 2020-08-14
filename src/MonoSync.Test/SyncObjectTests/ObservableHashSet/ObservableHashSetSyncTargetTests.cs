@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using MonoSync.Collections;
 using MonoSync.Test.TestObjects;
@@ -21,10 +22,10 @@ namespace MonoSync.Test.Synchronization
             ObservableHashSet<string> target = TargetSynchronizerRoot.Reference;
             target.Add("2");
 
-            TargetSynchronizerRoot.Clock.OwnTick = 5;
+            TargetSynchronizerRoot.Clock.OwnTick = TimeSpan.FromMilliseconds(5);
 
             //Set tick older than client tick
-            byte[] changes = SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(6);
+            byte[] changes = SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.FromMilliseconds(6));
             TargetSynchronizerRoot.Read(changes);
 
             // Recently added item should be rolled back
@@ -60,7 +61,7 @@ namespace MonoSync.Test.Synchronization
             hashSetTestObject.Players.Add(new NotifyPropertyChangedTestPlayer { Name = "player1", Health = 100, Level = 30 });
             hashSetTestObject.Players.Add(new NotifyPropertyChangedTestPlayer { Name = "player2", Health = 44, Level = 1337 });
 
-            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(10));
+            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.FromMilliseconds(10)));
 
             NotifyPropertyChangedHashSetTestObject targetGameWorld = TargetSynchronizerRoot.Reference;
 

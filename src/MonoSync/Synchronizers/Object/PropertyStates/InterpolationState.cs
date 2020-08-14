@@ -7,7 +7,7 @@ namespace MonoSync.Synchronizers.PropertyStates
         private readonly ISerializer _serializer;
         private readonly SynchronizableTargetMember _synchronizableTargetMember;
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
-        private int _interpolatingStartTick;
+        private TimeSpan _interpolatingStartTick;
         private bool _subscribedToEndRead;
 
         private object _interpolationSource;
@@ -48,11 +48,11 @@ namespace MonoSync.Synchronizers.PropertyStates
         private void TargetSynchronizerRootOnUpdated(object sender, EventArgs e)
         {
             var interpolationFactor = Math.Min(1f,
-                (_targetSynchronizerRoot.Clock.OwnTick - _interpolatingStartTick) / (float) _targetSynchronizerRoot.UpdateRate);
+                (_targetSynchronizerRoot.Clock.OwnTick.TotalMilliseconds - _interpolatingStartTick.TotalMilliseconds) / (float) _targetSynchronizerRoot.UpdateRate.TotalMilliseconds);
             _synchronizableTargetMember.Value = _serializer.Interpolate(
                 _interpolationSource,
                 _interpolationTarget,
-                interpolationFactor);
+                (float) interpolationFactor);
 
             //Done interpolating
             if (interpolationFactor >= 1f)

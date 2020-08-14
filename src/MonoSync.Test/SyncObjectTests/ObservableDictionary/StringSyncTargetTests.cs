@@ -1,3 +1,4 @@
+using System;
 using MonoSync.Collections;
 using MonoSync.Test.TestObjects;
 using MonoSync.Test.TestUtils;
@@ -20,7 +21,7 @@ namespace MonoSync.Test.Synchronization
 
             sourceGameWorld.Players.Add("player2", new NotifyPropertyChangedTestPlayer { Name = "sameString"+1, Health = 44, Level = 1337 });
             SynchronizationPacket writeChangesAndDispose = SourceSynchronizerRoot.WriteChangesAndDispose();
-            TargetSynchronizerRoot.Read(writeChangesAndDispose.SetTick(0));
+            TargetSynchronizerRoot.Read(writeChangesAndDispose.SetTick(TimeSpan.Zero));
 
             NotifyPropertyChangedTestGameWorld targetGameWorld = TargetSynchronizerRoot.Reference;
 

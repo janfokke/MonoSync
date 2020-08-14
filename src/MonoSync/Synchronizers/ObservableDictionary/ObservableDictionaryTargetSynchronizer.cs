@@ -183,9 +183,9 @@ namespace MonoSync.Synchronizers
 
         private abstract class TargetCommand
         {
-            public int Tick { get; }
+            public TimeSpan Tick { get; }
 
-            protected TargetCommand(int tick)
+            protected TargetCommand(TimeSpan tick)
             {
                 Tick = tick;
             }
@@ -201,7 +201,7 @@ namespace MonoSync.Synchronizers
         {
             private readonly KeyValuePair<TKey, TValue> _item;
 
-            public TargetRemoveCommand(int tick, KeyValuePair<TKey, TValue> item) : base(tick)
+            public TargetRemoveCommand(TimeSpan tick, KeyValuePair<TKey, TValue> item) : base(tick)
             {
                 _item = item;
             }
@@ -224,7 +224,7 @@ namespace MonoSync.Synchronizers
         {
             private readonly KeyValuePair<TKey, TValue> _addedItem;
 
-            public TargetAddCommand(int tick, KeyValuePair<TKey, TValue> addedItem) : base(tick)
+            public TargetAddCommand(TimeSpan tick, KeyValuePair<TKey, TValue> addedItem) : base(tick)
             {
                 _addedItem = addedItem;
             }
@@ -246,7 +246,7 @@ namespace MonoSync.Synchronizers
             private readonly TValue _newValue;
             private TValue _oldValue;
 
-            public TargetReplaceCommands(int tick, TKey key, TValue oldValue, TValue newValue) : base(tick)
+            public TargetReplaceCommands(TimeSpan tick, TKey key, TValue oldValue, TValue newValue) : base(tick)
             {
                 _key = key;
                 _oldValue = oldValue;

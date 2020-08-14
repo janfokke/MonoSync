@@ -19,8 +19,18 @@ namespace MonoSync.Sample.Tweening
             _networkStream = client.GetStream();
         }
 
-     
-        public int Tick { get; set; }
+        private DateTime _tickSetDateTime;
+        private TimeSpan _tickOffset;
+        public TimeSpan Tick
+        {
+            get => DateTime.Now - _tickSetDateTime + _tickOffset;
+            set
+            {
+                _tickSetDateTime = DateTime.Now;
+                _tickOffset = value;
+            }
+        }
+
 
         public event EventHandler Disconnected;
 
@@ -47,7 +57,7 @@ namespace MonoSync.Sample.Tweening
                         }
                         case Commands.TICK_UPDATE:
                             // Refine Tick
-                            Tick = BitConverter.ToInt32(_buffer, 1);
+                            Tick = TimeSpan.FromTicks(BitConverter.ToInt64(_buffer, 1));
                             break;
                     }
                 }

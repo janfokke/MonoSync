@@ -4,15 +4,44 @@ namespace MonoSync
 {
     public class Clock
     {
-        public int OwnTick { get; set; }
-        public int OtherTick { get; set; }
+        private DateTime _ownTickSetDateTime = DateTime.Now;
+        private TimeSpan _ownTick;
+        public TimeSpan OwnTick
+        {
+            get => _ownTick;
+            set
+            {
+                _ownTickSetDateTime = DateTime.Now;
+                _ownTick = value;
+            }
+        }
 
-        public int Difference => Math.Max(0, OwnTick - OtherTick);
+        private DateTime _otherTickSetDateTime = DateTime.Now;
+        private TimeSpan _otherTick;
+        public TimeSpan OtherTick
+        {
+            get => _otherTick;
+            set
+            {
+                _otherTickSetDateTime = DateTime.Now;
+                _otherTick = value;
+            }
+        }
 
         public void Update()
         {
-            OwnTick++;
-            OtherTick++;
+            _ownTick = DateTime.Now - _ownTickSetDateTime + _ownTick;
+            _otherTick = DateTime.Now - _otherTickSetDateTime + _otherTick;
+        }
+
+        public TimeSpan Difference
+        {
+            get
+            {
+                if(OtherTick > OwnTick)
+                    return TimeSpan.Zero;
+                return OwnTick - OtherTick;
+            }
         }
 
         public override string ToString()

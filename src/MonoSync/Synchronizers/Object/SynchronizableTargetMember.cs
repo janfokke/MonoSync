@@ -64,7 +64,7 @@ namespace MonoSync.Synchronizers
         /// <summary>
         ///     Tick when underlying property changed
         /// </summary>
-        internal int TickWhenDirty { get; private set; }
+        internal TimeSpan TickWhenDirty { get; private set; }
 
         public SynchronizationBehaviour SynchronizationBehaviour
         {

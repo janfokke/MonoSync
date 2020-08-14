@@ -43,7 +43,7 @@ namespace MonoSync.Test.Synchronization
             ConstructedPropertyChangeSynchronizationMock getterOnlyConstructorMockRoot = TargetSynchronizerRoot.Reference;
             Assert.Equal(getterOnlyConstructorMockSource.Accessor, getterOnlyConstructorMockRoot.Accessor);
 
-            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(0));
+            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.Zero));
 
             Assert.Equal(getterOnlyConstructorMockSource.Accessor, getterOnlyConstructorMockRoot.Accessor);
         }
@@ -82,7 +82,7 @@ namespace MonoSync.Test.Synchronization
             var TargetSynchronizerRoot =
                 new TargetSynchronizerRoot<NotifyPropertyChangedSynchronizeConstructorMock>(SourceSynchronizerRoot.WriteFullAndDispose());
 
-            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(0));
+            TargetSynchronizerRoot.Read(SourceSynchronizerRoot.WriteChangesAndDispose().SetTick(TimeSpan.Zero));
 
             NotifyPropertyChangedSynchronizeConstructorMock targetConstructorMock = TargetSynchronizerRoot.Reference;
 

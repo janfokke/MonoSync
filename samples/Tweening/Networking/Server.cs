@@ -63,8 +63,6 @@ namespace MonoSync.Sample.Tweening
 
         public override void Update(GameTime gameTime)
         {
-            IncrementClientTicks();
-
             if (_serverTick++ % (60 / SendRate) == 0)
             {
                 BroadcastWorld();
@@ -78,14 +76,6 @@ namespace MonoSync.Sample.Tweening
             {
                 value = Math.Clamp(value, 1, 60);
                 _sendRate = value;
-            }
-        }
-
-        private void IncrementClientTicks()
-        {
-            foreach (ServerSideClient serverSideClient in _clients)
-            {
-                serverSideClient.Tick++;
             }
         }
 
