@@ -25,6 +25,8 @@ namespace MonoSync
             Read(reader, (Action<T>) (value => synchronizationCallback(value)));
         }
 
+        
+
         public virtual T Interpolate(T source, T target, float factor)
         {
             throw new NotImplementedException();

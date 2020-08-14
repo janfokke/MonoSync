@@ -19,18 +19,19 @@ namespace MonoSync.Synchronizers
 
         public bool TryGetMemberByName(string memberName, out SynchronizableSourceMember synchronizableSourceMember)
         {
-            synchronizableSourceMember = null;
             for (var i = 0; i < SynchronizableSourceMembers.Length; i++)
             {
                 SynchronizableSourceMember x = SynchronizableSourceMembers[i];
                 if (x.Name == memberName)
                 {
                     synchronizableSourceMember = x;
-                    break;
+                    return true;
                 }
             }
-            return synchronizableSourceMember != null;
+            synchronizableSourceMember = default;
+            return false;
         }
+
         private void SourceObjectOnPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             // Value changed event might be from a non-sync property

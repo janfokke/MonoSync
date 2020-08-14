@@ -35,7 +35,6 @@ namespace MonoSync
         internal TargetReferencePool ReferencePool { get; } = new TargetReferencePool();
         internal SynchronizableMemberFactory SynchronizableMemberFactory { get; }
 
-
         /// <summary>
         /// Amount of updates between reads
         /// </summary>
@@ -92,7 +91,6 @@ namespace MonoSync
             {
                 removedReferencesIds[i] = reader.Read7BitEncodedInt();
             }
-
             return removedReferencesIds;
         }
 

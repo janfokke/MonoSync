@@ -15,11 +15,7 @@ namespace MonoSync.Utils
         public int Index { get; }
         public MemberInfo MemberInfo { get; }
 
-        public Type MemberType => MemberInfo.MemberType switch
-        {
-            MemberTypes.Field => ((FieldInfo) MemberInfo).FieldType,
-            MemberTypes.Property => ((PropertyInfo) MemberInfo).PropertyType,
-        };
+        public Type MemberType { get; }
         
         public SynchronizeAttribute SynchronizeAttribute { get; }
         public bool CanSet => _setter != null;
@@ -39,6 +35,13 @@ namespace MonoSync.Utils
             Index = index;
             Serializer = serializer;
             MemberInfo = memberInfo;
+
+            MemberType = MemberInfo.MemberType switch
+            {
+                MemberTypes.Field => ((FieldInfo)MemberInfo).FieldType,
+                MemberTypes.Property => ((PropertyInfo)MemberInfo).PropertyType,
+            };
+
             SynchronizeAttribute = synchronizeAttribute;
         }
 

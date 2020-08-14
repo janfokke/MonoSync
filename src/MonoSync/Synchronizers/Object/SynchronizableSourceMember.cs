@@ -3,7 +3,7 @@ using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
-    public class SynchronizableSourceMember
+    public struct SynchronizableSourceMember
     {
         private readonly object _declaringReference;
         private readonly SynchronizableMember _synchronizableMember;
