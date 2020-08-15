@@ -5,6 +5,7 @@ namespace MonoSync
     public class Clock
     {
         private DateTime _ownTickSetDateTime = DateTime.Now;
+        private TimeSpan _ownTickOffset;
         private TimeSpan _ownTick;
         public TimeSpan OwnTick
         {
@@ -12,11 +13,12 @@ namespace MonoSync
             set
             {
                 _ownTickSetDateTime = DateTime.Now;
-                _ownTick = value;
+                _ownTick = _ownTickOffset = value;
             }
         }
 
         private DateTime _otherTickSetDateTime = DateTime.Now;
+        private TimeSpan _otherTickOffset;
         private TimeSpan _otherTick;
         public TimeSpan OtherTick
         {
@@ -24,14 +26,14 @@ namespace MonoSync
             set
             {
                 _otherTickSetDateTime = DateTime.Now;
-                _otherTick = value;
+                _otherTick = _otherTickOffset = value;
             }
         }
 
         public void Update()
         {
-            _ownTick = DateTime.Now - _ownTickSetDateTime + _ownTick;
-            _otherTick = DateTime.Now - _otherTickSetDateTime + _otherTick;
+            _ownTick = DateTime.Now - _ownTickSetDateTime + _ownTickOffset;
+            _otherTick = DateTime.Now - _otherTickSetDateTime + _otherTickOffset;
         }
 
         public TimeSpan Difference
