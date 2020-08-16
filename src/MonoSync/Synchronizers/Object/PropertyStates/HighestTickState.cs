@@ -8,23 +8,16 @@ namespace MonoSync.Synchronizers.PropertyStates
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
 
         private bool _subscribedToEndRead;
+        private TimeSpan _tickWhenDirty;
 
         public HighestTickState(SynchronizableTargetMember synchronizableTargetMember, TargetSynchronizerRoot targetSynchronizerRoot)
         {
             _synchronizableTargetMember = synchronizableTargetMember;
             _targetSynchronizerRoot = targetSynchronizerRoot;
-            _synchronizableTargetMember.Dirty += SynchronizableTargetMemberOnDirty;
-        }
-
-        private void SynchronizableTargetMemberOnDirty(object sender, EventArgs e)
-        {
-            // The Value should be restored to the value of the source if the source's tick is higher than the property's dirty tick.
-            SubscribeToEndRead();
         }
 
         public void Dispose()
         {
-            _synchronizableTargetMember.Dirty -= SynchronizableTargetMemberOnDirty;
             UnSubscribeToEndRead();
         }
 
@@ -33,9 +26,15 @@ namespace MonoSync.Synchronizers.PropertyStates
             SubscribeToEndRead();
         }
 
+        public void ValueChanged()
+        {
+            _tickWhenDirty = _targetSynchronizerRoot.Clock.OwnTick;
+            SubscribeToEndRead();
+        }
+
         private void TargetSynchronizerRootOnEndRead(object sender, EventArgs e)
         {
-            if (_targetSynchronizerRoot.Clock.OtherTick > _synchronizableTargetMember.TickWhenDirty)
+            if (_targetSynchronizerRoot.Clock.OtherTick > _tickWhenDirty)
             {
                 _synchronizableTargetMember.Value = _synchronizableTargetMember.SynchronizedValue;
                 UnSubscribeToEndRead();

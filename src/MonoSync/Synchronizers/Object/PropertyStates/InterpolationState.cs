@@ -21,7 +21,6 @@ namespace MonoSync.Synchronizers.PropertyStates
             _synchronizableTargetMember = synchronizableTargetMember;
             _targetSynchronizerRoot = targetSynchronizerRoot;
             _serializer = serializer;
-            _synchronizableTargetMember.Dirty += SynchronizableTargetMemberOnDirty;
         }
 
         public void HandleRead(object value)
@@ -30,19 +29,18 @@ namespace MonoSync.Synchronizers.PropertyStates
             SubscribeToEndRead();
         }
 
-        public void Dispose()
-        {
-            _synchronizableTargetMember.Dirty -= SynchronizableTargetMemberOnDirty;
-            UnSubscribeToEndRead();
-            EndInterpolate();
-        }
-
-        private void SynchronizableTargetMemberOnDirty(object sender, EventArgs e)
+        public void ValueChanged()
         {
             if (Interpolating == false)
             {
                 SubscribeToEndRead();
             }
+        }
+
+        public void Dispose()
+        {
+            UnSubscribeToEndRead();
+            EndInterpolate();
         }
 
         private void TargetSynchronizerRootOnUpdated(object sender, EventArgs e)
@@ -53,7 +51,7 @@ namespace MonoSync.Synchronizers.PropertyStates
                 _interpolationSource,
                 _interpolationTarget,
                 (float) interpolationFactor);
-
+            
             //Done interpolating
             if (interpolationFactor >= 1f)
             {

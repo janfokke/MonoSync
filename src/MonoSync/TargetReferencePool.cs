@@ -11,8 +11,6 @@ namespace MonoSync
         private readonly Dictionary<int, TargetSynchronizer> _syncObjectLookup = new Dictionary<int, TargetSynchronizer>();
         private readonly Dictionary<object, int> _syncObjectReferenceIdLookup = new Dictionary<object, int>(ReferenceEqualityComparer.Default);
 
-        public IEnumerable<SynchronizerBase> SyncObjects => _syncObjectLookup.Values;
-
         /// <summary>
         ///     Resolves the reference if it is available or becomes available
         /// </summary>
@@ -85,7 +83,6 @@ namespace MonoSync
                     return syncObject;
                 }
             }
-
             return null;
         }
 
@@ -93,10 +90,8 @@ namespace MonoSync
         {
             if (referenceIdentifier == 0)
             {
-                targetSynchronizerObject = null;
-                return true;
+                throw new Exception("null referenceIdentifier");
             }
-
             return _syncObjectLookup.TryGetValue(referenceIdentifier, out targetSynchronizerObject);
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
+using System.Linq;
 using System.Text;
 using MonoSync.Serializers;
 using MonoSync.Utils;
@@ -39,8 +40,6 @@ namespace MonoSync
         /// Amount of updates between reads
         /// </summary>
         public TimeSpan UpdateRate => _currentUpdateDateTime - _previousUpdateDateTime;
-
-      
 
         public TargetSynchronizerRoot(byte[] initialFullSynchronization,Settings settings = null ,IServiceProvider serviceProvider = null)
         {
@@ -124,7 +123,20 @@ namespace MonoSync
 
         public event EventHandler BeginRead;
 
-        public event EventHandler EndRead;
+        private readonly HashSet<EventHandler> _endReadHandlers = new HashSet<EventHandler>();
+        public event EventHandler EndRead
+        {
+            add => _endReadHandlers.Add(value);
+            remove => _endReadHandlers.Remove(value);
+        }
+
+        protected virtual void OnEndRead()
+        {
+            foreach (EventHandler endReadHandler in _endReadHandlers.ToList())
+            {
+                endReadHandler.Invoke(this, EventArgs.Empty);
+            }
+        }
 
         public void Update()
         {
@@ -140,11 +152,6 @@ namespace MonoSync
         protected virtual void OnBeginRead()
         {
             BeginRead?.Invoke(this, EventArgs.Empty);
-        }
-
-        protected virtual void OnEndRead()
-        {
-            EndRead?.Invoke(this, EventArgs.Empty);
         }
     }
 }

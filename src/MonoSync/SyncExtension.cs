@@ -49,7 +49,10 @@ namespace MonoSync
             IEnumerable<ObjectTargetSynchronizer> syncTargetObjects = GetTargetSynchronizer(source);
             foreach (ObjectTargetSynchronizer targetObject in syncTargetObjects)
             {
-                yield return targetObject.GetSyncTargetMember(name);
+                if (targetObject.TryGetMemberByName(name, out SynchronizableTargetMember targetMember))
+                {
+                    yield return targetMember;
+                }
             }
         }
 

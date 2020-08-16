@@ -11,7 +11,7 @@ namespace MonoSync.Benchmark
         static void Main()
         {
             RunMonoSyncTest(1000);
-            RunMonoSyncTest(1000000);
+            RunMonoSyncTest(100000);
 
             //RunJsonTest(1000);
             //RunJsonTest(1000000);
@@ -61,10 +61,12 @@ namespace MonoSync.Benchmark
             // Full write
             Console.Write("Full write: ");
             stopwatch.Start();
-            using (WriteSession writeSession = syncSourceRoot.BeginWrite())
-            {
-                writeSession.WriteFull();
-            }
+
+
+            WriteSession fullWriteSession = syncSourceRoot.BeginWrite();
+            var syncTargetRoot = new TargetSynchronizerRoot<MonoSyncWorld>(fullWriteSession.WriteFull());
+            fullWriteSession.Dispose();
+
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds + "MS");
             stopwatch.Reset();
@@ -79,7 +81,8 @@ namespace MonoSync.Benchmark
             }
             using (WriteSession writeSession = syncSourceRoot.BeginWrite())
             {
-                int size = writeSession.WriteChanges().SetTick(TimeSpan.Zero).Length;
+                var data = writeSession.WriteChanges().SetTick(TimeSpan.Zero);
+                syncTargetRoot.Read(data);
             }
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds + "MS");

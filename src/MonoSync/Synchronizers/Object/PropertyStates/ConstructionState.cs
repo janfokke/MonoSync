@@ -17,5 +17,9 @@ namespace MonoSync.Synchronizers.PropertyStates
         public void HandleRead(object reader)
         {
         }
+
+        public void ValueChanged()
+        {
+        }
     }
 }

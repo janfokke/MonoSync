@@ -10,13 +10,15 @@ namespace MonoSync.Synchronizers
 {
     public class SynchronizableTargetMember : IDisposable
     {
-        private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
         private readonly object _declaringReference;
+        private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
         private readonly SynchronizableMember _synchronizableMember;
         private bool _changing;
         private ISyncTargetPropertyState _state;
         private SynchronizationBehaviour _synchronizationBehaviour;
         private object _synchronizedValue;
+
+        public string Name => _synchronizableMember.MemberInfo.Name;
 
         public SynchronizableTargetMember(
             object declaringReference,
@@ -28,8 +30,6 @@ namespace MonoSync.Synchronizers
             _declaringReference = declaringReference;
             _state = ManualState.Instance;
         }
-
-        internal event EventHandler Dirty;
 
         internal object Value
         {
@@ -64,7 +64,9 @@ namespace MonoSync.Synchronizers
         /// <summary>
         ///     Tick when underlying property changed
         /// </summary>
-        internal TimeSpan TickWhenDirty { get; private set; }
+
+        public SynchronizationBehaviour DefaultSynchronizationBehaviour =>
+            _synchronizableMember.SynchronizeAttribute.SynchronizationBehaviour;
 
         public SynchronizationBehaviour SynchronizationBehaviour
         {
@@ -143,9 +145,7 @@ namespace MonoSync.Synchronizers
             {
                 return;
             }
-            
-            TickWhenDirty = _targetSynchronizerRoot.Clock.OwnTick;
-            Dirty?.Invoke(this, EventArgs.Empty);
+            _state.ValueChanged();
         }
     }
 }

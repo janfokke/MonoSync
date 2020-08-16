@@ -18,5 +18,10 @@
         {
             _synchronizableTargetMember.Value = value;
         }
+
+        public void ValueChanged()
+        {
+            // Ignore
+        }
     }
 }

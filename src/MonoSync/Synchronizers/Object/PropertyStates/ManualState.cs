@@ -14,5 +14,9 @@
         public void HandleRead(object reader)
         {
         }
+
+        public void ValueChanged()
+        {
+        }
     }
 }
