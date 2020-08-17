@@ -10,12 +10,21 @@ using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
+    
+
     public class ObjectTargetSynchronizer : TargetSynchronizer
     {
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
         protected readonly SynchronizableTargetMember[] SynchronizableTargetMembers;
 
-        private bool _constructing;
+        private State _state;
+
+        enum State : byte
+        {
+            Uninitialized,
+            Constructing,
+            Constructed
+        }
 
         public ObjectTargetSynchronizer(TargetSynchronizerRoot targetSynchronizerRoot, int referenceId, Type referenceType) : base(referenceId)
         {
@@ -80,9 +89,9 @@ namespace MonoSync.Synchronizers
         {
             path.Add(Reference);
 
-            if (_constructing == false)
+            if (_state == State.Uninitialized)
             {
-                _constructing = true;
+                _state = State.Constructing;
                 ConstructorInfo constructor = ResolveConstructor(Reference.GetType());
                 ParameterInfo[] constructorParametersInfos = constructor.GetParameters();
                 object[] constructorParameters;
@@ -153,8 +162,9 @@ namespace MonoSync.Synchronizers
                         synchronizableTargetMember.SynchronizationBehaviour != SynchronizationBehaviour.Construction)
                         synchronizableTargetMember.Value = synchronizableTargetMember.SynchronizedValue;
                 }
+                _state = State.Constructed;
             }
-            else
+            else if(_state == State.Constructing)
             {
                 throw new ConstructorReferenceCycleException(path);
             }
