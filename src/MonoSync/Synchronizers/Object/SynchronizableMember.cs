@@ -36,7 +36,9 @@ namespace MonoSync.Utils
             Serializer = serializer;
             MemberInfo = memberInfo;
 
+#pragma warning disable 8509
             MemberType = MemberInfo.MemberType switch
+#pragma warning restore 8509
             {
                 MemberTypes.Field => ((FieldInfo)MemberInfo).FieldType,
                 MemberTypes.Property => ((PropertyInfo)MemberInfo).PropertyType,

@@ -10,12 +10,22 @@ using MonoSync.Utils;
 
 namespace MonoSync.Synchronizers
 {
-    
-
     public class ObjectTargetSynchronizer : TargetSynchronizer
     {
         private readonly TargetSynchronizerRoot _targetSynchronizerRoot;
         protected readonly SynchronizableTargetMember[] SynchronizableTargetMembers;
+        private List<Action<object>> _constructionCallbacks;
+
+        public void InvokeWhenConstructed(Action<object> callback)
+        {
+            if (_state == State.Constructed)
+            {
+                callback(Reference);
+                return;
+            }
+            _constructionCallbacks ??=new List<Action<object>>();
+            _constructionCallbacks.Add(callback);
+        }
 
         private State _state;
 
@@ -162,7 +172,17 @@ namespace MonoSync.Synchronizers
                         synchronizableTargetMember.SynchronizationBehaviour != SynchronizationBehaviour.Construction)
                         synchronizableTargetMember.Value = synchronizableTargetMember.SynchronizedValue;
                 }
+                
                 _state = State.Constructed;
+
+                if (_constructionCallbacks != null)
+                {
+                    foreach (Action<object> constructionCallback in _constructionCallbacks)
+                    {
+                        constructionCallback.Invoke(Reference);
+                    }
+                    _constructionCallbacks = null;
+                }
             }
             else if(_state == State.Constructing)
             {

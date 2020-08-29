@@ -89,12 +89,20 @@ namespace MonoSync.Synchronizers
                         _state = new InterpolationState(this, _targetSynchronizerRoot, _synchronizableMember.Serializer);
                         AssertHasSetter();
                         break;
+                    case SynchronizationBehaviour.HighestTickInterpolated:
+                        _state = new HighestTickInterpolationState(this, _targetSynchronizerRoot, _synchronizableMember.Serializer);
+                        AssertHasSetter();
+                        break;
                     case SynchronizationBehaviour.HighestTick:
                         _state = new HighestTickState(this, _targetSynchronizerRoot);
                         AssertHasSetter();
                         break;
                     case SynchronizationBehaviour.TakeSynchronized:
                         _state = new TakeSynchronizedState(this);
+                        AssertHasSetter();
+                        break;
+                    case SynchronizationBehaviour.TakeSynchronizedOnEachUpdate:
+                        _state = new TakeSynchronizedOnEachUpdateState(this, _targetSynchronizerRoot);
                         AssertHasSetter();
                         break;
                 }
@@ -107,7 +115,7 @@ namespace MonoSync.Synchronizers
             {
                 if (_state is InterpolationState interpolationState)
                 {
-                    return interpolationState.Interpolating;
+                    return interpolationState.IsInterpolating;
                 }
 
                 return false;

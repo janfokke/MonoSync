@@ -5,13 +5,24 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using MonoSync.Exceptions;
 using MonoSync.Synchronizers;
 
 namespace MonoSync
 {
     public static class SyncExtensions
     {
+        public static void InvokeWhenConstructed<TSyncObject>(this TSyncObject syncObject, Action<TSyncObject> callback)
+        {
+            if(TryGetTargetSynchronizer(syncObject, out ObjectTargetSynchronizer objectTargetSynchronizer))
+            {
+                objectTargetSynchronizer.InvokeWhenConstructed(reference => callback((TSyncObject)reference));
+            }
+            else
+            {
+                callback(syncObject);
+            }
+        }
+
         public static TMember InitializeSynchronizableMember<TTarget, TMember>(this TTarget target, string name, Func<TMember> defaultValue)
         {
             if (TryGetSyncTargetMember(target, name, out SynchronizableTargetMember result))
@@ -21,52 +32,50 @@ namespace MonoSync
             return defaultValue();
         }
 
-        /// <summary>
-        ///     Returns a single <see cref="SynchronizableTargetMember" />, and throws an exception if there is not exactly one
-        ///     <see cref="SynchronizableTargetMember" />
-        /// </summary>
-        /// <param name="source">The Synchronization-object that contains the target member</param>
-        /// <param name="selector">The Expression to the intended member Value</param>
-        public static SynchronizableTargetMember GetSyncTargetMember<TSyncType>(this TSyncType source, string name)
-        {
-            return GetSyncTargetMembers(source, name).Single();
-        }
-
         public static bool TryGetSyncTargetMember<TSyncType>(this TSyncType source, string name, out SynchronizableTargetMember synchronizableTargetMember)
         {
-            SynchronizableTargetMember targetMember = GetSyncTargetMembers(source, name).FirstOrDefault();
-            synchronizableTargetMember = targetMember;
-            return targetMember != null;
+            if (TryGetTargetSynchronizer(source, out ObjectTargetSynchronizer objectTargetSynchronizer))
+            {
+                return objectTargetSynchronizer.TryGetMemberByName(name, out synchronizableTargetMember);
+            }
+            synchronizableTargetMember = null;
+            return false;
         }
 
         /// <summary>
         ///     Returns all the <see cref="SynchronizableTargetMember">SyncTargetProperties</see> that are bound to the Value
         /// </summary>
-        /// <param name="source">The Synchronization-object that contains the target member</param>
-        /// <param name="selector">The Expression to the intended member Value</param>
-        public static IEnumerable<SynchronizableTargetMember> GetSyncTargetMembers<TSyncType>(this TSyncType source, string name)
+        public static SynchronizableTargetMember GetSyncTargetMember<TSyncType>(this TSyncType source, string name)
         {
-            IEnumerable<ObjectTargetSynchronizer> syncTargetObjects = GetTargetSynchronizer(source);
-            foreach (ObjectTargetSynchronizer targetObject in syncTargetObjects)
+            if (TryGetSyncTargetMember(source, name, out SynchronizableTargetMember targetMember))
             {
-                if (targetObject.TryGetMemberByName(name, out SynchronizableTargetMember targetMember))
-                {
-                    yield return targetMember;
-                }
+                return targetMember;
             }
+            throw new SynchronizableMemberNotFoundException(typeof(TSyncType), name);
         }
 
-        public static IEnumerable<ObjectTargetSynchronizer> GetTargetSynchronizer(object reference)
+        public static ObjectTargetSynchronizer GetTargetSynchronizer(object reference)
+        {
+            if (TryGetTargetSynchronizer(reference, out ObjectTargetSynchronizer objectTargetSynchronizer))
+            {
+                return objectTargetSynchronizer;
+            }
+            throw new ObjectTargetSynchronizerNotFoundException();
+        }
+
+        public static bool TryGetTargetSynchronizer(object reference, out ObjectTargetSynchronizer objectTargetSynchronizer)
         {
             foreach (WeakReference<TargetSynchronizerRoot> weakReference in TargetSynchronizerRoot.Instances)
             {
                 if (weakReference.TryGetTarget(out TargetSynchronizerRoot targetSynchronizerRoot))
                 {
-                    var notifyPropertyChangedTargetSynchronizer = (ObjectTargetSynchronizer) targetSynchronizerRoot.ReferencePool.GetSynchronizer(reference);
-                    if(notifyPropertyChangedTargetSynchronizer != null)
-                        yield return notifyPropertyChangedTargetSynchronizer;
+                    objectTargetSynchronizer = (ObjectTargetSynchronizer) targetSynchronizerRoot.ReferencePool.GetSynchronizer(reference);
+                    if(objectTargetSynchronizer != null)
+                        return true;
                 }
             }
+            objectTargetSynchronizer = null;
+            return false;
         }
     }
 }

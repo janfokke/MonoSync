@@ -2,7 +2,7 @@
 
 namespace MonoSync.Synchronizers.PropertyStates
 {
-    internal class InterpolationState : ISyncTargetPropertyState
+    internal class HighestTickInterpolationState : ISyncTargetPropertyState
     {
         private readonly ISerializer _serializer;
         private readonly SynchronizableTargetMember _synchronizableTargetMember;
@@ -12,10 +12,11 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         private object _interpolationSource;
         private object _interpolationTarget;
+        private TimeSpan _tickWhenDirty;
 
         public bool IsInterpolating { get; private set; }
 
-        public InterpolationState(SynchronizableTargetMember synchronizableTargetMember, TargetSynchronizerRoot targetSynchronizerRoot,
+        public HighestTickInterpolationState(SynchronizableTargetMember synchronizableTargetMember, TargetSynchronizerRoot targetSynchronizerRoot,
             ISerializer serializer)
         {
             _synchronizableTargetMember = synchronizableTargetMember;
@@ -31,6 +32,8 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         public void ValueChanged()
         {
+            _tickWhenDirty = _targetSynchronizerRoot.Clock.OwnTick;
+            EndInterpolate();
             if (IsInterpolating == false)
             {
                 SubscribeToEndRead();
@@ -79,20 +82,22 @@ namespace MonoSync.Synchronizers.PropertyStates
 
         private void TargetSynchronizerRootOnEndRead(object sender, EventArgs e)
         {
-            UnSubscribeToEndRead();
-
-            // Previous interpolation is still running
-            _interpolatingStartTick = _targetSynchronizerRoot.Clock.OwnTick;
-            _interpolationSource = _synchronizableTargetMember.Value;
-
-            if (_interpolationSource == null || _interpolationTarget == null)
+            if (_targetSynchronizerRoot.Clock.OtherTick > _tickWhenDirty)
             {
-                // Quick set
-                _synchronizableTargetMember.Value = _interpolationTarget;
-            }
-            else
-            {
-                BeginInterpolate();
+                UnSubscribeToEndRead();
+                // Previous interpolation is still running
+                _interpolatingStartTick = _targetSynchronizerRoot.Clock.OwnTick;
+                _interpolationSource = _synchronizableTargetMember.Value;
+
+                if (_interpolationSource == null || _interpolationTarget == null)
+                {
+                    // Quick set
+                    _synchronizableTargetMember.Value = _interpolationTarget;
+                }
+                else
+                {
+                    BeginInterpolate();
+                }
             }
         }
 
